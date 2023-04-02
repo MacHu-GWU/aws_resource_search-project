@@ -1,0 +1,10 @@
+cached-property>=1.5.2; python_version < '3.8'
+dataclasses>=0.8; python_version == '3.6'
+pathlib_mate  # for pathlib
+iterproxy
+diskcache  # for cache
+fuzzywuzzy
+python-Levenshtein
+boto3
+boto_session_manager>=1.4.2
+aws_console_url>=0.7.3
