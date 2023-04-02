@@ -68,7 +68,7 @@ class FuzzyMatcher(T.Generic[Item]):
         self,
         name: str,
         threshold: int = 70,
-        limit: int = 5,
+        limit: int = 20,
         filter_func: T.Callable = lambda x: True,
     ) -> T.List[Item]:
         matched_name_list = process.extract(name, self._names, limit=limit)

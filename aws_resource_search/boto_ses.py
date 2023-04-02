@@ -17,7 +17,7 @@ class AWS:
         argument for each method, diskcache will raise an error anyway.
 
         So we have to declare a module level singleton object ``aws``, and
-        use it for AWS credential. 
+        use it for AWS credential.
     """
     def __init__(self):
         self.bsm: BotoSesManager

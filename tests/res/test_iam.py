@@ -19,10 +19,15 @@ class TestIamSearcher:
 
         aws.attach_bsm(BotoSesManager())
 
-        aws.bsm.iam_client.create_role(
-            RoleName="test-role",
-            AssumeRolePolicyDocument="{}",
-        )
+        cases = [
+            ("ec2-admin-role", ),
+            ("lambda-admin-role",),
+        ]
+        for role_name, in cases:
+            aws.bsm.iam_client.create_role(
+                RoleName=role_name,
+                AssumeRolePolicyDocument="{}",
+            )
 
 
     @classmethod
@@ -33,6 +38,9 @@ class TestIamSearcher:
         sr = IamSearcher()
         print(sr.list_roles())
         print(sr.list_roles())
+
+        print(sr.filter_roles("ec2"))
+        print(sr.filter_roles("lambda"))
 
 
 if __name__ == "__main__":

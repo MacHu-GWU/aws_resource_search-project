@@ -7,6 +7,7 @@ from ...model import BaseModel
 from ...cache import cache
 from ...boto_ses import aws
 from ...constants import CACHE_EXPIRE
+from ...fuzzy import FuzzyMatcher
 from ..searcher import Searcher
 
 
@@ -18,6 +19,11 @@ class Role(BaseModel):
     create_date: T.Optional[str] = dataclasses.field(default=None)
     path: T.Optional[str] = dataclasses.field(default=None)
     arn: T.Optional[str] = dataclasses.field(default=None)
+
+
+class RoleFuzzyMatcher(FuzzyMatcher[Role]):
+    def get_name(self, item) -> T.Optional[str]:
+        return item.name
 
 
 @dataclasses.dataclass
@@ -35,10 +41,17 @@ class IamSearcher(Searcher):
             for role_dict in res["Roles"]
         ]
 
-    @cache.memoize(name="iam-roles", expire=CACHE_EXPIRE)
+    @cache.memoize(expire=CACHE_EXPIRE)
     def list_roles(self) -> T.List[Role]:
         paginator = aws.bsm.iam_client.get_paginator("list_roles")
         roles = list()
         for res in paginator.paginate():
             roles.extend(self.parse_response(res))
         return roles
+
+
+    @cache.memoize(expire=CACHE_EXPIRE)
+    def filter_roles(self, query_str: str) -> T.List[Role]:
+        return RoleFuzzyMatcher.from_items(
+            self.list_roles()
+        ).match(query_str)
