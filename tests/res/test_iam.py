@@ -43,23 +43,33 @@ class TestIamSearcher:
                 ),
             )
 
+            aws.bsm.iam_client.create_user(
+                UserName=f"{name}-user",
+            )
+
     @classmethod
     def teardown_class(cls):
         cls.mock_iam.stop()
 
     def test(self):
         sr = IamSearcher()
-        print(sr.list_roles())
-        print(sr.list_roles())
+        assert len(sr.list_roles()) == 2
+        assert len(sr.list_roles()) == 2
 
-        print(sr.filter_roles("ec2"))
-        print(sr.filter_roles("lambda"))
+        assert "ec2" in sr.filter_roles("ec2")[0].name
+        assert "lambda" in sr.filter_roles("lambda")[0].name
 
-        print(sr.list_policies(scope_is_all=True))
-        print(sr.list_policies(scope_is_all=True))
+        assert len(sr.list_policies(scope_is_local=True)) == 2
+        assert len(sr.list_policies(scope_is_local=True)) == 2
+        
+        assert "ec2" in sr.filter_policies("ec2", scope_is_local=True)[0].name
+        assert "lambda" in sr.filter_policies("lambda", scope_is_local=True)[0].name
 
-        print(sr.filter_policies("ec2", scope_is_all=True))
-        print(sr.filter_policies("lambda", scope_is_all=True))
+        assert len(sr.list_users()) == 2
+        assert len(sr.list_users()) == 2
+
+        assert "ec2" in sr.filter_users("ec2")[0].name
+        assert "lambda" in sr.filter_users("lambda")[0].name
 
 
 if __name__ == "__main__":
