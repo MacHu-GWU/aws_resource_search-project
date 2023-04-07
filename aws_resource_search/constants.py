@@ -1,3 +1,5 @@
 # -*- coding: utf-8 -*-
 
 CACHE_EXPIRE = 1
+LIST_API_CACHE_EXPIRE = 1
+FILTER_API_CACHE_EXPIRE = 1
