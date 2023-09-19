@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from pytest import raises, approx
 
 
 def test():
-    import aws_resource_search
-    pass
+    import aws_resource_search.api as aws_resource_search
+
+    _ = aws_resource_search.IamSearcher
+    _ = aws_resource_search.DynamoDBSearcher
+    _ = aws_resource_search.S3Searcher
 
 
 if __name__ == "__main__":

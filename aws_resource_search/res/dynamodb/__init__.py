@@ -25,7 +25,7 @@ class TableFuzzyMatcher(FuzzyMatcher[Table]):
 
 
 @dataclasses.dataclass
-class TableSearcher(Searcher):
+class DynamoDBSearcher(Searcher):
     """
     todo: docstring
     """
