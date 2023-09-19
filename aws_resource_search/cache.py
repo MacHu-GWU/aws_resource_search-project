@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+The ``list-aws-resources`` API sometime is very slow, we would like to cache
+the result to speed up the search.
+"""
+
 import typing as T
 from diskcache import Cache
 from pathlib_mate import Path
@@ -14,6 +19,18 @@ def decohints(decorator: T.Callable) -> T.Callable:
 
 
 class TypedCache(Cache):
+    """
+    The original ``diskcache.Cache.memoize`` method will mess up the type hint
+    of the decorated function, this class fix this issue.
+
+    Usage::
+
+        cache = TypedCache("/path/to/cache/dir")
+
+        @cache.typed_memoize()
+        def very_slow_method() -> T.List[str]:
+            pass
+    """
     def typed_memoize(self, name=None, typed=False, expire=None, tag=None, ignore=()):
         @decohints
         def decorator(func):

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Fuzzy match utilities.
+"""
+
 import typing as T
 import dataclasses
 
@@ -13,7 +17,7 @@ class FuzzyMatcher(T.Generic[Item]):
     """
     Fuzzywuzzy is awesome to match string. However, what if the item is not string?
 
-    We can define a name for each item and use fuzzywuzzy to match the name.
+    We can define a **name** for each item and use fuzzywuzzy to match the **name**.
     Then use the name to locate the original item. This class implements this pattern.
 
     :param _items: list of item you want to match
@@ -21,11 +25,32 @@ class FuzzyMatcher(T.Generic[Item]):
     :param _mapper: the key is the name of the item, the value is the
         list of item that with the same name.
 
-    You have to subclass this class and implement the :meth:`FuzzyMatcher.get_name`
-     method. See doc string for more information.
+    You have to subclass this class and **implement the**
+    :meth:`FuzzyMatcher.get_name` **method**. See doc string for more information.
 
     Don't directly use the constructor, use the ``from_items`` or ``from_mapper``
     factory method instead.
+
+    Usage Example::
+
+        @dataclasses.dataclass
+        class Item:
+            id: int
+            name: str
+
+
+        class ItemFuzzyMatcher(FuzzyMatcher[Item]):
+            def get_name(self, item: Item) -> T.Optional[str]:
+                return item.name
+
+        items = [
+            Item(id=1, name="apple and banana and cherry"),
+            Item(id=2, name="alice and bob and charlie"),
+        ]
+
+        matcher = ItemFuzzyMatcher.from_items(items)
+        result = matcher.match("apple", threshold=0)
+        print(result)
     """
 
     _items: T.List[Item] = dataclasses.field(default_factory=list)
@@ -34,9 +59,10 @@ class FuzzyMatcher(T.Generic[Item]):
 
     def get_name(self, item: Item) -> T.Optional[str]:
         """
-        Given an item, return the item of the entity for fuzzy match.
+        Given an item, return the name of the item for fuzzy match.
 
         This method should not raise any error and always return a string or None.
+        If return None, the item will be ignored (not shown in result).
         """
         raise NotImplementedError
 
@@ -58,10 +84,17 @@ class FuzzyMatcher(T.Generic[Item]):
 
     @classmethod
     def from_items(cls, items: T.List[Item]):
+        """
+        Build a FuzzyMatcher from a list of items.
+        """
         return cls(_items=items)
 
     @classmethod
     def from_mapper(cls, name_to_item_mapper: T.Dict[str, T.List[Item]]):
+        """
+        Build a FuzzyMatcher from a mapper, the key should be the name of the item
+        for fuzzy match.
+        """
         return cls(_mapper=name_to_item_mapper)
 
     def match(
@@ -71,6 +104,15 @@ class FuzzyMatcher(T.Generic[Item]):
         limit: int = 20,
         filter_func: T.Callable = lambda x: True,
     ) -> T.List[Item]:
+        """
+        Match items by name.
+
+        :param name: name is the search string for fuzzy match
+        :param threshold: the minimal similarity score (0-100) to be considered as matched
+        :param limit: the max number of matched items to return
+        :param filter_func: additional filter function to filter the matched items
+            it has to be a function that accept an item and return a bool
+        """
         matched_name_list = process.extract(name, self._names, limit=limit)
         if len(matched_name_list) == 0:
             return []
