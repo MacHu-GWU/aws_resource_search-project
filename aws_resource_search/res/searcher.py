@@ -12,6 +12,7 @@ class Searcher:
     """
     Base class for all AWS Resource Searcher.
     """
+
     aws_access_key_id: T.Optional[str] = dataclasses.field(default=None)
     aws_secret_access_key: T.Optional[str] = dataclasses.field(default=None)
     aws_session_token: T.Optional[str] = dataclasses.field(default=None)
