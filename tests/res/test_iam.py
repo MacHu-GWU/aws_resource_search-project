@@ -1,37 +1,33 @@
 # -*- coding: utf-8 -*-
 
-import typing as T
-import dataclasses
-import os
 import json
 
 import moto
 from boto_session_manager import BotoSesManager
-from aws_resource_search.boto_ses import aws
 from aws_resource_search.res.iam import IamSearcher
+from aws_resource_search.tests.mock_test import BaseMockTest
 
 
-class TestIamSearcher:
-    mock_iam = None
+class TestIamSearcher(BaseMockTest):
+    mock_list = [
+        moto.mock_iam,
+    ]
 
     @classmethod
-    def setup_class(cls):
-        cls.mock_iam = moto.mock_iam()
-        cls.mock_iam.start()
-
-        aws.attach_bsm(BotoSesManager())
+    def setup_class_post_hook(cls):
+        cls.bsm = BotoSesManager()
 
         cases = [
             ("ec2-admin",),
             ("lambda-admin",),
         ]
         for (name,) in cases:
-            aws.bsm.iam_client.create_role(
+            cls.bsm.iam_client.create_role(
                 RoleName=f"{name}-role",
                 AssumeRolePolicyDocument="{}",
             )
 
-            aws.bsm.iam_client.create_policy(
+            cls.bsm.iam_client.create_policy(
                 PolicyName=f"{name}-policy",
                 PolicyDocument=json.dumps(
                     {
@@ -43,13 +39,9 @@ class TestIamSearcher:
                 ),
             )
 
-            aws.bsm.iam_client.create_user(
+            cls.bsm.iam_client.create_user(
                 UserName=f"{name}-user",
             )
-
-    @classmethod
-    def teardown_class(cls):
-        cls.mock_iam.stop()
 
     def test(self):
         sr = IamSearcher()
@@ -61,7 +53,7 @@ class TestIamSearcher:
 
         assert len(sr.list_policies(scope_is_local=True)) == 2
         assert len(sr.list_policies(scope_is_local=True)) == 2
-        
+
         assert "ec2" in sr.filter_policies("ec2", scope_is_local=True)[0].name
         assert "lambda" in sr.filter_policies("lambda", scope_is_local=True)[0].name
 

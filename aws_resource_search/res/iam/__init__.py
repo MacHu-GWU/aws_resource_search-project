@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
+"""
+todo: docstring
+"""
+
 import typing as T
 import dataclasses
 
 from ...model import BaseModel
 from ...cache import cache
-from ...boto_ses import aws
 from ...constants import LIST_API_CACHE_EXPIRE, FILTER_API_CACHE_EXPIRE
 from ...fuzzy import FuzzyMatcher
 from ..searcher import Searcher
@@ -62,6 +65,7 @@ class IamSearcher(Searcher):
 
     - IAM object quotas: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html#reference_iam-quotas-entities
     """
+
     def parse_list_roles(self, res) -> T.List[Role]:
         return [
             Role(
@@ -75,19 +79,35 @@ class IamSearcher(Searcher):
             for role_dict in res["Roles"]
         ]
 
-    @cache.typed_memoize(expire=LIST_API_CACHE_EXPIRE)
-    def list_roles(self) -> T.List[Role]:
-        paginator = aws.bsm.iam_client.get_paginator("list_roles")
+    @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
+    def list_roles(
+        self,
+        max_items: int = 1000,
+        page_size: int = 100,
+    ) -> T.List[Role]:
+        paginator = self.bsm.iam_client.get_paginator("list_roles")
         roles = list()
-        for res in paginator.paginate():
+        for res in paginator.paginate(
+            PaginationConfig=dict(
+                MaxItems=max_items,
+                PageSize=page_size,
+            )
+        ):
             roles.extend(self.parse_list_roles(res))
         return roles
 
-
-    @cache.typed_memoize(expire=FILTER_API_CACHE_EXPIRE)
-    def filter_roles(self, query_str: str) -> T.List[Role]:
+    @cache.better_memoize(expire=FILTER_API_CACHE_EXPIRE)
+    def filter_roles(
+        self,
+        query_str: str,
+        max_items: int = 1000,
+        page_size: int = 100,
+    ) -> T.List[Role]:
         return RoleFuzzyMatcher.from_items(
-            self.list_roles()
+            self.list_roles(
+                max_items=max_items,
+                page_size=page_size,
+            )
         ).match(query_str)
 
     def parse_list_policies(self, res) -> T.List[Policy]:
@@ -103,7 +123,7 @@ class IamSearcher(Searcher):
             for policy_dict in res["Policies"]
         ]
 
-    @cache.typed_memoize(expire=LIST_API_CACHE_EXPIRE)
+    @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_policies(
         self,
         scope_is_all: bool = False,
@@ -111,38 +131,48 @@ class IamSearcher(Searcher):
         scope_is_local: bool = False,
         only_attached: bool = False,
         path_prefix: T.Optional[str] = None,
+        max_items: int = 1000,
+        page_size: int = 100,
     ) -> T.List[Policy]:
-        flag_count = sum([
-            scope_is_all,
-            scope_is_aws,
-            scope_is_local,
-        ])
+        flag_count = sum(
+            [
+                scope_is_all,
+                scope_is_aws,
+                scope_is_local,
+            ]
+        )
         if flag_count != 1:
-            raise ValueError("one of scope_is_all, scope_is_aws, scope_is_local must be set to True")
+            raise ValueError(
+                "one of scope_is_all, scope_is_aws, scope_is_local must be set to True"
+            )
         if scope_is_all:
             Scope = "All"
         elif scope_is_aws:
             Scope = "AWS"
         elif scope_is_local:
             Scope = "Local"
-        else: # pragma: no cover
+        else:  # pragma: no cover
             raise NotImplementedError
 
         kwargs = dict(
             Scope=Scope,
             OnlyAttached=only_attached,
             MaxItems=5000,
+            PaginationConfig=dict(
+                MaxItems=max_items,
+                PageSize=page_size,
+            ),
         )
         if path_prefix is not None:
             kwargs["PathPrefix"] = path_prefix
 
-        paginator = aws.bsm.iam_client.get_paginator("list_policies")
+        paginator = self.bsm.iam_client.get_paginator("list_policies")
         policies = list()
         for res in paginator.paginate(**kwargs):
             policies.extend(self.parse_list_policies(res))
         return policies
 
-    @cache.typed_memoize(expire=FILTER_API_CACHE_EXPIRE)
+    @cache.better_memoize(expire=FILTER_API_CACHE_EXPIRE)
     def filter_policies(
         self,
         query_str: str,
@@ -151,6 +181,8 @@ class IamSearcher(Searcher):
         scope_is_local: bool = False,
         only_attached: bool = False,
         path_prefix: T.Optional[str] = None,
+        max_items: int = 1000,
+        page_size: int = 100,
     ) -> T.List[Policy]:
         return PolicyFuzzyMatcher.from_items(
             self.list_policies(
@@ -159,6 +191,8 @@ class IamSearcher(Searcher):
                 scope_is_local=scope_is_local,
                 only_attached=only_attached,
                 path_prefix=path_prefix,
+                max_items=max_items,
+                page_size=page_size,
             )
         ).match(query_str)
 
@@ -174,15 +208,21 @@ class IamSearcher(Searcher):
             for user_dict in res["Users"]
         ]
 
-    @cache.typed_memoize(expire=LIST_API_CACHE_EXPIRE)
+    @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_users(
         self,
         path_prefix: T.Optional[str] = None,
+        max_items: int = 1000,
+        page_size: int = 100,
     ) -> T.List[User]:
-        paginator = aws.bsm.iam_client.get_paginator("list_users")
+        paginator = self.bsm.iam_client.get_paginator("list_users")
         users = list()
         kwargs = dict(
-            MaxItems = 5000,
+            MaxItems=5000,
+            PaginationConfig=dict(
+                MaxItems=max_items,
+                PageSize=page_size,
+            ),
         )
         if path_prefix is not None:
             kwargs["PathPrefix"] = path_prefix
@@ -190,14 +230,18 @@ class IamSearcher(Searcher):
             users.extend(self.parse_list_users(res))
         return users
 
-    @cache.typed_memoize(expire=FILTER_API_CACHE_EXPIRE)
+    @cache.better_memoize(expire=FILTER_API_CACHE_EXPIRE)
     def filter_users(
         self,
         query_str: str,
         path_prefix: T.Optional[str] = None,
+        max_items: int = 1000,
+        page_size: int = 100,
     ) -> T.List[User]:
         return UserFuzzyMatcher.from_items(
             self.list_users(
                 path_prefix=path_prefix,
+                max_items=max_items,
+                page_size=page_size,
             )
         ).match(query_str)

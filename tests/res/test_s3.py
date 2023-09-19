@@ -1,44 +1,31 @@
 # -*- coding: utf-8 -*-
 
-import typing as T
-import dataclasses
-import os
-import json
-
 import moto
 from boto_session_manager import BotoSesManager
-from aws_resource_search.boto_ses import aws
 from aws_resource_search.res.s3 import S3Searcher
+from aws_resource_search.tests.mock_test import BaseMockTest
 
 
-class TestIamSearcher:
-    mock_s3 = None
+class TestIamSearcher(BaseMockTest):
+    mock_list = [
+        moto.mock_s3,
+        moto.mock_sts,
+    ]
 
     @classmethod
-    def setup_class(cls):
-        cls.mock_s3 = moto.mock_s3()
-        cls.mock_s3.start()
-
-        aws.attach_bsm(BotoSesManager())
+    def setup_class_post_hook(cls):
+        cls.bsm = BotoSesManager()
 
         bucket_names = [
             "company-data",
             "enterprise-data",
         ]
         for bucket_name in bucket_names:
-            aws.bsm.s3_client.create_bucket(
-                Bucket=bucket_name,
-                CreateBucketConfiguration=dict(
-                    LocationConstraint=aws.bsm.aws_region,
-                ),
-            )
-
-    @classmethod
-    def teardown_class(cls):
-        cls.mock_s3.stop()
+            cls.bsm.s3_client.create_bucket(Bucket=bucket_name)
 
     def test(self):
         sr = S3Searcher()
+
         assert len(sr.list_buckets()) == 2
         assert len(sr.list_buckets()) == 2
 
