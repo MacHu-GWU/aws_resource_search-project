@@ -57,7 +57,7 @@ class FuzzyMatcher(T.Generic[Item]):
     _names: T.List[str] = dataclasses.field(default_factory=list)
     _mapper: T.Dict[str, T.List[Item]] = dataclasses.field(default_factory=dict)
 
-    def get_name(self, item: Item) -> T.Optional[str]:
+    def get_name(self, item: Item) -> T.Optional[str]:  # pragma: no cover
         """
         Given an item, return the name of the item for fuzzy match.
 

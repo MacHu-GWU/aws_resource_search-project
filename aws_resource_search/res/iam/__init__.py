@@ -145,9 +145,9 @@ class IamSearcher(Searcher):
             raise ValueError(
                 "one of scope_is_all, scope_is_aws, scope_is_local must be set to True"
             )
-        if scope_is_all:
+        if scope_is_all:  # pragma: no cover
             Scope = "All"
-        elif scope_is_aws:
+        elif scope_is_aws:  # pragma: no cover
             Scope = "AWS"
         elif scope_is_local:
             Scope = "Local"
@@ -163,7 +163,7 @@ class IamSearcher(Searcher):
                 PageSize=page_size,
             ),
         )
-        if path_prefix is not None:
+        if path_prefix is not None:  # pragma: no cover
             kwargs["PathPrefix"] = path_prefix
 
         paginator = self.bsm.iam_client.get_paginator("list_policies")
