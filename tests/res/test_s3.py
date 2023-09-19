@@ -2,14 +2,13 @@
 
 import moto
 from boto_session_manager import BotoSesManager
-from aws_resource_search.res.s3 import S3Searcher
+from aws_resource_search.res.s3 import Bucket, S3Searcher
 from aws_resource_search.tests.mock_test import BaseMockTest
 
 
 class TestIamSearcher(BaseMockTest):
     mock_list = [
         moto.mock_s3,
-        moto.mock_sts,
     ]
 
     @classmethod
@@ -26,8 +25,9 @@ class TestIamSearcher(BaseMockTest):
     def test(self):
         sr = S3Searcher()
 
-        assert len(sr.list_buckets()) == 2
-        assert len(sr.list_buckets()) == 2
+        res = sr.list_buckets()
+        assert len(res) == 2
+        assert isinstance(res[0], Bucket)
 
         assert "company" in sr.filter_buckets("company")[0].name
         assert "enterprise" in sr.filter_buckets("enterprise")[0].name

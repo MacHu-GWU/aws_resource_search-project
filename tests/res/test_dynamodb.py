@@ -2,7 +2,7 @@
 
 import moto
 from boto_session_manager import BotoSesManager
-from aws_resource_search.res.dynamodb import DynamoDBSearcher
+from aws_resource_search.res.dynamodb import Table, DynamoDBSearcher
 from aws_resource_search.tests.mock_test import BaseMockTest
 
 
@@ -39,8 +39,10 @@ class TestDynamodbSearcher(BaseMockTest):
 
     def test(self):
         sr = DynamoDBSearcher()
-        assert len(sr.list_tables()) == 2
-        assert len(sr.list_tables()) == 2
+
+        res = sr.list_tables()
+        assert len(res) == 2
+        assert isinstance(res[0], Table)
 
         assert "virtual-machines" in sr.filter_tables("virtual-machines")[0].name
         assert "containers" in sr.filter_tables("containers")[0].name

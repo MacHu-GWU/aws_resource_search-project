@@ -8,7 +8,7 @@ import typing as T
 import dataclasses
 from datetime import datetime
 
-from ...model import BaseModel
+from ...model import BaseAwsResourceModel
 from ...cache import cache
 from ...constants import LIST_API_CACHE_EXPIRE, FILTER_API_CACHE_EXPIRE
 from ...fuzzy import FuzzyMatcher
@@ -16,7 +16,7 @@ from ..searcher import Searcher
 
 
 @dataclasses.dataclass
-class Stack(BaseModel):
+class Stack(BaseAwsResourceModel):
     id: T.Optional[str] = dataclasses.field(default=None)
     name: T.Optional[str] = dataclasses.field(default=None)
     create_time: T.Optional[datetime] = dataclasses.field(default=None)
@@ -37,15 +37,23 @@ class StackFuzzyMatcher(FuzzyMatcher[Stack]):
 
 
 @dataclasses.dataclass
-class StackSet(BaseModel):
+class StackSet(BaseAwsResourceModel):
     id: T.Optional[str] = dataclasses.field(default=None)
     name: T.Optional[str] = dataclasses.field(default=None)
     status: T.Optional[str] = dataclasses.field(default=None)
+    permission_model: T.Optional[str] = dataclasses.field(default=None)
+    drift_status: T.Optional[str] = dataclasses.field(default=None)
+    arn: T.Optional[str] = dataclasses.field(default=None)
 
-    def get_arn(self, aws_account_id: str, aws_region: str) -> str:  # pragma: no cover
-        return (
-            f"arn:aws:cloudformation:{aws_region}:{aws_account_id}:stackset/{self.id}"
-        )
+    def is_self_managed(self) -> bool:
+        if self.permission_model is None:
+            raise ValueError("permission_model is None")
+        return self.permission_model == "SELF_MANAGED"
+
+    def is_service_managed(self) -> bool:
+        if self.permission_model is None:
+            raise ValueError("permission_model is None")
+        return self.permission_model == "SERVICE_MANAGED"
 
 
 class StackSetFuzzyMatcher(FuzzyMatcher[StackSet]):
@@ -63,8 +71,9 @@ class CloudFormationSearcher(Searcher):
         """
         Parse response of https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudformation/client/describe_stacks.html
         """
-        return [
-            Stack(
+        lst = list()
+        for dct in res.get("Stacks", []):
+            stack = Stack(
                 id=dct.get("StackId"),
                 name=dct.get("StackName"),
                 create_time=dct.get("CreationTime"),
@@ -74,8 +83,10 @@ class CloudFormationSearcher(Searcher):
                 parent_id=dct.get("ParentId"),
                 root_id=dct.get("RootId"),
             )
-            for dct in res.get("Stacks", [])
-        ]
+            self._enrich_aws_account_and_region(stack)
+            stack.console_url = self.aws_console.cloudformation.get_stack(stack.arn)
+            lst.append(stack)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_stacks(
@@ -100,14 +111,30 @@ class CloudFormationSearcher(Searcher):
         """
         Parse response of https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudformation/client/list_stack_sets.html
         """
-        return [
-            StackSet(
+        lst = list()
+        for dct in res.get("Summaries", []):
+            stack_set = StackSet(
                 id=dct.get("StackSetId"),
                 name=dct.get("StackSetName"),
                 status=dct.get("Status"),
+                permission_model=dct.get("PermissionModel"),
+                drift_status=dct.get("DriftStatus"),
             )
-            for dct in res.get("Summaries", [])
-        ]
+            self._enrich_aws_account_and_region(stack_set)
+            if stack_set.permission_model is None:
+                stack_set.permission_model = "SELF_MANAGED"
+            stack_set.arn = self.aws_console.cloudformation.get_stack_set_arn(
+                name=stack_set.name,
+                is_self_managed=stack_set.is_self_managed(),
+                is_service_managed=stack_set.is_service_managed(),
+            )
+            stack_set.console_url = self.aws_console.cloudformation.get_stack_set_info(
+                name_or_id_or_arn=stack_set.id,
+                is_self_managed=stack_set.is_self_managed(),
+                is_service_managed=stack_set.is_service_managed(),
+            )
+            lst.append(stack_set)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_stack_sets(

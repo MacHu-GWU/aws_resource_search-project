@@ -7,7 +7,7 @@ todo: docstring
 import typing as T
 import dataclasses
 
-from ...model import BaseModel
+from ...model import BaseAwsResourceModel
 from ...cache import cache
 from ...constants import LIST_API_CACHE_EXPIRE, FILTER_API_CACHE_EXPIRE
 from ...fuzzy import FuzzyMatcher
@@ -15,10 +15,11 @@ from ..searcher import Searcher
 
 
 @dataclasses.dataclass
-class Bucket(BaseModel):
+class Bucket(BaseAwsResourceModel):
     """
     todo: docstring
     """
+
     name: T.Optional[str] = dataclasses.field(default=None)
     create_date: T.Optional[str] = dataclasses.field(default=None)
 
@@ -39,13 +40,16 @@ class S3Searcher(Searcher):
     """
 
     def parse_list_buckets(self, res) -> T.List[Bucket]:
-        return [
-            Bucket(
+        lst = list()
+        for bucket_dict in res.get("Buckets", []):
+            bucket = Bucket(
                 name=bucket_dict["Name"],
                 create_date=str(bucket_dict["CreationDate"]),
             )
-            for bucket_dict in res.get("Buckets", [])
-        ]
+            self._enrich_aws_account_and_region(bucket)
+            bucket.console_url = self.aws_console.s3.get_console_url(bucket=bucket.name)
+            lst.append(bucket)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_buckets(self) -> T.List[Bucket]:

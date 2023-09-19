@@ -7,7 +7,7 @@ todo: docstring
 import typing as T
 import dataclasses
 
-from ...model import BaseModel
+from ...model import BaseAwsResourceModel
 from ...cache import cache
 from ...constants import LIST_API_CACHE_EXPIRE, FILTER_API_CACHE_EXPIRE
 from ...fuzzy import FuzzyMatcher
@@ -15,8 +15,9 @@ from ..searcher import Searcher
 
 
 @dataclasses.dataclass
-class Table(BaseModel):
+class Table(BaseAwsResourceModel):
     name: T.Optional[str] = dataclasses.field(default=None)
+    arn: T.Optional[str] = dataclasses.field(default=None)
 
 
 class TableFuzzyMatcher(FuzzyMatcher[Table]):
@@ -34,12 +35,16 @@ class DynamoDBSearcher(Searcher):
         """
         Parse response of: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/list_tables.html
         """
-        return [
-            Table(
+        lst = list()
+        for table_name in res.get("TableNames", []):
+            table = Table(
                 name=table_name,
             )
-            for table_name in res.get("TableNames", [])
-        ]
+            self._enrich_aws_account_and_region(table)
+            table.arn = self.aws_console.dynamodb.get_table_arn(table.name)
+            table.console_url = self.aws_console.dynamodb.get_table_overview(table.name)
+            lst.append(table)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_tables(

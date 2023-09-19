@@ -7,7 +7,7 @@ todo: docstring
 import typing as T
 import dataclasses
 
-from ...model import BaseModel
+from ...model import BaseAwsResourceModel
 from ...cache import cache
 from ...constants import LIST_API_CACHE_EXPIRE, FILTER_API_CACHE_EXPIRE
 from ...fuzzy import FuzzyMatcher
@@ -15,7 +15,7 @@ from ..searcher import Searcher
 
 
 @dataclasses.dataclass
-class Role(BaseModel):
+class Role(BaseAwsResourceModel):
     id: T.Optional[str] = dataclasses.field(default=None)
     name: T.Optional[str] = dataclasses.field(default=None)
     description: T.Optional[str] = dataclasses.field(default=None)
@@ -30,7 +30,7 @@ class RoleFuzzyMatcher(FuzzyMatcher[Role]):
 
 
 @dataclasses.dataclass
-class Policy(BaseModel):
+class Policy(BaseAwsResourceModel):
     id: T.Optional[str] = dataclasses.field(default=None)
     name: T.Optional[str] = dataclasses.field(default=None)
     description: T.Optional[str] = dataclasses.field(default=None)
@@ -45,7 +45,7 @@ class PolicyFuzzyMatcher(FuzzyMatcher[Policy]):
 
 
 @dataclasses.dataclass
-class User(BaseModel):
+class User(BaseAwsResourceModel):
     id: T.Optional[str] = dataclasses.field(default=None)
     name: T.Optional[str] = dataclasses.field(default=None)
     create_date: T.Optional[str] = dataclasses.field(default=None)
@@ -67,8 +67,9 @@ class IamSearcher(Searcher):
     """
 
     def parse_list_roles(self, res) -> T.List[Role]:
-        return [
-            Role(
+        lst = list()
+        for role_dict in res.get("Roles", []):
+            role = Role(
                 id=role_dict["RoleId"],
                 name=role_dict["RoleName"],
                 description=role_dict.get("Description"),
@@ -76,8 +77,10 @@ class IamSearcher(Searcher):
                 path=role_dict["Path"],
                 arn=role_dict["Arn"],
             )
-            for role_dict in res.get("Roles", [])
-        ]
+            self._enrich_aws_account_and_region(role)
+            role.console_url = self.aws_console.iam.get_role(role.arn)
+            lst.append(role)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_roles(
@@ -111,8 +114,9 @@ class IamSearcher(Searcher):
         ).match(query_str)
 
     def parse_list_policies(self, res) -> T.List[Policy]:
-        return [
-            Policy(
+        lst = list()
+        for policy_dict in res.get("Policies", []):
+            policy = Policy(
                 id=policy_dict["PolicyId"],
                 name=policy_dict["PolicyName"],
                 description=policy_dict.get("Description"),
@@ -120,8 +124,10 @@ class IamSearcher(Searcher):
                 path=policy_dict["Path"],
                 arn=policy_dict["Arn"],
             )
-            for policy_dict in res.get("Policies", [])
-        ]
+            self._enrich_aws_account_and_region(policy)
+            policy.console_url = self.aws_console.iam.get_policy(policy.arn)
+            lst.append(policy)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_policies(
@@ -197,16 +203,19 @@ class IamSearcher(Searcher):
         ).match(query_str)
 
     def parse_list_users(self, res) -> T.List[User]:
-        return [
-            User(
+        lst = list()
+        for user_dict in res["Users"]:
+            user = User(
                 id=user_dict["UserId"],
                 name=user_dict["UserName"],
                 create_date=str(user_dict["CreateDate"]),
                 path=user_dict["Path"],
                 arn=user_dict["Arn"],
             )
-            for user_dict in res["Users"]
-        ]
+            self._enrich_aws_account_and_region(user)
+            user.console_url = self.aws_console.iam.get_user(user.arn)
+            lst.append(user)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_users(

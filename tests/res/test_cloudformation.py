@@ -13,7 +13,6 @@ from aws_resource_search.tests.mock_test import BaseMockTest
 
 class TestCloudFormationSearcher(BaseMockTest):
     mock_list = [
-        moto.mock_sts,
         moto.mock_cloudformation,
     ]
 
@@ -62,11 +61,7 @@ class TestCloudFormationSearcher(BaseMockTest):
 
         res = sr.list_stack_sets()
         assert len(res) == 3
-        assert (
-            res[0]
-            .get_arn(self.bsm.aws_account_id, self.bsm.aws_region)
-            .startswith("arn:")
-        )
+        assert res[0].arn.startswith("arn:")
         assert isinstance(res[0], StackSet)
         assert sr.filter_stack_sets("dev")[0].name == "my-app-dev"
         assert sr.filter_stack_sets("test")[0].name == "my-app-test"

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
+import moto
 from boto_session_manager import BotoSesManager
 
 
@@ -47,6 +48,8 @@ class BaseMockTest:
     def setup_moto(cls):
         if cls.use_mock:
             cls._mock_list = []
+            if moto.mock_sts not in cls.mock_list:
+                cls.mock_list.append(moto.mock_sts)
             for mock_abc in cls.mock_list:
                 mocker = mock_abc()
                 mocker.start()

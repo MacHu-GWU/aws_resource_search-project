@@ -8,7 +8,7 @@ import typing as T
 import dataclasses
 from datetime import datetime
 
-from ...model import BaseModel
+from ...model import BaseAwsResourceModel
 from ...cache import cache
 from ...constants import LIST_API_CACHE_EXPIRE, FILTER_API_CACHE_EXPIRE
 from ...fuzzy import FuzzyMatcher
@@ -16,7 +16,7 @@ from ..searcher import Searcher
 
 
 @dataclasses.dataclass
-class GlueJob(BaseModel):
+class GlueJob(BaseAwsResourceModel):
     name: T.Optional[str] = dataclasses.field(default=None)
     type: T.Optional[str] = dataclasses.field(default=None)
     created_by: T.Optional[str] = dataclasses.field(default=None)
@@ -28,6 +28,7 @@ class GlueJob(BaseModel):
     max_capacity: T.Optional[int] = dataclasses.field(default=None)
     max_retries: T.Optional[int] = dataclasses.field(default=None)
     timeout: T.Optional[int] = dataclasses.field(default=None)
+    arn: T.Optional[str] = dataclasses.field(default=None)
 
 
 class GlueJobFuzzyMatcher(FuzzyMatcher[GlueJob]):
@@ -36,12 +37,13 @@ class GlueJobFuzzyMatcher(FuzzyMatcher[GlueJob]):
 
 
 @dataclasses.dataclass
-class GlueDatabase(BaseModel):
+class GlueDatabase(BaseAwsResourceModel):
     catalog_id: T.Optional[str] = dataclasses.field(default=None)
     database: T.Optional[str] = dataclasses.field(default=None)
     description: T.Optional[str] = dataclasses.field(default=None)
     create_time: T.Optional[datetime] = dataclasses.field(default=None)
     location_uri: T.Optional[str] = dataclasses.field(default=None)
+    arn: T.Optional[str] = dataclasses.field(default=None)
 
     @property
     def name(self) -> str:  # pragma: no cover
@@ -54,13 +56,14 @@ class GlueDatabaseFuzzyMatcher(FuzzyMatcher[GlueDatabase]):
 
 
 @dataclasses.dataclass
-class GlueTable(BaseModel):
+class GlueTable(BaseAwsResourceModel):
     catalog_id: T.Optional[str] = dataclasses.field(default=None)
     database: T.Optional[str] = dataclasses.field(default=None)
     table: T.Optional[str] = dataclasses.field(default=None)
     description: T.Optional[str] = dataclasses.field(default=None)
     create_time: T.Optional[datetime] = dataclasses.field(default=None)
     update_time: T.Optional[datetime] = dataclasses.field(default=None)
+    arn: T.Optional[str] = dataclasses.field(default=None)
 
     @property
     def name(self) -> str:  # pragma: no cover
@@ -82,8 +85,9 @@ class GlueSearcher(Searcher):
         """
         Parse response of: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glue/client/list_jobs.html
         """
-        return [
-            GlueJob(
+        lst = list()
+        for dct in res.get("Jobs", []):
+            glue_job = GlueJob(
                 name=dct.get("Name"),
                 type=dct.get("Type"),
                 created_by=dct.get("CreatedBy"),
@@ -96,8 +100,11 @@ class GlueSearcher(Searcher):
                 max_retries=dct.get("MaxRetries"),
                 timeout=dct.get("timeout"),
             )
-            for dct in res.get("Jobs", [])
-        ]
+            self._enrich_aws_account_and_region(glue_job)
+            glue_job.arn = self.aws_console.glue.get_job_arn(glue_job.name)
+            glue_job.console_url = self.aws_console.glue.get_job(glue_job.name)
+            lst.append(glue_job)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_jobs(
@@ -124,16 +131,25 @@ class GlueSearcher(Searcher):
         """
         Parse response of: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glue/client/get_databases.html
         """
-        return [
-            GlueDatabase(
+        lst = list()
+        for dct in res.get("DatabaseList", []):
+            glue_database = GlueDatabase(
                 catalog_id=dct.get("CatalogId"),
                 database=dct.get("Name"),
                 description=dct.get("Description"),
                 create_time=dct.get("CreateTime"),
                 location_uri=dct.get("LocationUri"),
             )
-            for dct in res.get("DatabaseList", [])
-        ]
+            self._enrich_aws_account_and_region(glue_database)
+            glue_database.arn = self.aws_console.glue.get_database_arn(
+                name=glue_database.name
+            )
+            glue_database.console_url = self.aws_console.glue.get_database(
+                database=glue_database.name,
+                catalog_id=glue_database.catalog_id,
+            )
+            lst.append(glue_database)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_databases(
@@ -170,8 +186,9 @@ class GlueSearcher(Searcher):
         """
         Parse response of: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glue/client/get_databases.html
         """
-        return [
-            GlueTable(
+        lst = list()
+        for dct in res.get("TableList", []):
+            glue_table = GlueTable(
                 catalog_id=dct.get("CatalogId"),
                 database=dct.get("DatabaseName"),
                 table=dct.get("Name"),
@@ -179,8 +196,17 @@ class GlueSearcher(Searcher):
                 create_time=dct.get("CreateTime"),
                 update_time=dct.get("UpdateTime"),
             )
-            for dct in res.get("TableList", [])
-        ]
+            self._enrich_aws_account_and_region(glue_table)
+            glue_table.arn = self.aws_console.glue.get_table_arn(
+                database=glue_table.database, table=glue_table.table
+            )
+            glue_table.console_url = self.aws_console.glue.get_table(
+                database=glue_table.database,
+                table=glue_table.table,
+                catalog_id=glue_table.catalog_id,
+            )
+            lst.append(glue_table)
+        return lst
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
     def list_tables(

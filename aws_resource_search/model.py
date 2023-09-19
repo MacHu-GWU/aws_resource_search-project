@@ -30,3 +30,10 @@ class BaseModel:
         Convert the instance to a dict.
         """
         return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass
+class BaseAwsResourceModel(BaseModel):
+    aws_account_id: T.Optional[str] = dataclasses.field(default=None)
+    aws_region: T.Optional[str] = dataclasses.field(default=None)
+    console_url: T.Optional[str] = dataclasses.field(default=None)
