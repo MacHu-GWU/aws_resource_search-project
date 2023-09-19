@@ -47,7 +47,6 @@ class TestFuzzyMatcher:
 
         empty_matcher = ItemFuzzyMatcher.from_mapper({})
         res = empty_matcher.match("apple", threshold=0)
-        print(res)
         assert len(res) == 0
 
 

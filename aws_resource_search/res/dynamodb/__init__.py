@@ -31,11 +31,14 @@ class DynamoDBSearcher(Searcher):
     """
 
     def parse_list_tables(self, res) -> T.List[Table]:
+        """
+        Parse response of: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/list_tables.html
+        """
         return [
             Table(
                 name=table_name,
             )
-            for table_name in res["TableNames"]
+            for table_name in res.get("TableNames", [])
         ]
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)

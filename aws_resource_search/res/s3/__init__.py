@@ -44,7 +44,7 @@ class S3Searcher(Searcher):
                 name=bucket_dict["Name"],
                 create_date=str(bucket_dict["CreationDate"]),
             )
-            for bucket_dict in res["Buckets"]
+            for bucket_dict in res.get("Buckets", [])
         ]
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)

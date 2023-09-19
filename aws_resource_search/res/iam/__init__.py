@@ -76,7 +76,7 @@ class IamSearcher(Searcher):
                 path=role_dict["Path"],
                 arn=role_dict["Arn"],
             )
-            for role_dict in res["Roles"]
+            for role_dict in res.get("Roles", [])
         ]
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)
@@ -120,7 +120,7 @@ class IamSearcher(Searcher):
                 path=policy_dict["Path"],
                 arn=policy_dict["Arn"],
             )
-            for policy_dict in res["Policies"]
+            for policy_dict in res.get("Policies", [])
         ]
 
     @cache.better_memoize(expire=LIST_API_CACHE_EXPIRE)

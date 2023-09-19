@@ -2,3 +2,8 @@
 pytest                                  # test framework
 pytest-cov                              # coverage test
 moto
+moto[sts]
+moto[cloudformation]
+moto[dynamodb]
+moto[iam]
+moto[s3]
