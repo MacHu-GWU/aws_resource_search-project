@@ -7,3 +7,4 @@ moto[cloudformation]
 moto[dynamodb]
 moto[iam]
 moto[s3]
+rich

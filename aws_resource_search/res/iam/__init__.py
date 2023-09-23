@@ -21,7 +21,6 @@ class Role(BaseAwsResourceModel):
     description: T.Optional[str] = dataclasses.field(default=None)
     create_date: T.Optional[str] = dataclasses.field(default=None)
     path: T.Optional[str] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
 
 class RoleFuzzyMatcher(FuzzyMatcher[Role]):
@@ -36,7 +35,6 @@ class Policy(BaseAwsResourceModel):
     description: T.Optional[str] = dataclasses.field(default=None)
     update_date: T.Optional[str] = dataclasses.field(default=None)
     path: T.Optional[str] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
 
 class PolicyFuzzyMatcher(FuzzyMatcher[Policy]):
@@ -50,7 +48,6 @@ class User(BaseAwsResourceModel):
     name: T.Optional[str] = dataclasses.field(default=None)
     create_date: T.Optional[str] = dataclasses.field(default=None)
     path: T.Optional[str] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
 
 class UserFuzzyMatcher(FuzzyMatcher[User]):

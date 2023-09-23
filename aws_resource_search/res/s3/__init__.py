@@ -23,10 +23,6 @@ class Bucket(BaseAwsResourceModel):
     name: T.Optional[str] = dataclasses.field(default=None)
     create_date: T.Optional[str] = dataclasses.field(default=None)
 
-    @property
-    def arn(self):
-        return "arn:aws:s3:::{}".format(self.name)
-
 
 class BucketFuzzyMatcher(FuzzyMatcher[Bucket]):
     def get_name(self, item) -> T.Optional[str]:
@@ -47,6 +43,7 @@ class S3Searcher(Searcher):
                 create_date=str(bucket_dict["CreationDate"]),
             )
             self._enrich_aws_account_and_region(bucket)
+            bucket.arn = "arn:aws:s3:::{}".format(bucket.name)
             bucket.console_url = self.aws_console.s3.get_console_url(bucket=bucket.name)
             lst.append(bucket)
         return lst

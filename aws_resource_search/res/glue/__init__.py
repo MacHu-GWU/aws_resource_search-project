@@ -28,7 +28,6 @@ class GlueJob(BaseAwsResourceModel):
     max_capacity: T.Optional[int] = dataclasses.field(default=None)
     max_retries: T.Optional[int] = dataclasses.field(default=None)
     timeout: T.Optional[int] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
 
 class GlueJobFuzzyMatcher(FuzzyMatcher[GlueJob]):
@@ -43,7 +42,6 @@ class GlueDatabase(BaseAwsResourceModel):
     description: T.Optional[str] = dataclasses.field(default=None)
     create_time: T.Optional[datetime] = dataclasses.field(default=None)
     location_uri: T.Optional[str] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
     @property
     def name(self) -> str:  # pragma: no cover
@@ -63,7 +61,6 @@ class GlueTable(BaseAwsResourceModel):
     description: T.Optional[str] = dataclasses.field(default=None)
     create_time: T.Optional[datetime] = dataclasses.field(default=None)
     update_time: T.Optional[datetime] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
     @property
     def name(self) -> str:  # pragma: no cover
@@ -145,7 +142,7 @@ class GlueSearcher(Searcher):
                 name=glue_database.name
             )
             glue_database.console_url = self.aws_console.glue.get_database(
-                database=glue_database.name,
+                database_or_arn=glue_database.name,
                 catalog_id=glue_database.catalog_id,
             )
             lst.append(glue_database)
@@ -201,8 +198,8 @@ class GlueSearcher(Searcher):
                 database=glue_table.database, table=glue_table.table
             )
             glue_table.console_url = self.aws_console.glue.get_table(
+                table_or_arn=glue_table.table,
                 database=glue_table.database,
-                table=glue_table.table,
                 catalog_id=glue_table.catalog_id,
             )
             lst.append(glue_table)

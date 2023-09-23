@@ -26,10 +26,6 @@ class Stack(BaseAwsResourceModel):
     parent_id: T.Optional[str] = dataclasses.field(default=None)
     root_id: T.Optional[str] = dataclasses.field(default=None)
 
-    @property
-    def arn(self) -> str:  # pragma: no cover
-        return self.id
-
 
 class StackFuzzyMatcher(FuzzyMatcher[Stack]):
     def get_name(self, item) -> T.Optional[str]:
@@ -43,15 +39,14 @@ class StackSet(BaseAwsResourceModel):
     status: T.Optional[str] = dataclasses.field(default=None)
     permission_model: T.Optional[str] = dataclasses.field(default=None)
     drift_status: T.Optional[str] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
     def is_self_managed(self) -> bool:
-        if self.permission_model is None:
+        if self.permission_model is None:  # pragma: no cover
             raise ValueError("permission_model is None")
         return self.permission_model == "SELF_MANAGED"
 
     def is_service_managed(self) -> bool:
-        if self.permission_model is None:
+        if self.permission_model is None:  # pragma: no cover
             raise ValueError("permission_model is None")
         return self.permission_model == "SERVICE_MANAGED"
 
@@ -73,8 +68,9 @@ class CloudFormationSearcher(Searcher):
         """
         lst = list()
         for dct in res.get("Stacks", []):
+            stack_arn = dct.get("StackId")
             stack = Stack(
-                id=dct.get("StackId"),
+                id=stack_arn,
                 name=dct.get("StackName"),
                 create_time=dct.get("CreationTime"),
                 update_time=dct.get("LastUpdatedTime"),
@@ -82,9 +78,10 @@ class CloudFormationSearcher(Searcher):
                 status=dct.get("StackStatus"),
                 parent_id=dct.get("ParentId"),
                 root_id=dct.get("RootId"),
+                arn=stack_arn,
+                console_url=self.aws_console.cloudformation.get_stack(stack_arn),
             )
             self._enrich_aws_account_and_region(stack)
-            stack.console_url = self.aws_console.cloudformation.get_stack(stack.arn)
             lst.append(stack)
         return lst
 

@@ -9,6 +9,7 @@ from aws_resource_search.res.cloudformation import (
     CloudFormationSearcher,
 )
 from aws_resource_search.tests.mock_test import BaseMockTest
+from rich import print as rprint
 
 
 class TestCloudFormationSearcher(BaseMockTest):

@@ -4,6 +4,7 @@ import moto
 from boto_session_manager import BotoSesManager
 from aws_resource_search.res.s3 import Bucket, S3Searcher
 from aws_resource_search.tests.mock_test import BaseMockTest
+from rich import print as rprint
 
 
 class TestIamSearcher(BaseMockTest):

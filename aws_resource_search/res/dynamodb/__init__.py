@@ -17,7 +17,6 @@ from ..searcher import Searcher
 @dataclasses.dataclass
 class Table(BaseAwsResourceModel):
     name: T.Optional[str] = dataclasses.field(default=None)
-    arn: T.Optional[str] = dataclasses.field(default=None)
 
 
 class TableFuzzyMatcher(FuzzyMatcher[Table]):
@@ -39,10 +38,10 @@ class DynamoDBSearcher(Searcher):
         for table_name in res.get("TableNames", []):
             table = Table(
                 name=table_name,
+                arn=self.aws_console.dynamodb.get_table_arn(table_name),
+                console_url=self.aws_console.dynamodb.get_table_overview(table_name),
             )
             self._enrich_aws_account_and_region(table)
-            table.arn = self.aws_console.dynamodb.get_table_arn(table.name)
-            table.console_url = self.aws_console.dynamodb.get_table_overview(table.name)
             lst.append(table)
         return lst
 

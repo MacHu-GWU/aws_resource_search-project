@@ -36,4 +36,5 @@ class BaseModel:
 class BaseAwsResourceModel(BaseModel):
     aws_account_id: T.Optional[str] = dataclasses.field(default=None)
     aws_region: T.Optional[str] = dataclasses.field(default=None)
+    arn: T.Optional[str] = dataclasses.field(default=None)
     console_url: T.Optional[str] = dataclasses.field(default=None)

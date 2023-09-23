@@ -4,7 +4,7 @@ import typing as T
 import dataclasses
 
 from boto_session_manager import BotoSesManager
-from aws_console_url import AWSConsole
+import aws_console_url.api as aws_console_url
 
 from ..compat import cached_property
 
@@ -33,8 +33,8 @@ class Searcher:
         )
 
     @cached_property
-    def aws_console(self) -> AWSConsole:
-        return AWSConsole(
+    def aws_console(self) -> aws_console_url.AWSConsole:
+        return aws_console_url.AWSConsole(
             aws_account_id=self.bsm.aws_account_id,
             aws_region=self.bsm.aws_region,
             is_us_gov_cloud=self.is_us_gov_cloud,
@@ -48,3 +48,4 @@ class Searcher:
         res.aws_account_id = self.bsm.aws_account_id
         res.aws_region = self.bsm.aws_region
         return res
+
