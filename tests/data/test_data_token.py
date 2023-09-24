@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import moto
 from aws_resource_search.data.token import (
     StringTemplateToken,
 )

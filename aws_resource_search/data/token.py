@@ -13,7 +13,12 @@ from .common import BaseModel
 
 
 @dataclasses.dataclass
-class StringTemplateToken(BaseModel):
+class BaseToken(BaseModel):
+    pass
+
+
+@dataclasses.dataclass
+class StringTemplateToken(BaseToken):
     """
     这种类型的 Token 是一个字符串模板, 而模板中的变量都是从一个叫 ``data`` 的字典对象中通过
     jmespath 语法获取的.
@@ -59,6 +64,8 @@ class StringTemplateToken(BaseModel):
     template: str = dataclasses.field()
     params: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
 
+    _type: str = "string_template"
+
     def evaluate(
         self,
         data: T.Dict[str, T.Any],
@@ -78,3 +85,6 @@ class StringTemplateToken(BaseModel):
                 params[k] = v
 
         return self.template.format(**params)
+
+
+token_class_mapper = {klass._type: klass for klass in BaseToken.__subclasses__()}

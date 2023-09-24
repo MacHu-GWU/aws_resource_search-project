@@ -2,6 +2,7 @@
 
 import moto
 from aws_resource_search.data.request import Request
+from aws_resource_search.data.token import StringTemplateToken
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
 
@@ -42,10 +43,37 @@ class TestIamSearcher(BaseMockTest):
         assert len(request.invoke(self.bsm).all()) == 0
 
         self._create_test_buckets()
+
         res = request.invoke(self.bsm).all()
         assert res == [
             {"name": "company-data", "message": "hello"},
             {"name": "enterprise-data", "message": "hello"},
+        ]
+
+        # ----------------------------------------------------------------------
+        request.result = None
+        item = request.invoke(self.bsm).one()
+        assert set(item) == {"Name", "CreationDate"}
+
+        # ----------------------------------------------------------------------
+        request.result = {"*": None, "Bucket": "$Name"}
+        item = request.invoke(self.bsm).one()
+        assert set(item) == {"Name", "CreationDate", "Bucket"}
+
+        # ----------------------------------------------------------------------
+        request.result = {
+            "Arn": {
+                "type": StringTemplateToken._type,
+                "kwargs": {
+                    "template": "arn:aws:s3:{AWS_REGION}:{AWS_ACCOUNT_ID}:bucket/{bucket}",
+                    "params": {"bucket": "$Name"},
+                },
+            }
+        }
+        res = request.invoke(self.bsm).all()
+        assert res == [
+            {"Arn": "arn:aws:s3:us-east-1:123456789012:bucket/company-data"},
+            {"Arn": "arn:aws:s3:us-east-1:123456789012:bucket/enterprise-data"},
         ]
 
     def test_paginator(self):
