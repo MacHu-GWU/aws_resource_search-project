@@ -14,11 +14,30 @@ from .common import BaseModel
 
 @dataclasses.dataclass
 class BaseToken(BaseModel):
+    """
+    所有 Token 的基类.
+
+    所有的 Token 类必须有一个 ``def evaluate(data: dict, context: T.Optional[dict]):``
+    方法. 这个方法的作用是根据 ``data`` 和 ``context`` 来计算出这个 Token 的值.
+
+    - :class:`StringTemplateToken`
+    """
+
     pass
 
 
 @dataclasses.dataclass
-class StringTemplateToken(BaseToken):
+class StringToken(BaseToken):
+    def evaluate(
+        self,
+        data: T.Dict[str, T.Any],
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ) -> str:  # pragma: no cover
+        raise NotImplementedError
+
+
+@dataclasses.dataclass
+class StringTemplateToken(StringToken):
     """
     这种类型的 Token 是一个字符串模板, 而模板中的变量都是从一个叫 ``data`` 的字典对象中通过
     jmespath 语法获取的.
@@ -71,6 +90,9 @@ class StringTemplateToken(BaseToken):
         data: T.Dict[str, T.Any],
         context: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> str:
+        """
+        todo: add docstring
+        """
         data = copy.copy(data)
         params = dict()
         if context is not None:
@@ -87,4 +109,9 @@ class StringTemplateToken(BaseToken):
         return self.template.format(**params)
 
 
-token_class_mapper = {klass._type: klass for klass in BaseToken.__subclasses__()}
+token_class_mapper = dict()
+for klass in BaseToken.__subclasses__():
+    try:
+        token_class_mapper[klass._type].append(klass)
+    except AttributeError:
+        pass
