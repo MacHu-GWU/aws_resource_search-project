@@ -3,7 +3,8 @@ aws_resource_search_venv/
 aws_resource_search.egg-info/
 aws_resource_search-*/
 tmp/
-
+.index/
+.cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

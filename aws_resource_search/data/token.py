@@ -109,9 +109,19 @@ class StringTemplateToken(StringToken):
         return self.template.format(**params)
 
 
+def _get_all_subclasses(cls):
+    all_subclasses = set()
+
+    for subclass in cls.__subclasses__():
+        all_subclasses.add(subclass)
+        all_subclasses.update(_get_all_subclasses(subclass))
+
+    return all_subclasses
+
+
 token_class_mapper = dict()
-for klass in BaseToken.__subclasses__():
+for klass in _get_all_subclasses(BaseToken):
     try:
-        token_class_mapper[klass._type].append(klass)
-    except AttributeError:
-        pass
+        token_class_mapper[klass._type] = klass
+    except AttributeError as e:
+        print(e)
