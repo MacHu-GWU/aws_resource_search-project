@@ -10,6 +10,7 @@ import dataclasses
 import jmespath
 
 from .common import BaseModel
+from ..constants import TokenTypeEnum
 
 
 @dataclasses.dataclass
@@ -19,27 +20,61 @@ class BaseToken(BaseModel):
 
     所有的 Token 类必须有一个 ``def evaluate(data: dict, context: T.Optional[dict]):``
     方法. 这个方法的作用是根据 ``data`` 和 ``context`` 来计算出这个 Token 的值.
-
-    - :class:`StringTemplateToken`
     """
 
-    pass
-
-
-@dataclasses.dataclass
-class StringToken(BaseToken):
     def evaluate(
         self,
         data: T.Dict[str, T.Any],
         context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> str:  # pragma: no cover
+    ) -> T.Any:  # pragma: no cover
         raise NotImplementedError
 
 
 @dataclasses.dataclass
-class StringTemplateToken(StringToken):
+class RawToken(BaseToken):
     """
-    这种类型的 Token 是一个字符串模板, 而模板中的变量都是从一个叫 ``data`` 的字典对象中通过
+    这种类型的 token 会将 value 中的值原封不动的返回.
+
+    :param value: 所要返回的值. 可以是任何对象.
+    """
+
+    value: T.Any = dataclasses.field()
+
+    def evaluate(
+        self,
+        data: T.Dict[str, T.Any],
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ) -> T.Any:  # pragma: no cover
+        return self.value
+
+
+@dataclasses.dataclass
+class JmespathToken(BaseToken):
+    """
+    这种类型的 token 会从一个叫 ``data`` 的字典对象中通过 jmespath 语法获取最终的值.
+
+    :param path: jmespath 的语法.
+    """
+
+    path: str = dataclasses.field()
+
+    def evaluate(
+        self,
+        data: T.Dict[str, T.Any],
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ) -> T.Any:  # pragma: no cover
+        if context is None:
+            context = data
+        else:
+            context = copy.copy(context)
+            context.update(data)
+        return jmespath.search(self.path[1:], context)
+
+
+@dataclasses.dataclass
+class SubToken(BaseToken):
+    """
+    这种类型的 token 是一个字符串模板, 而模板中的变量都是从一个叫 ``data`` 的字典对象中通过
     jmespath 语法获取的.
 
     举例, 我们的 template 是 ``Hello {FIRSTNAME} {LASTNAME}!  Today is {DATE}.``,
@@ -64,9 +99,9 @@ class StringTemplateToken(StringToken):
 
         {"DATE": "2021-01-01"}
 
-    总结下来, ``StringTemplateToken`` 的使用方法是::
+    总结下来, ``SubToken`` 的使用方法是::
 
-        >>> token = StringTemplateToken(
+        >>> token = SubToken(
         ...     template="Hello {FIRSTNAME} {LASTNAME}! Today is {DATE}.",
         ...     params={
         ...         "FIRSTNAME": "$first_name",
@@ -78,12 +113,25 @@ class StringTemplateToken(StringToken):
         ...     context={"DATE": "2021-01-01"},
         ... )
         'Hello John Doe! Today is 2021-01-01.'
+
+    :param template: 字符串模板.
+    :param params: 字符串模板所需的数据, 是一个 key value 键值对, 其中值既可以是 literal,
+        也可以是一个 token.
     """
 
     template: str = dataclasses.field()
     params: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
 
-    _type: str = "string_template"
+    def _evaluate_params(
+        self,
+        data: T.Dict[str, T.Any],
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ) -> T.Dict[str, T.Any]:
+        """ """
+        params = dict()
+        for k, v in self.params.items():
+            params[k] = evaluate_token(v, data, context)
+        return params
 
     def evaluate(
         self,
@@ -93,35 +141,77 @@ class StringTemplateToken(StringToken):
         """
         todo: add docstring
         """
-        data = copy.copy(data)
-        params = dict()
-        if context is not None:
-            data.update(context)
-            params.update(context)
-
-        for k, v in self.params.items():
-            if v.startswith("$"):
-                expr = jmespath.compile(v[1:])
-                params[k] = expr.search(data)
-            else:  # pragma: no cover
-                params[k] = v
-
-        return self.template.format(**params)
+        if context is None:  # pragma: no cover
+            context = dict()
+        else:  # pragma: no cover
+            context = copy.copy(context)
+        evaluate_data = dict()
+        evaluate_data.update(data)
+        evaluate_data.update(context)
+        format_data = self._evaluate_params(evaluate_data, context)
+        format_data.update(context)
+        return self.template.format(**format_data)
 
 
-def _get_all_subclasses(cls):
-    all_subclasses = set()
+@dataclasses.dataclass
+class JoinToken(BaseToken):
+    sep: str = dataclasses.field()
+    array: T.List[T.Any] = dataclasses.field(default_factory=list)
 
-    for subclass in cls.__subclasses__():
-        all_subclasses.add(subclass)
-        all_subclasses.update(_get_all_subclasses(subclass))
+    def _evaluate_array(
+        self,
+        data: T.Dict[str, T.Any],
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ) -> T.List[str]:
+        """ """
+        array = list()
+        for v in self.array:
+            array.append(evaluate_token(v, data, context))
+        return array
 
-    return all_subclasses
+    def evaluate(
+        self,
+        data: T.Dict[str, T.Any],
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ) -> str:
+        """
+        todo: add docstring
+        """
+        if context is None:  # pragma: no cover
+            context = dict()
+        else:  # pragma: no cover
+            context = copy.copy(context)
+        evaluate_data = dict()
+        evaluate_data.update(data)
+        evaluate_data.update(context)
+        array = self._evaluate_array(evaluate_data, context)
+        return self.sep.join(array)
 
 
-token_class_mapper = dict()
-for klass in _get_all_subclasses(BaseToken):
-    try:
-        token_class_mapper[klass._type] = klass
-    except AttributeError as e:
-        print(e)
+token_class_mapper = {
+    TokenTypeEnum.raw.value: RawToken,
+    TokenTypeEnum.jmespath.value: JmespathToken,
+    TokenTypeEnum.sub.value: SubToken,
+    TokenTypeEnum.join.value: JoinToken,
+}
+
+
+def evaluate_token(
+    token: T.Any,
+    data: T.Dict[str, T.Any],
+    context: T.Optional[T.Dict[str, T.Any]] = None,
+) -> T.Any:
+    """
+    自动判断 token 是什么类型, 应该用什么策略来 evaluate.
+    """
+    if isinstance(token, str):
+        if token.startswith("$"):
+            return JmespathToken(path=token).evaluate(data, context)
+        else:
+            return token
+    elif isinstance(token, dict):
+        token_type = token["type"]
+        token_class = token_class_mapper[token_type]
+        return token_class(**token["kwargs"]).evaluate(data, context)
+    else:
+        return token
