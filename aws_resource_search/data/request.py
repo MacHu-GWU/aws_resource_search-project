@@ -87,8 +87,8 @@ class Request(BaseModel):
         ...     # how to locate list of bucket details in the response object
         ...     items_path="$Buckets",
         ...     result={ ## extract additional fields
-        ...         "bucket": "$Name",
-        ...         "arn": {
+        ...         "bucket": Attribute.from_dict({"type": "str", "value": "$Name"}),
+        ...         "arn": Attribute.from_dict({
         ...             "type": "str",
         ...             "value": {
         ...                 "type": "sub",
@@ -97,7 +97,7 @@ class Request(BaseModel):
         ...                     "params": {"bucket": "$Name"},
         ...                 },
         ...             },
-        ...         },
+        ...         }),
         ...     },
         ... )
         >>> bsm = BotoSesManager(profile_name="my_aws_profile")
@@ -159,21 +159,26 @@ class Request(BaseModel):
     def _invoke(
         self,
         bsm: "BotoSesManager",
+        boto_kwargs: T.Optional[dict] = None,
     ) -> T.Iterator[T_RESULT_ITEM]:
         context = {
             AWS_ACCOUNT_ID: bsm.aws_account_id,
             AWS_REGION: bsm.aws_region,
         }
         boto_client = bsm.get_client(self.client)
+        if boto_kwargs is not None:
+            kwargs = boto_kwargs
+        else:
+            kwargs = self.kwargs
         if self.is_paginator:
             paginator = boto_client.get_paginator(self.method)
             expr = jmespath.compile(self.items_path[1:])
-            for response in paginator.paginate(**self.kwargs):
+            for response in paginator.paginate(**kwargs):
                 for item in expr.search(response):
                     yield self._select_result(item, context)
         else:
             method = getattr(boto_client, self.method)
-            response = method(**self.kwargs)
+            response = method(**kwargs)
             expr = jmespath.compile(self.items_path[1:])
             for item in expr.search(response):
                 yield self._select_result(item, context)
@@ -181,8 +186,9 @@ class Request(BaseModel):
     def invoke(
         self,
         bsm: "BotoSesManager",
+        boto_kwargs: T.Optional[dict] = None,
     ) -> ResultItemIterproxy:
         """
         todo: add docstring
         """
-        return ResultItemIterproxy(self._invoke(bsm))
+        return ResultItemIterproxy(self._invoke(bsm, boto_kwargs))

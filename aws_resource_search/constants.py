@@ -29,3 +29,16 @@ class TokenTypeEnum(BetterStrEnum):
     jmespath = "jmespath"
     sub = "sub"
     join = "join"
+
+
+class FieldTypeEnum(BetterStrEnum):
+    Stored = "Stored"
+    Id = "Id"
+    IdList = "IdList"
+    Keyword = "Keyword"
+    Text = "Text"
+    Numeric = "Numeric"
+    Datetime = "Datetime"
+    Boolean = "Boolean"
+    Ngram = "Ngram"
+    NgramWords = "NgramWords"
