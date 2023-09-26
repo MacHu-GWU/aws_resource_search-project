@@ -36,8 +36,8 @@ class TestIamSearcher(BaseMockTest):
             is_paginator=False,
             items_path="$Buckets",
             result={
-                "name": "$Name",
-                "message": "hello",
+                "name": {"type": "str", "value": "$Name"},
+                "message": {"type": "str", "value": "hello"},
             },
         )
         assert len(request.invoke(self.bsm).all()) == 0
@@ -50,22 +50,25 @@ class TestIamSearcher(BaseMockTest):
         assert res1["message"] == "hello"
         assert res2["name"] == "enterprise-data"
         assert res2["message"] == "hello"
-        assert set(res1) == {"Name", "CreationDate", "name", "message"}
+        assert set(res1) == {"_item", "name", "message"}
 
         # ----------------------------------------------------------------------
         request.result = None
-        item = request.invoke(self.bsm).one()
+        item = request.invoke(self.bsm).one()["_item"]
         assert set(item) == {"Name", "CreationDate"}
 
         # ----------------------------------------------------------------------
         request.result = {
             "Arn": {
-                "type": TokenTypeEnum.sub,
-                "kwargs": {
-                    "template": "arn:aws:s3:{AWS_REGION}:{AWS_ACCOUNT_ID}:bucket/{bucket}",
-                    "params": {"bucket": "$Name"},
+                "type": "str",
+                "value": {
+                    "type": TokenTypeEnum.sub,
+                    "kwargs": {
+                        "template": "arn:aws:s3:{AWS_REGION}:{AWS_ACCOUNT_ID}:bucket/{bucket}",
+                        "params": {"bucket": "$Name"},
+                    },
                 },
-            }
+            },
         }
         res = request.invoke(self.bsm).all()
         assert res[0]["Arn"] == "arn:aws:s3:us-east-1:123456789012:bucket/company-data"
@@ -91,7 +94,7 @@ class TestIamSearcher(BaseMockTest):
         self._create_test_iam_groups()
         res = request.invoke(self.bsm).all()
         assert len(res) == 2
-        assert [item["GroupName"] for item in res] == self.iam_group_names
+        assert [item["_item"]["GroupName"] for item in res] == self.iam_group_names
 
 
 if __name__ == "__main__":

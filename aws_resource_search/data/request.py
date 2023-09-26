@@ -65,14 +65,18 @@ class Request(BaseModel):
         ...     client="s3",
         ...     method="list_buckets",
         ...     is_paginator=False,
+        ...     # how to locate list of bucket details in the response object
         ...     items_path="$Buckets",
-        ...     result={
+        ...     result={ ## extract additional fields
         ...         "bucket": "$Name",
         ...         "arn": {
-        ...             "type": "string_template",
-        ...             "kwargs": {
-        ...                 "template": "arn:aws:s3:::{bucket}",
-        ...                 "params": {"bucket": "$Name"},
+        ...             "type": "str",
+        ...             "value": {
+        ...                 "type": "sub",
+        ...                 "kwargs": {
+        ...                     "template": "arn:aws:s3:::{bucket}",
+        ...                     "params": {"bucket": "$Name"},
+        ...                 },
         ...             },
         ...         },
         ...     },
@@ -80,8 +84,22 @@ class Request(BaseModel):
         >>> bsm = BotoSesManager(profile_name="my_aws_profile")
         >>> for item in request.invoke(bsm):
         ...     print(item)
-        {'bucket': 'my-bucket-1'}
-        {'bucket': 'my-bucket-2'}
+        {
+            'bucket': 'my-bucket-1',
+            'arn': 'arn:aws:s3:::my-bucket-1',
+            '_item': {
+                'Name': 'my-bucket-1',
+                'CreateDate': datetime(2020, 1, 1),
+            }
+        }
+        {
+            'bucket': 'my-bucket-2',
+            'arn': 'arn:aws:s3:::my-bucket-2',
+            '_item': {
+                'Name': 'my-bucket-2',
+                'CreateDate': datetime(2020, 1, 1),
+            }
+        }
         ...
 
     这里的逻辑翻译成人类语言就是, 使用 ``boto3.client("s3").list_buckets()`` API,
@@ -104,11 +122,12 @@ class Request(BaseModel):
         item: T_RESULT_ITEM,
         context: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> T_RESULT_ITEM:
+        result = {"_item": item}
         if self.result is None:
-            return item
+            return result
         for key, value in self.result.items():
-            item[key] = evaluate_token(value, item, context)
-        return item
+            result[key] = evaluate_token(value["value"], item, context)
+        return result
 
     def _invoke(
         self,
