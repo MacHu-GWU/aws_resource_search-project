@@ -9,8 +9,7 @@ from iterproxy import IterProxy
 from ..constants import AWS_ACCOUNT_ID, AWS_REGION
 from .common import BaseModel, NOTHING
 from .types import T_RESULT_ITEM
-from .token import token_class_mapper
-
+from .token import evaluate_token
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
@@ -92,6 +91,7 @@ class Request(BaseModel):
     参数 params 是 ``{"bucket": "$Name"}``. 参数中的 bucket 也是通过 jmespath 从
     原字典中提取的.
     """
+
     client: str = dataclasses.field(default=NOTHING)
     method: str = dataclasses.field(default=NOTHING)
     kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
@@ -106,22 +106,9 @@ class Request(BaseModel):
     ) -> T_RESULT_ITEM:
         if self.result is None:
             return item
-        data = dict()
         for key, value in self.result.items():
-            if key == "*":
-                data.update(item)
-            elif isinstance(value, dict):
-                klass = token_class_mapper[value["type"]]
-                token = klass(**value["kwargs"])
-                data[key] = token.evaluate(item, context)
-            elif value.startswith("$"):
-                data[key] = jmespath.search(
-                    value[1:],
-                    item,
-                )
-            else:
-                data[key] = value
-        return data
+            item[key] = evaluate_token(value, item, context)
+        return item
 
     def _invoke(
         self,

@@ -7,4 +7,6 @@ moto[cloudformation]
 moto[dynamodb]
 moto[iam]
 moto[s3]
+fixa>=0.10.2,<1.0.0
+Faker
 rich
