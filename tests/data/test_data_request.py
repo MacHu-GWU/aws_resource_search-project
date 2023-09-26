@@ -2,12 +2,53 @@
 
 import moto
 from aws_resource_search.constants import TokenTypeEnum
-from aws_resource_search.data.request import Request
+from aws_resource_search.data.request import Attribute, Request
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
 
 
-class TestIamSearcher(BaseMockTest):
+class TestAttribute:
+    def test(self):
+        attr = Attribute(type="str", value="hello")
+        assert attr.to_dict() == {"type": "str", "value": "hello"}
+        assert Attribute.from_dict({"type": "str", "value": "hello"}) == attr
+
+
+class TestRequest:
+    def test(self):
+        req = Request(
+            client="ec2",
+            method="describe_instances",
+            is_paginator=True,
+            items_path="$Reservations[].Instances[] || `[]`",
+            result={
+                "arn": Attribute.from_dict({"type": "str", "value": "ec2_arn"}),
+            },
+        )
+        assert req.to_dict() == {
+            "client": "ec2",
+            "method": "describe_instances",
+            "kwargs": {},
+            "is_paginator": True,
+            "items_path": "$Reservations[].Instances[] || `[]`",
+            "result": {"arn": {"type": "str", "value": "ec2_arn"}},
+        }
+        assert (
+            Request.from_dict(
+                {
+                    "client": "ec2",
+                    "method": "describe_instances",
+                    "kwargs": {},
+                    "is_paginator": True,
+                    "items_path": "$Reservations[].Instances[] || `[]`",
+                    "result": {"arn": {"type": "str", "value": "ec2_arn"}},
+                }
+            )
+            == req
+        )
+
+
+class TestS3AndIamRequest(BaseMockTest):
     mock_list = [
         moto.mock_s3,
         moto.mock_iam,
@@ -36,8 +77,8 @@ class TestIamSearcher(BaseMockTest):
             is_paginator=False,
             items_path="$Buckets",
             result={
-                "name": {"type": "str", "value": "$Name"},
-                "message": {"type": "str", "value": "hello"},
+                "name": Attribute.from_dict({"type": "str", "value": "$Name"}),
+                "message": Attribute.from_dict({"type": "str", "value": "hello"}),
             },
         )
         assert len(request.invoke(self.bsm).all()) == 0
@@ -59,17 +100,20 @@ class TestIamSearcher(BaseMockTest):
 
         # ----------------------------------------------------------------------
         request.result = {
-            "Arn": {
-                "type": "str",
-                "value": {
-                    "type": TokenTypeEnum.sub,
-                    "kwargs": {
-                        "template": "arn:aws:s3:{AWS_REGION}:{AWS_ACCOUNT_ID}:bucket/{bucket}",
-                        "params": {"bucket": "$Name"},
+            "Arn": Attribute.from_dict(
+                {
+                    "type": "str",
+                    "value": {
+                        "type": TokenTypeEnum.sub,
+                        "kwargs": {
+                            "template": "arn:aws:s3:{AWS_REGION}:{AWS_ACCOUNT_ID}:bucket/{bucket}",
+                            "params": {"bucket": "$Name"},
+                        },
                     },
-                },
-            },
+                }
+            ),
         }
+
         res = request.invoke(self.bsm).all()
         assert res[0]["Arn"] == "arn:aws:s3:us-east-1:123456789012:bucket/company-data"
         assert (

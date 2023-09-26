@@ -21,6 +21,25 @@ class ResultItemIterproxy(IterProxy[T_RESULT_ITEM]):
 
 
 @dataclasses.dataclass
+class Attribute(BaseModel):
+    """
+    代表了 :attr:`Request.result` 中的一个属性. 这个属性是一个可以被 evaluate 的
+    :class:`aws_resource_search.data.token.BaseToken`.
+
+    """
+
+    type: str = dataclasses.field()
+    value: T.Any = dataclasses.field()
+
+    def evaluate(
+        self,
+        item: T.Dict[str, T.Any],
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ):
+        return evaluate_token(self.value, item, context)
+
+
+@dataclasses.dataclass
 class Request(BaseModel):
     """
     代表了一个用来列出许多 AWS 资源的请求. 例如列出所有 S3 Bucket, 列出所有 EC2 Instance 等等.
@@ -115,7 +134,15 @@ class Request(BaseModel):
     kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
     is_paginator: bool = dataclasses.field(default=NOTHING)
     items_path: str = dataclasses.field(default=NOTHING)
-    result: T.Optional[T.Dict[str, T.Any]] = dataclasses.field(default=None)
+    result: T.Dict[str, Attribute] = dataclasses.field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, dct: T.Dict[str, T.Any]):
+        dct["result"] = {
+            key: Attribute.from_dict(value)
+            for key, value in dct.get("result", dict()).items()
+        }
+        return cls(**dct)
 
     def _select_result(
         self,
@@ -125,8 +152,8 @@ class Request(BaseModel):
         result = {"_item": item}
         if self.result is None:
             return result
-        for key, value in self.result.items():
-            result[key] = evaluate_token(value["value"], item, context)
+        for key, attribute in self.result.items():
+            result[key] = attribute.evaluate(item, context)
         return result
 
     def _invoke(
