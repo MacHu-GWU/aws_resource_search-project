@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
 import dataclasses
 
 
@@ -19,3 +20,10 @@ class BaseModel:
                     f"arg {k!r} is required for "
                     f"{self.__class__.__module__}.{self.__class__.__qualname__}"
                 )
+
+    def to_dict(self) -> T.Dict[str, T.Any]:
+        return dataclasses.asdict(self)
+
+    @classmethod
+    def from_dict(cls, dct: T.Dict[str, T.Any]):
+        return cls(**dct)
