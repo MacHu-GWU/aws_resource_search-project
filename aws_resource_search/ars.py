@@ -13,14 +13,14 @@ if T.TYPE_CHECKING:
 @dataclasses.dataclass
 class ARS(ARSBase):
     @cached_property
+    def cloudformation_stack(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="cloudformation", resource_type="stack")
+    
+    @cached_property
     def ec2_instance(self) -> "ResourceSearcher":
         return self._get_rs(service_id="ec2", resource_type="instance")
     
     @cached_property
     def s3_bucket(self) -> "ResourceSearcher":
         return self._get_rs(service_id="s3", resource_type="bucket")
-    
-    @cached_property
-    def cloudformation_stack(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="cloudformation", resource_type="stack")
     

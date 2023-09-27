@@ -2,9 +2,9 @@
 
 from pathlib_mate import Path
 
-_dir_here = Path.dir_here(__file__)
+dir_python_lib = Path.dir_here(__file__)
 
-dir_project_root = _dir_here.parent
+dir_project_root = dir_python_lib.parent
 
 # ------------------------------------------------------------------------------
 # Virtual Environment Related
@@ -31,4 +31,4 @@ dir_cache = dir_aws_console_url_search.joinpath(".cache")
 # ------------------------------------------------------------------------------
 # Project
 # ------------------------------------------------------------------------------
-path_data_json = _dir_here.joinpath("data.json")
+path_data_json = dir_python_lib.joinpath("data.json")

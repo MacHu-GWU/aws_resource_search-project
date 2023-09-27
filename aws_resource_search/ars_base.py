@@ -23,7 +23,6 @@ class ARSBase:
     dir_index: Path = dataclasses.field(default=dir_index)
     dir_cache: Path = dataclasses.field(default=dir_cache)
     cache: Cache = dataclasses.field(default=None)
-    _console: "aws_console_url.AWSConsole" = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.dir_index = Path(self.dir_index)
@@ -33,7 +32,10 @@ class ARSBase:
             self.cache = Cache(str(self.dir_cache))
         else:
             self.dir_cache = Path(self.cache.directory)
-        self._console = aws_console_url.AWSConsole(
+
+    @cached_property
+    def aws_console(self) -> aws_console_url.AWSConsole:
+        return aws_console_url.AWSConsole(
             aws_account_id=self.bsm.aws_account_id,
             aws_region=self.bsm.aws_region,
             bsm=self.bsm,
@@ -57,11 +59,7 @@ class ARSBase:
         search_data = dct["search"]
         rs = ResourceSearcher(
             bsm=self.bsm,
-            aws_console=aws_console_url.AWSConsole(
-                aws_account_id=self.bsm.aws_account_id,
-                aws_region=self.bsm.aws_region,
-                bsm=self.bsm,
-            ),
+            aws_console=self.aws_console,
             dir_index=self.dir_index,
             dir_cache=self.dir_cache,
             cache=self.cache,
