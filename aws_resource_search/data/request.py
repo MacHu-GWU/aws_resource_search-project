@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
+import copy
 import dataclasses
 
 import jmespath
@@ -143,6 +144,7 @@ class Request(BaseModel):
 
     @classmethod
     def from_dict(cls, dct: T.Dict[str, T.Any]):
+        dct = copy.deepcopy(dct)
         dct["result"] = {
             key: Attribute.from_dict(value)
             for key, value in dct.get("result", dict()).items()

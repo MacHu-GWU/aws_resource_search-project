@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
+import copy
 import dataclasses
 
 import sayt.api as sayt
@@ -72,6 +73,7 @@ class Search(BaseModel):
 
     @classmethod
     def from_dict(cls, dct: dict):
+        dct = copy.deepcopy(dct)
         fields = []
         for field in dct.get("fields", []):
             fields.append(Field(**field))

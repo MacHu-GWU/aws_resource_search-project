@@ -21,6 +21,22 @@ class ARS(ARSBase):
         return self._get_rs(service_id="ec2", resource_type="instance")
     
     @cached_property
+    def glue_database(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="glue", resource_type="database")
+    
+    @cached_property
+    def glue_table(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="glue", resource_type="table")
+    
+    @cached_property
+    def glue_job(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="glue", resource_type="job")
+    
+    @cached_property
+    def glue_crawler(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="glue", resource_type="crawler")
+    
+    @cached_property
     def iam_group(self) -> "ResourceSearcher":
         return self._get_rs(service_id="iam", resource_type="group")
     

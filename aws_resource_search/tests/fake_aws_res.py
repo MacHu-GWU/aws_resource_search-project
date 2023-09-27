@@ -20,11 +20,13 @@ class FakeAws(BaseMockTest):
     mock_list = [
         moto.mock_cloudformation,
         moto.mock_ec2,
+        moto.mock_glue,
         moto.mock_iam,
         moto.mock_s3,
     ]
 
-    def create_cloudformation_stack(self):
+    @classmethod
+    def create_cloudformation_stack(cls):
         tpl_data = {
             "AWSTemplateFormatVersion": "2010-09-09",
             "Parameters": {
@@ -43,8 +45,8 @@ class FakeAws(BaseMockTest):
         }
         for ith in range(1, 1 + 10):
             env = random.choice(envs)
-            self.bsm.cloudformation_client.create_stack(
-                StackName=f"{env}-{guid}-{ith}",
+            cls.bsm.cloudformation_client.create_stack(
+                StackName=f"{env}-{guid}-{ith}-cloudformation-stack",
                 TemplateBody=str(json.dumps(tpl_data)),
                 Parameters=[
                     dict(
@@ -54,8 +56,9 @@ class FakeAws(BaseMockTest):
                 ],
             )
 
-    def create_ec2_inst(self):
-        image_id = self.bsm.ec2_client.describe_images()["Images"][0]["ImageId"]
+    @classmethod
+    def create_ec2_inst(cls):
+        image_id = cls.bsm.ec2_client.describe_images()["Images"][0]["ImageId"]
 
         for ith in range(1, 1 + 10):
             kwargs = dict(
@@ -68,21 +71,22 @@ class FakeAws(BaseMockTest):
                 kwargs["TagSpecifications"] = [
                     dict(
                         ResourceType="instance",
-                        Tags=[dict(Key="Name", Value=f"{env}-{guid}-{ith}")],
+                        Tags=[dict(Key="Name", Value=f"{env}-{guid}-{ith}-ec2-instance")],
                     )
                 ]
-            self.bsm.ec2_client.run_instances(**kwargs)
+            cls.bsm.ec2_client.run_instances(**kwargs)
 
-    def create_iam(self):
+    @classmethod
+    def create_iam(cls):
         for ith in range(1, 1 + 10):
             env = random.choice(envs)
-            self.bsm.iam_client.create_role(
-                RoleName=f"{env}-{guid}-{ith}-role",
+            cls.bsm.iam_client.create_role(
+                RoleName=f"{env}-{guid}-{ith}-iam-role",
                 AssumeRolePolicyDocument="{}",
             )
 
-            self.bsm.iam_client.create_policy(
-                PolicyName=f"{env}-{guid}-{ith}-policy",
+            cls.bsm.iam_client.create_policy(
+                PolicyName=f"{env}-{guid}-{ith}-iam-policy",
                 PolicyDocument=json.dumps(
                     {
                         "Version": "2012-10-17",
@@ -93,15 +97,55 @@ class FakeAws(BaseMockTest):
                 ),
             )
 
-            self.bsm.iam_client.create_user(
-                UserName=f"{env}-{guid}-{ith}-user",
+            cls.bsm.iam_client.create_user(
+                UserName=f"{env}-{guid}-{ith}-iam-user",
             )
 
-            self.bsm.iam_client.create_group(
-                GroupName=f"{env}-{guid}-{ith}-group",
+            cls.bsm.iam_client.create_group(
+                GroupName=f"{env}-{guid}-{ith}-iam-group",
             )
 
-    def create_s3_bucket(self):
+    @classmethod
+    def create_glue_database_table_job_and_crawler(cls):
+        for ith in range(6):
+            env = random.choice(envs)
+            db_name = f"{env}-{guid}-{ith}-glue-database"
+            cls.bsm.glue_client.create_database(
+                DatabaseInput=dict(
+                    Name=db_name,
+                ),
+            )
+            for jth in range(10):
+                tb_name = f"{env}-{guid}-{jth}-glue-table"
+                cls.bsm.glue_client.create_table(
+                    DatabaseName=db_name,
+                    TableInput=dict(
+                        Name=tb_name,
+                    ),
+                )
+
+        for ith in range(10):
+            env = random.choice(envs)
+            job_name = f"{env}-{guid}-{ith}-glue-job"
+            cls.bsm.glue_client.create_job(
+                Name=job_name,
+                Role="arn:aws:iam::123456789012:role/AWSGlueServiceRoleDefault",
+                Command={
+                    "Name": "glueetl",
+                },
+            )
+
+        for ith in range(10):
+            env = random.choice(envs)
+            job_name = f"{env}-{guid}-{ith}-glue-crawler"
+            cls.bsm.glue_client.create_crawler(
+                Name=job_name,
+                Role="arn:aws:iam::123456789012:role/AWSGlueServiceRoleDefault",
+                Targets=dict(S3Targets=[]),
+            )
+
+    @classmethod
+    def create_s3_bucket(cls):
         for ith in range(1, 1 + 10):
             env = random.choice(envs)
-            self.bsm.s3_client.create_bucket(Bucket=f"{env}-{guid}-{ith}")
+            cls.bsm.s3_client.create_bucket(Bucket=f"{env}-{guid}-{ith}-s3-bucket")

@@ -142,6 +142,290 @@
             }
         }
     },
+    "glue": {
+        "_shared": {
+            "*.search.url_getter.service_id": "glue"
+        },
+        "database": {
+            "request": {
+                "method": "get_databases",
+                "is_paginator": true,
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$DatabaseList || `[]`",
+                "result": {
+                    "catalog_id": {
+                        "type": "str",
+                        "value": "$CatalogId"
+                    },
+                    "arn": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "arn:aws:glue:{AWS_REGION}:{AWS_ACCOUNT_ID}:database/{database}",
+                                "params": {
+                                    "database": "$Name"
+                                }
+                            }
+                        }
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$Name"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$Description || 'No Description'"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_database",
+                    "kwargs": {
+                        "database_or_arn": "$raw_result.arn"
+                    }
+                }
+            }
+        },
+        "table": {
+            "request": {
+                "method": "get_tables",
+                "is_paginator": true,
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$TableList || `[]`",
+                "result": {
+                    "catalog_id": {
+                        "type": "str",
+                        "value": "$CatalogId"
+                    },
+                    "arn": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "arn:aws:glue:{AWS_REGION}:{AWS_ACCOUNT_ID}:table/{database}/{table}",
+                                "params": {
+                                    "database": "$DatabaseName",
+                                    "table": "$Name"
+                                }
+                            }
+                        }
+                    },
+                    "database_and_table": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "{database}.{table}",
+                                "params": {
+                                    "database": "$DatabaseName",
+                                    "table": "$Name"
+                                }
+                            }
+                        }
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "{database}.{table}",
+                                "params": {
+                                    "database": "$DatabaseName",
+                                    "table": "$Name"
+                                }
+                            }
+                        }
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$Description || 'No Description'"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_result.database_and_table",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_result.database_and_table",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_table",
+                    "kwargs": {
+                        "table_or_arn": "$raw_result.arn"
+                    }
+                }
+            }
+        },
+        "job": {
+            "request": {
+                "method": "get_jobs",
+                "is_paginator": true,
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$Jobs || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "arn:aws:glue:{AWS_REGION}:{AWS_ACCOUNT_ID}:job/{job}",
+                                "params": {
+                                    "job": "$Name"
+                                }
+                            }
+                        }
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$Name"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$Description || 'No Description'"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_job",
+                    "kwargs": {
+                        "name_or_arn": "$raw_item.Name"
+                    }
+                }
+            }
+        },
+        "crawler": {
+            "request": {
+                "method": "get_crawlers",
+                "is_paginator": true,
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$Crawlers || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "arn:aws:glue:{AWS_REGION}:{AWS_ACCOUNT_ID}:crawler/{crawler}",
+                                "params": {
+                                    "crawler": "$Name"
+                                }
+                            }
+                        }
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$Name"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$Description || 'No Description'"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_crawler",
+                    "kwargs": {
+                        "name_or_arn": "$raw_item.Name"
+                    }
+                }
+            }
+        }
+    },
     "iam": {
         "_shared": {
             "*.search.url_getter.service_id": "iam"
