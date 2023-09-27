@@ -6,7 +6,9 @@ import dataclasses
 import sayt.api as sayt
 from aws_console_url.api import AWSConsole
 
-from ..constants import FieldTypeEnum
+from ..constants import (
+    FieldTypeEnum, _ITEM, _RESULT, RAW_ITEM, RAW_RESULT,
+)
 from .common import BaseModel
 from .token import evaluate_token
 
@@ -55,12 +57,18 @@ class Search(BaseModel):
 
     def __post_init__(self):
         super().__post_init__()
-        field = Field(
-            name="raw_item",
-            type=FieldTypeEnum.Stored.value,
-            value="$_item",
-        )
-        self.fields.append(field)
+        self.fields.extend([
+            Field(
+                name=RAW_ITEM,
+                type=FieldTypeEnum.Stored.value,
+                value=f"${_ITEM}",
+            ),
+            Field(
+                name=RAW_RESULT,
+                type=FieldTypeEnum.Stored.value,
+                value=f"${_RESULT}",
+            ),
+        ])
 
     @classmethod
     def from_dict(cls, dct: dict):
@@ -78,24 +86,27 @@ class Search(BaseModel):
         """
         Convert the item into a document that can be indexed by whoosh.
 
+
         Sample item::
-
+            >>> item ={
+            ...     "${additional_attribute_extracted_by_result_selector}": "...",
+            ...     "arn": "arn:aws:s3:::my-bucket",
+            ...     "_item": {
+            ...         "Bucket": "my-bucket"
+            ...     },
+            ... }
+            >>> fields = [
+            ...     {
+            ...         "name": "id",
+            ...         "type": "Id",
+            ...         "value": "$arn"
+            ...     },
+            ... ]
+            >>> Search(fields=fields)._item_to_doc(item)
             {
-                "${additional_attribute_extracted_by_result_selector}": ...,
-                "_item": { # the original item returned by the boto3 API call
-                    ...
-                }
-            }
-
-        Sample document::
-
-            {
-                "id": ...
-                "name": ...
-                "console_url": ...
-                "raw_item": {
-                    ...,
-                    "arn": ...
+                'id': 'arn:aws:s3:::my-bucket',
+                'raw_item': {
+                    'Bucket': 'my-bucket'
                 }
             }
         """
