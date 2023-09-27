@@ -3,15 +3,12 @@
 import typing as T
 import dataclasses
 
-import jmespath
-from iterproxy import IterProxy
 import sayt.api as sayt
+from aws_console_url.api import AWSConsole
 
-from ..constants import AWS_ACCOUNT_ID, AWS_REGION, FieldTypeEnum
-from ..compat import cached_property
-from .common import BaseModel, NOTHING
-from .types import T_RESULT_ITEM
-from .token import token_class_mapper, evaluate_token
+from ..constants import FieldTypeEnum
+from .common import BaseModel
+from .token import evaluate_token
 
 
 _type_to_field_class_mapper = {
@@ -35,13 +32,16 @@ class Field(BaseModel):
     value: T.Any = dataclasses.field()
     kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
 
-    @classmethod
-    def from_dict(cls, dct: dict):
-        return cls(**dct)
-
     def _to_sayt_field(self) -> sayt.T_Field:
         field_class = _type_to_field_class_mapper[self.type]
         return field_class(name=self.name, **self.kwargs)
+
+
+@dataclasses.dataclass
+class UrlGetter(BaseModel):
+    service_id: str = dataclasses.field()
+    method: str = dataclasses.field()
+    kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
@@ -50,7 +50,8 @@ class Search(BaseModel):
     Defines how to index the result of a :class:`Request`.
     """
 
-    fields: T.List[Field] = dataclasses.field(default_factory=list)
+    fields: T.List[Field] = dataclasses.field()
+    url_getter: UrlGetter = dataclasses.field()
 
     def __post_init__(self):
         super().__post_init__()
@@ -66,7 +67,9 @@ class Search(BaseModel):
         fields = []
         for field in dct.get("fields", []):
             fields.append(Field(**field))
-        return cls(fields=fields)
+        dct["fields"] = fields
+        dct["url_getter"] = UrlGetter(**dct["url_getter"])
+        return cls(**dct)
 
     def _item_to_doc(
         self,
@@ -74,8 +77,60 @@ class Search(BaseModel):
     ) -> T.Dict[str, T.Any]:
         """
         Convert the item into a document that can be indexed by whoosh.
+
+        Sample item::
+
+            {
+                "${additional_attribute_extracted_by_result_selector}": ...,
+                "_item": { # the original item returned by the boto3 API call
+                    ...
+                }
+            }
+
+        Sample document::
+
+            {
+                "id": ...
+                "name": ...
+                "console_url": ...
+                "raw_item": {
+                    ...,
+                    "arn": ...
+                }
+            }
         """
         doc = {}
         for field in self.fields:
             doc[field.name] = evaluate_token(field.value, item)
         return doc
+
+    def _doc_to_url(
+        self,
+        doc: T.Dict[str, T.Any],
+        console: AWSConsole,
+    ) -> str:
+        """
+        Get the aws console url from the document data. A document usually has a
+        ``id`` field that can be used as a unique identifier, a human friendly
+        ``name`` field that can be searched by ngram, and a ``raw_item`` field
+        that contains the original item data.
+
+        Sample document::
+
+            {
+                "id": ...
+                "name": ...
+                "console_url": ...
+                "raw_item": {
+                    ...,
+                    "arn": ...
+                }
+            }
+        """
+        kwargs = dict()
+        for key, value in self.url_getter.kwargs.items():
+            kwargs[key] = evaluate_token(value, doc)
+        return getattr(
+            getattr(console, self.url_getter.service_id),
+            self.url_getter.method,
+        )(**kwargs)

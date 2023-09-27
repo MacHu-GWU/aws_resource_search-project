@@ -16,6 +16,23 @@ from .data.request import Request
 from .data.search import Search
 
 
+def get_boto_session_fingerprint(bsm: "BotoSesManager") -> str:
+    """
+    Get the logical unique fingerprint of the boto3 session. It is used in
+    the index name and cache key.
+    """
+    sep = "----"
+    parts = []
+    if bsm.profile_name is None:
+        parts.append(bsm.aws_account_id)
+        parts.append(bsm.aws_region)
+    else:
+        parts.append(bsm.profile_name)
+        if bsm.aws_region is not None:
+            parts.append(bsm.aws_region)
+    return sep.join(parts)
+
+
 @dataclasses.dataclass
 class ResourceSearcher:
     """
@@ -39,33 +56,38 @@ class ResourceSearcher:
     search: Search = dataclasses.field()
     dir_index: Path = dataclasses.field(default=dir_index)
     dir_cache: Path = dataclasses.field(default=dir_cache)
+    cache: Cache = dataclasses.field(default=None)
     cache_expire: int = dataclasses.field(default=3600)
 
-    @cached_property
-    def cache(self) -> Cache:
-        return Cache(str(self.dir_cache))
+    def __post_init__(self):
+        if self.dir_cache is not None:  # pragma: no cover
+            self.dir_cache = Path(self.dir_cache)
+        if self.cache is None:  # pragma: no cover
+            self.cache = Cache(str(self.dir_cache))
+        else:
+            self.dir_cache = Path(self.cache.directory)
 
     @cached_property
     def index_name(self) -> str:
-        return f"{self.bsm.aws_account_id}-{self.bsm.aws_region}-{self.service_id}-{self.resource_type}"
+        return f"{get_boto_session_fingerprint(self.bsm)}-{self.service_id}-{self.resource_type}"
 
     @cached_property
     def cache_key(self) -> str:
         """
-        用于缓存 API Call 的结果的 key. 由你所用的 boto session 的 aws_account_id, aws_region,
+        用于缓存 API Call 的结果的 key. 由你所用的 boto session 的 fingerprint,
         以及你所要搜索的资源的 service_id, resource_type 组成. 这个 key 最终也会被用于
         构成 Query 结果的 cache key.
         """
-        return f"{self.bsm.aws_account_id}-{self.bsm.aws_region}-{self.service_id}-{self.resource_type}"
+        return f"{get_boto_session_fingerprint(self.bsm)}-{self.service_id}-{self.resource_type}"
 
     @cached_property
     def cache_tag(self) -> str:
         """
         这个 Tag 是用于在清除缓存时, 批量清除所有带有这个 Tag 的缓存的. 我们只有在数据集缓存
         过期后, 才需要清理掉所有这个数据集所有的 Query 的缓存. 同样, 这个 Tag 也是由
-        aws_account_id, aws_region, service_id, resource_type 组成.
+        boto session 的 fingerprint, service_id, resource_type 组成.
         """
-        return f"{self.bsm.aws_account_id}-{self.bsm.aws_region}-{self.service_id}-{self.resource_type}"
+        return f"{get_boto_session_fingerprint(self.bsm)}-{self.service_id}-{self.resource_type}"
 
     @cached_property
     def sayt_dataset(self) -> sayt.DataSet:
@@ -80,22 +102,22 @@ class ResourceSearcher:
         )
 
     def _refresh_data(self, boto_kwargs: T.Optional[dict] = None):
-        with DateTimeTimer("remove index"):
-            self.sayt_dataset.remove_index()
-        with DateTimeTimer("remove cache"):
-            self.sayt_dataset.remove_cache()
-        with DateTimeTimer("call api"):
-            items = self.request.invoke(self.bsm, boto_kwargs).all()
-        with DateTimeTimer("item to doc"):
-            docs = [self.search._item_to_doc(item) for item in items]
+        # with DateTimeTimer("remove index"):
+        self.sayt_dataset.remove_index()
+        # with DateTimeTimer("remove cache"):
+        self.sayt_dataset.remove_cache()
+        # with DateTimeTimer("call api"):
+        items = self.request.invoke(self.bsm, boto_kwargs).all()
+        # with DateTimeTimer("item to doc"):
+        docs = [self.search._item_to_doc(item) for item in items]
         self.cache.set(
             self.cache_key,
             1,
             expire=self.cache_expire,
             tag=self.cache_tag,
         )
-        with DateTimeTimer("build index"):
-            self.sayt_dataset.build_index(docs, rebuild=False)
+        # with DateTimeTimer("build index"):
+        self.sayt_dataset.build_index(docs, rebuild=False)
 
     def query(
         self,
@@ -105,11 +127,15 @@ class ResourceSearcher:
         refresh_data: bool = False,
     ):
         if refresh_data:
+            # print("force refresh data:")
             self._refresh_data(boto_kwargs=boto_kwargs)
         elif self.cache_key not in self.cache:
             self._refresh_data(boto_kwargs=boto_kwargs)
         else:
             pass
-        with DateTimeTimer("search"):
-            res = self.sayt_dataset.search(q, limit=limit)
-        return res
+        # with DateTimeTimer("search"):
+        docs = self.sayt_dataset.search(q, limit=limit)
+        for doc in docs:
+            console_url = self.search._doc_to_url(doc, self.aws_console)
+            doc["console_url"] = console_url
+        return docs

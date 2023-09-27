@@ -1,0 +1,206 @@
+{
+    "cloudformation": {
+        "_shared": {
+            "*.search.url_getter.service_id": "cloudformation"
+        },
+        "stack": {
+            "request": {
+                "method": "describe_stacks",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999
+                    }
+                },
+                "is_paginator": true,
+                "items_path": "$Stacks || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": "$StackId"
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$StackName"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$StackStatus"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.StackId",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.StackName",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_stack",
+                    "kwargs": {
+                        "name_or_arn": "$raw_item.StackId"
+                    }
+                }
+            }
+        }
+    },
+    "ec2": {
+        "_shared": {
+            "*.search.url_getter.service_id": "ec2"
+        },
+        "instance": {
+            "request": {
+                "method": "describe_instances",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "items_path": "$Reservations[].Instances[] || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "arn:aws:ec2:{AWS_REGION}:{AWS_ACCOUNT_ID}:instance/{instance_id}",
+                                "params": {
+                                    "instance_id": "$InstanceId"
+                                }
+                            }
+                        }
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$Tags[?Key=='Name'].Value | [0] || 'No instance name'"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "{state} | {inst_id} | {inst_type}",
+                                "params": {
+                                    "state": "$State.Name",
+                                    "inst_id": "$InstanceId",
+                                    "inst_type": "$InstanceType"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.InstanceId",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "inst_id",
+                        "type": "Ngram",
+                        "value": "$_item.InstanceId",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.Tags[?Key=='Name'].Value | [0] || 'No instance name'",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_instance",
+                    "kwargs": {
+                        "instance_id_or_arn": "$raw_item.InstanceId"
+                    }
+                }
+            }
+        }
+    },
+    "s3": {
+        "_shared": {
+            "*.search.url_getter.service_id": "s3"
+        },
+        "bucket": {
+            "request": {
+                "method": "list_buckets",
+                "is_paginator": false,
+                "items_path": "$Buckets || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "arn:aws:s3:::{bucket}",
+                                "params": {
+                                    "bucket": "$Name"
+                                }
+                            }
+                        }
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$Name"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$to_string(CreationDate)"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.Name",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_console_url",
+                    "kwargs": {
+                        "bucket": "$raw_item.Name"
+                    }
+                }
+            }
+        }
+    }
+}

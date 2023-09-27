@@ -25,4 +25,10 @@ dir_unit_test = dir_project_root / "tests"
 # ------------------------------------------------------------------------------
 dir_home = Path.home()
 dir_aws_console_url_search = dir_home.joinpath(".aws_resource_search")
-dir_cache = dir_aws_console_url_search.joinpath("cache")
+dir_index = dir_aws_console_url_search.joinpath(".index")
+dir_cache = dir_aws_console_url_search.joinpath(".cache")
+
+# ------------------------------------------------------------------------------
+# Project
+# ------------------------------------------------------------------------------
+path_data_json = _dir_here.joinpath("data.json")
