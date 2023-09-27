@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import moto
-from aws_resource_search.constants import TokenTypeEnum
+from aws_resource_search.constants import TokenTypeEnum, _ITEM, _RESULT
 from aws_resource_search.data.request import Attribute, Request
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
@@ -86,12 +86,11 @@ class TestS3AndIamRequest(BaseMockTest):
         self._create_test_buckets()
 
         res = request.invoke(self.bsm).all()
-        res1, res2 = res
-        assert res1["name"] == "company-data"
-        assert res1["message"] == "hello"
-        assert res2["name"] == "enterprise-data"
-        assert res2["message"] == "hello"
-        assert set(res1) == {"_item", "name", "message"}
+        assert res[0][_RESULT]["name"] == "company-data"
+        assert res[0][_RESULT]["message"] == "hello"
+        assert res[1][_RESULT]["name"] == "enterprise-data"
+        assert res[1][_RESULT]["message"] == "hello"
+        assert set(res[1]) == {_ITEM, _RESULT}
 
         # ----------------------------------------------------------------------
         request.result = None
@@ -115,9 +114,13 @@ class TestS3AndIamRequest(BaseMockTest):
         }
 
         res = request.invoke(self.bsm).all()
-        assert res[0]["Arn"] == "arn:aws:s3:us-east-1:123456789012:bucket/company-data"
         assert (
-            res[1]["Arn"] == "arn:aws:s3:us-east-1:123456789012:bucket/enterprise-data"
+            res[0][_RESULT]["Arn"]
+            == "arn:aws:s3:us-east-1:123456789012:bucket/company-data"
+        )
+        assert (
+            res[1][_RESULT]["Arn"]
+            == "arn:aws:s3:us-east-1:123456789012:bucket/enterprise-data"
         )
 
     def test_paginator(self):
@@ -138,7 +141,7 @@ class TestS3AndIamRequest(BaseMockTest):
         self._create_test_iam_groups()
         res = request.invoke(self.bsm).all()
         assert len(res) == 2
-        assert [item["_item"]["GroupName"] for item in res] == self.iam_group_names
+        assert [item[_ITEM]["GroupName"] for item in res] == self.iam_group_names
 
 
 if __name__ == "__main__":

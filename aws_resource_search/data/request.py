@@ -6,7 +6,12 @@ import dataclasses
 import jmespath
 from iterproxy import IterProxy
 
-from ..constants import AWS_ACCOUNT_ID, AWS_REGION
+from ..constants import (
+    AWS_ACCOUNT_ID,
+    AWS_REGION,
+    _ITEM,
+    _RESULT,
+)
 from .common import BaseModel, NOTHING
 from .types import T_RESULT_ITEM
 from .token import evaluate_token
@@ -149,11 +154,11 @@ class Request(BaseModel):
         item: T_RESULT_ITEM,
         context: T.Optional[T.Dict[str, T.Any]] = None,
     ) -> T_RESULT_ITEM:
-        result = {"_item": item}
+        result = {_ITEM: item, _RESULT: {}}
         if self.result is None:
             return result
         for key, attribute in self.result.items():
-            result[key] = attribute.evaluate(item, context)
+            result[_RESULT][key] = attribute.evaluate(item, context)
         return result
 
     def _invoke(
