@@ -142,6 +142,228 @@
             }
         }
     },
+    "iam": {
+        "_shared": {
+            "*.search.url_getter.service_id": "iam"
+        },
+        "group": {
+            "request": {
+                "method": "list_groups",
+                "is_paginator": true,
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$Groups || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": "$Arn"
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$GroupName"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$to_string(CreateDate)"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Arn",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.GroupName",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_user_group",
+                    "kwargs": {
+                        "name_or_arn": "$raw_item.Arn"
+                    }
+                }
+            }
+        },
+        "user": {
+            "request": {
+                "method": "list_users",
+                "is_paginator": true,
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$Users || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": "$Arn"
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$UserName"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$to_string(CreateDate)"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Arn",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.UserName",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_user",
+                    "kwargs": {
+                        "name_or_arn": "$raw_item.Arn"
+                    }
+                }
+            }
+        },
+        "role": {
+            "request": {
+                "method": "list_roles",
+                "is_paginator": true,
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$Roles || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": "$Arn"
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$RoleName"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$to_string(CreateDate)"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Arn",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.RoleName",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_role",
+                    "kwargs": {
+                        "name_or_arn": "$raw_item.Arn"
+                    }
+                }
+            }
+        },
+        "policy": {
+            "request": {
+                "method": "list_policies",
+                "is_paginator": true,
+                "kwargs": {
+                    "Scope": "All",
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "items_path": "$Policies || `[]`",
+                "result": {
+                    "arn": {
+                        "type": "str",
+                        "value": "$Arn"
+                    },
+                    "title": {
+                        "type": "str",
+                        "value": "$PolicyName"
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "value": "$to_string(CreateDate)"
+                    }
+                }
+            },
+            "search": {
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Id",
+                        "value": "$_item.Arn",
+                        "kwargs": {
+                            "stored": true,
+                            "field_boost": 10
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "type": "NgramWords",
+                        "value": "$_item.PolicyName",
+                        "kwargs": {
+                            "stored": true
+                        }
+                    }
+                ],
+                "url_getter": {
+                    "method": "get_policy",
+                    "kwargs": {
+                        "name_or_arn": "$raw_item.Arn"
+                    }
+                }
+            }
+        }
+    },
     "s3": {
         "_shared": {
             "*.search.url_getter.service_id": "s3"

@@ -13,12 +13,12 @@ from aws_resource_search.tests.fake_aws_res import FakeAws, guid
 
 class TestARS(FakeAws):
     def test(self):
-        # self.create_ec2_inst()
-        # self.create_s3_bucket()
         self.create_cloudformation_stack()
+        self.create_ec2_inst()
+        self.create_iam()
+        self.create_s3_bucket()
 
         ars = ARS(bsm=self.bsm)
-
         for service_id, resource_type in ars._service_id_and_resource_type_pairs():
             print(f"--- {service_id}-{resource_type} ---")
             rs = ars._get_rs(service_id=service_id, resource_type=resource_type)
