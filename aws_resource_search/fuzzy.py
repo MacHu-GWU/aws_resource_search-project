@@ -113,12 +113,15 @@ class FuzzyMatcher(T.Generic[Item]):
         :param filter_func: additional filter function to filter the matched items
             it has to be a function that accept an item and return a bool
         """
-        matched_name_list = process.extract(name, self._names, limit=limit)
+        matched_name_list = process.extractBests(name, self._names, limit=limit)
         if len(matched_name_list) == 0:
             return []
         matched_name_list = list(filter(filter_func, matched_name_list))
         best_matched_name, best_matched_score = matched_name_list[0]
         if best_matched_score >= threshold:
-            return self._mapper[best_matched_name]
+            matched_items = list()
+            for matched_name, _ in matched_name_list:
+                matched_items.extend(self._mapper[matched_name])
+            return matched_items[:limit]
         else:
             return []
