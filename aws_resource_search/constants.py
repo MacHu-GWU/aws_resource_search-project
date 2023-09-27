@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Importable constants value.
+"""
+
 from .vendor.better_enum import BetterStrEnum
 
 CACHE_EXPIRE = 1
@@ -16,6 +20,10 @@ RAW_RESULT = "raw_result"
 
 
 class DataTypeEnum(BetterStrEnum):
+    """
+    List of common data types syntax for type hint.
+    """
+
     str = "str"
     int = "int"
     float = "float"
@@ -30,6 +38,10 @@ class DataTypeEnum(BetterStrEnum):
 
 
 class TokenTypeEnum(BetterStrEnum):
+    """
+    List of token types.
+    """
+
     raw = "raw"
     jmespath = "jmespath"
     sub = "sub"
@@ -37,6 +49,10 @@ class TokenTypeEnum(BetterStrEnum):
 
 
 class FieldTypeEnum(BetterStrEnum):
+    """
+    List of searchable document field types.
+    """
+
     Stored = "Stored"
     Id = "Id"
     IdList = "IdList"

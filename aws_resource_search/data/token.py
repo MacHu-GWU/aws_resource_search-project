@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 """
-Token 是一个需要被 evaluate 之后才能获得的值.
+Token 是一个需要被 evaluate 之后才能获得的值. 本模块实现如何定义一个 Token, 以及如何
+evaluate 最终的值, 以及定义了一些常用的 Token.
 """
 
 import typing as T
-import copy
 import dataclasses
 import jmespath
 
 from .common import BaseModel
+from .types import T_EVAL_DATA
 from ..constants import TokenTypeEnum
 
 
@@ -18,14 +19,18 @@ class BaseToken(BaseModel):
     """
     所有 Token 的基类.
 
-    所有的 Token 类必须有一个 ``def evaluate(data: dict, context: T.Optional[dict]):``
-    方法. 这个方法的作用是根据 ``data`` 和 ``context`` 来计算出这个 Token 的值.
+    所有的 Token 必须有一些属性定义了这个 Token 是如何被 evaluate 的规则. 例如
+    :class:`JmespathToken`` 就有一个 ``path`` 属性, 定义了如何从 data 中提取最终的
+    value. 这些属性的定义取决于你的 Token 的 evaluation 的规则.
+
+    所有的 Token 类必须有一个 ``def evaluate(data: T_EVAL_DATA):`` 方法. 这个方法的作用是根据
+     ``data`` 和 evaluation 的规则提取储最终的 value. 这个 data 通常是一个 dict 对象,
+     但也可以是 list, str, int, float, bool 等任何可以用 jmespath 处理的对象.
     """
 
     def evaluate(
         self,
-        data: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
+        data: T_EVAL_DATA,
     ) -> T.Any:  # pragma: no cover
         raise NotImplementedError
 
@@ -40,11 +45,7 @@ class RawToken(BaseToken):
 
     value: T.Any = dataclasses.field()
 
-    def evaluate(
-        self,
-        data: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> T.Any:  # pragma: no cover
+    def evaluate(self, data: T_EVAL_DATA) -> T.Any:  # pragma: no cover
         return self.value
 
 
@@ -58,17 +59,8 @@ class JmespathToken(BaseToken):
 
     path: str = dataclasses.field()
 
-    def evaluate(
-        self,
-        data: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> T.Any:  # pragma: no cover
-        if context is None:
-            context = data
-        else:
-            context = copy.copy(context)
-            context.update(data)
-        return jmespath.search(self.path[1:], context)
+    def evaluate(self, data: T_EVAL_DATA) -> T.Any:  # pragma: no cover
+        return jmespath.search(self.path[1:], data)
 
 
 @dataclasses.dataclass
@@ -122,34 +114,18 @@ class SubToken(BaseToken):
     template: str = dataclasses.field()
     params: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
 
-    def _evaluate_params(
-        self,
-        data: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> T.Dict[str, T.Any]:
+    def _evaluate_params(self, data: T_EVAL_DATA) -> T.Dict[str, T.Any]:
         """ """
         params = dict()
         for k, v in self.params.items():
-            params[k] = evaluate_token(v, data, context)
+            params[k] = evaluate_token(v, data)
         return params
 
-    def evaluate(
-        self,
-        data: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> str:
+    def evaluate(self, data: T_EVAL_DATA) -> str:
         """
         todo: add docstring
         """
-        if context is None:  # pragma: no cover
-            context = dict()
-        else:  # pragma: no cover
-            context = copy.copy(context)
-        evaluate_data = dict()
-        evaluate_data.update(data)
-        evaluate_data.update(context)
-        format_data = self._evaluate_params(evaluate_data, context)
-        format_data.update(context)
+        format_data = self._evaluate_params(data)
         return self.template.format(**format_data)
 
 
@@ -158,33 +134,18 @@ class JoinToken(BaseToken):
     sep: str = dataclasses.field()
     array: T.List[T.Any] = dataclasses.field(default_factory=list)
 
-    def _evaluate_array(
-        self,
-        data: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> T.List[str]:
+    def _evaluate_array(self, data: T_EVAL_DATA) -> T.List[str]:
         """ """
         array = list()
         for v in self.array:
-            array.append(evaluate_token(v, data, context))
+            array.append(evaluate_token(v, data))
         return array
 
-    def evaluate(
-        self,
-        data: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> str:
+    def evaluate(self, data: T_EVAL_DATA) -> str:
         """
         todo: add docstring
         """
-        if context is None:  # pragma: no cover
-            context = dict()
-        else:  # pragma: no cover
-            context = copy.copy(context)
-        evaluate_data = dict()
-        evaluate_data.update(data)
-        evaluate_data.update(context)
-        array = self._evaluate_array(evaluate_data, context)
+        array = self._evaluate_array(data)
         return self.sep.join(array)
 
 
@@ -198,20 +159,58 @@ token_class_mapper = {
 
 def evaluate_token(
     token: T.Any,
-    data: T.Dict[str, T.Any],
-    context: T.Optional[T.Dict[str, T.Any]] = None,
+    data: T_EVAL_DATA,
 ) -> T.Any:
     """
     自动判断 token 是什么类型, 应该用什么策略来 evaluate.
+
+    **如果 Token 是一个字符串**, 那么有两种情况:
+
+    1. 字符串以 ``$`` 开头, 表示这是一个 jmespath 语法, 那么自动将其作为
+        ``JmespathToken(path=token)`` 来 evaluate 数据.
+    2. 字符串中包含 Python 中的 string template 语法, 类似 ``{key}`` 这种, 则表示这是
+        一个 string template, 而 data 就作为参数传给这个 string template, 使用
+        ``token.format(**data)`` 来 evaluate 数据. 值得注意的是, 如果这个 token 中
+        不包含 string template 语法, ``token.format(**data)`` 也不会失败, 只不过没有
+        任何效果, 只是将这个 string 原样返回而已.
+
+    **如果 Token 是一个字典**, 那么这个 token 就是一个用于创建 Token 对象的数据. 这个字典必定包含
+    ``type`` 和 ``kwargs`` 字段.
+
+    - ``type`` 字段代表这个 token 的类型, 它的值必须是
+    :class:`~aws_resource_search.constants.TokenTypeEnum` 中所定义的. 每一个 Type
+        都对应着此模块下定义的一个 Token 类. 例如 :class:`SubToken``, :class:`JoinToken``
+    - ``kwargs`` 字典代表了创建 Token 类所用到的参数. 例如 :class:`SubToken`` 的参数是
+        ``{"template": "my_string_template", "params": {"key": "value"}}``.
+
+    例如下面这个就是一个 :class:`SubToken` 的例子::
+
+        {
+            "type": "sub",
+            "kwargs": {
+                "template": "arn:aws:s3:::{bucket}",
+                "params": {
+                    "bucket": "$Name"
+                }
+            }
+        }
+
+    **如果 Token 不是字符串也不是字典**, 那么就视其为 literal, 直接返回. 这里注意的是如果
+    你的 literal 恰巧也是一个字典, 你需要用 ``RawToken`` 的语法显式的指定它是一个 Raw,
+    例如 ``{"type": "raw", "kwargs": {"value": my_dictionary_here}}``. 不然它会被
+    解析为一个 Token 对象.
     """
     if isinstance(token, str):
         if token.startswith("$"):
-            return JmespathToken(path=token).evaluate(data, context)
-        else:
+            return JmespathToken(path=token).evaluate(data)
+        else:  # literal
             return token
     elif isinstance(token, dict):
-        token_type = token["type"]
-        token_class = token_class_mapper[token_type]
-        return token_class(**token["kwargs"]).evaluate(data, context)
-    else:
+        if "type" in token:
+            token_type = token["type"]
+            token_class = token_class_mapper[token_type]
+            return token_class(**token["kwargs"]).evaluate(data)
+        else:  # literal
+            return token
+    else:  # literal
         return token

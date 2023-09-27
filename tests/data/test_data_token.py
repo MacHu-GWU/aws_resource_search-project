@@ -16,24 +16,27 @@ data = {
 }
 
 
-class TestRawToken:
-    def test(self):
+class Test:
+    def _test_RawToken(self):
         token = RawToken(value="hello")
-        assert token.evaluate(None, None) == "hello"
+        assert token.evaluate(None) == "hello"
+        assert token.evaluate("world") == "hello"
+        assert token.evaluate({"key": "value"}) == "hello"
         assert token.to_dict() == {"value": "hello"}
         assert RawToken.from_dict({"value": "hello"}) == token
 
-
-class TestJmespathToken:
-    def test(self):
+    def _test_JmespathToken(self):
         token = JmespathToken(path="$name")
         assert token.evaluate({"name": "John"}) == "John"
         assert token.to_dict() == {"path": "$name"}
         assert JmespathToken.from_dict({"path": "$name"}) == token
 
+        token = JmespathToken(path="$@")
+        assert token.evaluate("John") == "John"
+        assert token.to_dict() == {"path": "$@"}
+        assert JmespathToken.from_dict({"path": "$@"}) == token
 
-class TestSubToken:
-    def test(self):
+    def _test_SubToken(self):
         token = SubToken(template="hello {name}", params={"name": "$name"})
         assert token.evaluate({"name": "John"}) == "hello John"
         assert token.to_dict() == {
@@ -50,9 +53,7 @@ class TestSubToken:
             == token
         )
 
-
-class TestJoinToken:
-    def test(self):
+    def _test_JoinToken(self):
         token = JoinToken(
             sep=", ",
             array=[
@@ -81,11 +82,13 @@ class TestJoinToken:
             == token
         )
 
-
-class TestEvaluateToken:
-    def _test_1(self):
+    def _test_evaluate_token(self):
         # implicit raw token
         assert evaluate_token("hello", data) == "hello"
+        # implicit raw token
+        assert evaluate_token([1, 2, 3], data) == [1, 2, 3]
+        # implicit raw token
+        assert evaluate_token({"key": "value"}, data) == {"key": "value"}
         # implicit jmespath token
         assert evaluate_token("$firstname", data) == "John"
         # explicit raw token
@@ -117,13 +120,13 @@ class TestEvaluateToken:
             )
             == "John"
         )
-        # string template token
+        # sub token
         assert (
             evaluate_token(
                 {
                     "type": TokenTypeEnum.sub,
                     "kwargs": {
-                        "template": "Hello {FIRSTNAME} {LASTNAME}! Today is {DATE}, it's my {AGE} years birthday!",
+                        "template": "Hello {FIRSTNAME} {LASTNAME}! Today is my {AGE} years birthday!",
                         "params": {
                             "FIRSTNAME": "$firstname",
                             # params can be any token
@@ -136,12 +139,10 @@ class TestEvaluateToken:
                     },
                 },
                 data,
-                context={"DATE": "2021-01-01"},
             )
-            == "Hello John Doe! Today is 2021-01-01, it's my 18 years birthday!"
+            == "Hello John Doe! Today is my 18 years birthday!"
         )
-
-        # string template token
+        # join token
         assert (
             evaluate_token(
                 {
@@ -162,8 +163,51 @@ class TestEvaluateToken:
             == "Doe, John"
         )
 
+    def _test_evaluate_deeply_nested_token(self):
+        token = {
+            "type": TokenTypeEnum.join,
+            "kwargs": {
+                "sep": ", ",
+                "array": [
+                    {
+                        "type": TokenTypeEnum.sub,
+                        "kwargs": {
+                            "template": "my first name is {firstname}",
+                            "params": {
+                                "firstname": {
+                                    "type": TokenTypeEnum.sub,
+                                    "kwargs": {
+                                        "template": "{firstname}",
+                                        "params": {
+                                            "firstname": "$firstname",
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    {
+                        "type": TokenTypeEnum.sub,
+                        "kwargs": {
+                            "template": "my last name is {lastname}",
+                            "params": {
+                                "lastname": "$lastname",
+                            },
+                        },
+                    },
+                ],
+            },
+        }
+        value = evaluate_token(token, data)
+        assert value == "my first name is John, my last name is Doe"
+
     def test(self):
-        self._test_1()
+        self._test_RawToken()
+        self._test_JmespathToken()
+        self._test_SubToken()
+        self._test_JoinToken()
+        self._test_evaluate_token()
+        self._test_evaluate_deeply_nested_token()
 
 
 if __name__ == "__main__":
