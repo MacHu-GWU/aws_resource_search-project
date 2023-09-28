@@ -8,8 +8,9 @@ from diskcache import Cache
 import sayt.api as sayt
 from boto_session_manager import BotoSesManager
 import aws_console_url.api as aws_console_url
-from fixa.timer import DateTimeTimer
+from fixa.timer import TimeTimer
 
+from .logger import logger
 from .compat import cached_property
 from .paths import dir_index, dir_cache
 from .constants import CONSOLE_URL
@@ -117,33 +118,38 @@ class ResourceSearcher:
         }
 
     def _refresh_data(self, boto_kwargs: T.Optional[dict] = None):
-        # with DateTimeTimer("remove index"):
-        self.sayt_dataset.remove_index()
-        # with DateTimeTimer("remove cache"):
-        self.sayt_dataset.remove_cache()
-        # with DateTimeTimer("call api"):
-        res_list = self.request.send(self.bsm, boto_kwargs)
-        # with DateTimeTimer("item to doc"):
-        context = self.context
-        doc_list = [
-            extract_document(
-                document=self.document,
-                output=extract_output(
-                    output=self.output,
-                    resource=res,
-                    context=context,
-                ),
-            )
-            for res in res_list
-        ]
+        with TimeTimer(display=False) as timer:
+            self.sayt_dataset.remove_index()
+        logger.info(f"remove index time: {timer.elapsed:.3f}s")
+
+        with TimeTimer(display=False) as timer:
+            self.sayt_dataset.remove_cache()
+        logger.info(f"remove cache time: {timer.elapsed:.3f}s")
+
+        with TimeTimer(display=False) as timer:
+            res_list = self.request.send(self.bsm, boto_kwargs)
+            context = self.context
+            doc_list = [
+                extract_document(
+                    document=self.document,
+                    output=extract_output(
+                        output=self.output,
+                        resource=res,
+                        context=context,
+                    ),
+                )
+                for res in res_list
+            ]
+        logger.info(f"pull data time: {timer.elapsed:.3f}s")
         self.cache.set(
             self.cache_key,
             1,
             expire=self.cache_expire,
             tag=self.cache_tag,
         )
-        # with DateTimeTimer("build index"):
-        self.sayt_dataset.build_index(doc_list, rebuild=False)
+        with TimeTimer(display=False) as timer:
+            self.sayt_dataset.build_index(doc_list, rebuild=False)
+        logger.info(f"build index time: {timer.elapsed:.3f}s")
 
     def query(
         self,
@@ -151,16 +157,20 @@ class ResourceSearcher:
         limit: int = 20,
         boto_kwargs: T.Optional[dict] = None,
         refresh_data: bool = False,
+        verbose: bool = False,
     ):
-        if refresh_data:
-            # print("force refresh data:")
-            self._refresh_data(boto_kwargs=boto_kwargs)
-        elif self.cache_key not in self.cache:
-            self._refresh_data(boto_kwargs=boto_kwargs)
-        else:
-            pass
-        # with DateTimeTimer("search"):
-        docs = self.sayt_dataset.search(q, limit=limit)
-        for doc in docs:
-            doc[CONSOLE_URL] = self.url.get(document=doc, aws_console=self.aws_console)
-        return docs
+        with logger.disabled(disable=not verbose):
+            logger.info(f"query: {q!r}")
+            if refresh_data:  # force refresh data
+                self._refresh_data(boto_kwargs=boto_kwargs)
+            elif self.cache_key not in self.cache:
+                self._refresh_data(boto_kwargs=boto_kwargs)
+            else:
+                pass
+            with TimeTimer(display=False) as timer:
+                docs = self.sayt_dataset.search(q, limit=limit)
+            logger.info(f"search time: {timer.elapsed:.3f}s")
+            for doc in docs:
+                url = self.url.get(document=doc, aws_console=self.aws_console)
+                doc[CONSOLE_URL] = url
+            return docs

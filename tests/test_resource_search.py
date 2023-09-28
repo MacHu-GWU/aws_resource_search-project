@@ -8,6 +8,7 @@ from rich import print as rprint
 
 import aws_console_url.api as aws_console_url
 from aws_resource_search.constants import _RES, _OUT, RAW_DATA
+from aws_resource_search.logger import logger
 from aws_resource_search.data.request import parse_req_json_node
 from aws_resource_search.data.output import parse_out_json_node
 from aws_resource_search.data.document import parse_doc_json_node
@@ -64,7 +65,7 @@ class TestResourceSearcher(BaseMockTest):
                 ]
             self.bsm.ec2_client.run_instances(**kwargs)
 
-    def test(self):
+    def _test(self):
         self._create_test_ec2()
 
         rs = ResourceSearcher(
@@ -152,13 +153,16 @@ class TestResourceSearcher(BaseMockTest):
             ),
             cache_expire=1,
         )
-        docs = rs.query("john", refresh_data=True)
+        docs = rs.query("john", refresh_data=True, verbose=True)
         for doc in docs:
             ec2_name = doc[RAW_DATA][_RES]["Tags"][0]["Value"]
             assert "john" in ec2_name
             arn = doc[RAW_DATA][_OUT]["arn"]
             assert arn.startswith("arn:")
 
+    def test(self):
+        print("")
+        self._test()
 
 if __name__ == "__main__":
     from aws_resource_search.tests.helper import run_cov_test
