@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import moto
-from aws_resource_search.constants import TokenTypeEnum, _ITEM, _RESULT
+from aws_resource_search.constants import TokenTypeEnum, _RES, _OUT
 from aws_resource_search.data.request import Request
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint

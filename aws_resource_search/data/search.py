@@ -8,7 +8,7 @@ import sayt.api as sayt
 from aws_console_url.api import AWSConsole
 
 from ..constants import (
-    FieldTypeEnum, _ITEM, _RESULT, RAW_ITEM, RAW_RESULT,
+    FieldTypeEnum, _RES, _OUT, RAW_RES, RAW_RESULT,
 )
 from .common import BaseModel
 from .token import evaluate_token
@@ -60,14 +60,14 @@ class Search(BaseModel):
         super().__post_init__()
         self.fields.extend([
             Field(
-                name=RAW_ITEM,
+                name=RAW_RES,
                 type=FieldTypeEnum.Stored.value,
-                value=f"${_ITEM}",
+                value=f"${_RES}",
             ),
             Field(
                 name=RAW_RESULT,
                 type=FieldTypeEnum.Stored.value,
-                value=f"${_RESULT}",
+                value=f"${_OUT}",
             ),
         ])
 
