@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+"""
+This module implements the logic to parse ``${service_id}.${resource_type}.output``
+json node, and extract additional data from the AWS resource data returned by
+ boto3 API request.
+"""
+
 import typing as T
 import dataclasses
 
@@ -29,11 +35,14 @@ class Attribute(BaseModel):
     type: str = dataclasses.field()
     token: T.Any = dataclasses.field()
 
-    def evaluate(
-        self,
-        data: T_EVAL_DATA,
-    ):
+    def evaluate(self, data: T_EVAL_DATA):
         return evaluate_token(self.token, data)
+
+
+def parse_out_json_node(
+    dct: T.Dict[str, T.Any]
+) -> T.Dict[str, "Attribute"]:  # pragma: no cover
+    return {k: Attribute.from_dict(v) for k, v in dct.items()}
 
 
 def extract_output(

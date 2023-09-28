@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import moto
 from aws_resource_search.constants import TokenTypeEnum, _RES, _CTX, _OUT
-from aws_resource_search.data.output import Attribute, extract_output
+from aws_resource_search.data.output import (
+    Attribute,
+    parse_out_json_node,
+    extract_output,
+)
 
 from rich import print as rprint
 
@@ -18,22 +21,24 @@ class Test:
 
     def _test_extract_output(self):
         data = extract_output(
-            output={
-                "arn": Attribute(
-                    type="str",
-                    token={
-                        "type": TokenTypeEnum.sub,
-                        "kwargs": {
-                            "template": "arn:aws:s3:{aws_region}:{aws_account_id}:bucket/{bucket}",
-                            "params": {
-                                "bucket": f"${_RES}.Name",
-                                "aws_region": f"${_CTX}.AWS_REGION",
-                                "aws_account_id": f"${_CTX}.AWS_ACCOUNT_ID",
+            output=parse_out_json_node(
+                {
+                    "arn": {
+                        "type": "str",
+                        "token": {
+                            "type": TokenTypeEnum.sub,
+                            "kwargs": {
+                                "template": "arn:aws:s3:{aws_region}:{aws_account_id}:bucket/{bucket}",
+                                "params": {
+                                    "bucket": f"${_RES}.Name",
+                                    "aws_region": f"${_CTX}.AWS_REGION",
+                                    "aws_account_id": f"${_CTX}.AWS_ACCOUNT_ID",
+                                },
                             },
                         },
                     },
-                ),
-            },
+                }
+            ),
             resource={
                 "Name": "my-bucket",
             },

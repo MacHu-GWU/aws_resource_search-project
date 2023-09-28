@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+This module implements the logic to parse ``${service_id}.${resource_type}.request``
+json node, and send the right boto3 API request to get AWS resource data.
+"""
+
 import typing as T
 import dataclasses
 
@@ -47,7 +52,7 @@ class Request(BaseModel):
         ...     method="list_buckets", # boto3.client("s3").list_buckets(**kwargs)
         ...     kwargs={}, # there's no kwargs required
         ...     is_paginator=False, # it is not a paginator
-        ...     items_path="$Buckets", # how to locate list of bucket details in the response object
+        ...     result_path="$Buckets", # how to locate list of bucket details in the response object
         ... )
         >>> bsm = BotoSesManager(profile_name="my_aws_profile")
         >>> for resource in request.send(bsm):
@@ -77,7 +82,7 @@ class Request(BaseModel):
         ``PaginationConfig`` 参数.
     :param is_paginator: 表示这个 API 是否是用的 paginator, 如果是的话, 我们调用 API 的
         逻辑会略有不同.
-    :param items_path: 用来从 Response 中获取代表着很多 AWS 资源的列表的 jmespath 表达式.
+    :param result_path: 用来从 Response 中获取代表着很多 AWS 资源的列表的 jmespath 表达式.
         例如对于 ``s3_client.list_buckets`` 来说就是 ``$Buckets``, 而对于
         ``ec2_client.describe_instances`` 来说就是 ``$Reservations[].Instances[]``.
     :param result: 是一个 result selector, 用 jmespath 表达式来描述如何从
@@ -89,7 +94,7 @@ class Request(BaseModel):
     method: str = dataclasses.field(default=NOTHING)
     kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
     is_paginator: bool = dataclasses.field(default=NOTHING)
-    items_path: str = dataclasses.field(default=NOTHING)
+    result_path: str = dataclasses.field(default=NOTHING)
 
     @classmethod
     def from_dict(cls, dct: T.Dict[str, T.Any]):
@@ -101,19 +106,21 @@ class Request(BaseModel):
         boto_kwargs: T.Optional[dict] = None,
     ) -> T.Iterator[T_RESOURCE]:
         boto_client = bsm.get_client(self.client)
-        if boto_kwargs is not None:
+        if boto_kwargs is not None:  # pragma: no cover
             kwargs = boto_kwargs
+            for k, v in self.kwargs.items():
+                kwargs.setdefault(k, v)
         else:
             kwargs = self.kwargs
         if self.is_paginator:
             paginator = boto_client.get_paginator(self.method)
-            expr = jmespath.compile(self.items_path[1:])
+            expr = jmespath.compile(self.result_path[1:])
             for response in paginator.paginate(**kwargs):
                 yield from expr.search(response)
         else:
             method = getattr(boto_client, self.method)
             response = method(**kwargs)
-            expr = jmespath.compile(self.items_path[1:])
+            expr = jmespath.compile(self.result_path[1:])
             yield from expr.search(response)
 
     def send(
@@ -125,3 +132,7 @@ class Request(BaseModel):
         todo: add docstring
         """
         return ResourceIterproxy(self._send(bsm, boto_kwargs))
+
+
+def parse_req_json_node(dct: T.Dict[str, T.Any]) -> Request:  # pragma: no cover
+    return Request.from_dict(dct)

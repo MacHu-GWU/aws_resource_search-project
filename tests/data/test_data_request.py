@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import moto
-from aws_resource_search.constants import TokenTypeEnum, _RES, _OUT
 from aws_resource_search.data.request import Request
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
@@ -18,14 +17,14 @@ class Test(BaseMockTest):
             client="ec2",
             method="describe_instances",
             is_paginator=True,
-            items_path="$Reservations[].Instances[] || `[]`",
+            result_path="$Reservations[].Instances[] || `[]`",
         )
         assert req.to_dict() == {
             "client": "ec2",
             "method": "describe_instances",
             "kwargs": {},
             "is_paginator": True,
-            "items_path": "$Reservations[].Instances[] || `[]`",
+            "result_path": "$Reservations[].Instances[] || `[]`",
         }
         assert (
             Request.from_dict(
@@ -34,7 +33,7 @@ class Test(BaseMockTest):
                     "method": "describe_instances",
                     "kwargs": {},
                     "is_paginator": True,
-                    "items_path": "$Reservations[].Instances[] || `[]`",
+                    "result_path": "$Reservations[].Instances[] || `[]`",
                 }
             )
             == req
@@ -61,7 +60,7 @@ class Test(BaseMockTest):
             client="s3",
             method="list_buckets",
             is_paginator=False,
-            items_path="$Buckets",
+            result_path="$Buckets",
         )
         assert len(request.send(self.bsm).all()) == 0
 
@@ -82,7 +81,7 @@ class Test(BaseMockTest):
                 )
             ),
             is_paginator=True,
-            items_path="$Groups",
+            result_path="$Groups",
         )
         assert len(request.send(self.bsm).all()) == 0
 
