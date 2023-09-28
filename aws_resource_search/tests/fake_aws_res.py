@@ -19,6 +19,7 @@ envs = ["sbx", "tst", "prd"]
 class FakeAws(BaseMockTest):
     mock_list = [
         moto.mock_cloudformation,
+        moto.mock_dynamodb,
         moto.mock_ec2,
         moto.mock_glue,
         moto.mock_iam,
@@ -57,6 +58,42 @@ class FakeAws(BaseMockTest):
             )
 
     @classmethod
+    def create_dynamodb_table(cls):
+        for ith in range(1, 1 + 10):
+            env = random.choice(envs)
+            table = f"{env}-{guid}-{ith}-dynamodb-table"
+            kwargs = dict(
+                TableName=table,
+                AttributeDefinitions=[
+                    dict(
+                        AttributeName="pk",
+                        AttributeType="S",
+                    ),
+                ],
+                KeySchema=[
+                    dict(
+                        AttributeName="pk",
+                        KeyType="HASH",
+                    )
+                ],
+                BillingMode="PAY_PER_REQUEST",
+            )
+            if random.randint(1, 100) <= 30:
+                kwargs["AttributeDefinitions"].append(
+                    dict(
+                        AttributeName="sk",
+                        AttributeType="S",
+                    )
+                )
+                kwargs["KeySchema"].append(
+                    dict(
+                        AttributeName="sk",
+                        KeyType="RANGE",
+                    )
+                )
+            cls.bsm.dynamodb_client.create_table(**kwargs)
+
+    @classmethod
     def create_ec2_inst(cls):
         image_id = cls.bsm.ec2_client.describe_images()["Images"][0]["ImageId"]
 
@@ -71,7 +108,9 @@ class FakeAws(BaseMockTest):
                 kwargs["TagSpecifications"] = [
                     dict(
                         ResourceType="instance",
-                        Tags=[dict(Key="Name", Value=f"{env}-{guid}-{ith}-ec2-instance")],
+                        Tags=[
+                            dict(Key="Name", Value=f"{env}-{guid}-{ith}-ec2-instance")
+                        ],
                     )
                 ]
             cls.bsm.ec2_client.run_instances(**kwargs)

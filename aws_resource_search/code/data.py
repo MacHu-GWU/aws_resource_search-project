@@ -25,6 +25,10 @@ def reformat_path_data_json():
         resource_type_list = [k for k in sub_data if not k.startswith("_")]
         resource_type_list.sort()
         for resource_type in resource_type_list:
-            new_sub_data[resource_type] = sub_data[resource_type]
-        new_data[service_id] = sub_data
+            if resource_type.startswith(f"{service_id}-"):
+                new_resource_type = resource_type
+            else:
+                new_resource_type = f"{service_id}-{resource_type}"
+            new_sub_data[new_resource_type] = sub_data[resource_type]
+        new_data[service_id] = new_sub_data
     path_data_json.write_text(json.dumps(new_data, indent=4))

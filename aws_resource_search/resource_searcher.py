@@ -200,6 +200,7 @@ class ResourceSearcher:
 
         with TimeTimer(display=False) as timer:
             res_list = self.request.send(self.bsm, _boto_kwargs=final_boto_kwargs)
+            res_list = res_list.all()
             context = self.context
             doc_list = [
                 extract_document(
@@ -212,6 +213,7 @@ class ResourceSearcher:
                 )
                 for res in res_list
             ]
+        # print(doc_list[0])
         logger.info(f"pull data, elapsed: {timer.elapsed:.3f}s")
         logger.info(f"got {len(doc_list)} documents")
         self.cache.set(
@@ -247,8 +249,9 @@ class ResourceSearcher:
         limit: int = 20,
         boto_kwargs: T.Optional[dict] = None,
         refresh_data: bool = False,
+        simple_response: bool = False,
         verbose: bool = False,
-    ):
+    ) -> T.Union[Result, T.List[dict]]:
         """
         The main public API for AWS Resource Search.
 
@@ -299,4 +302,7 @@ class ResourceSearcher:
                     with logger.indent():
                         self._refresh_data(final_boto_kwargs)
                     result = self._search(q=q, limit=limit)
+
+            if simple_response: # pragma: no cover
+                result = [hit["_source"] for hit in result["hits"]]
             return result
