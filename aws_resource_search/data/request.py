@@ -1,48 +1,21 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
-import copy
 import dataclasses
 
 import jmespath
 from iterproxy import IterProxy
 
-from ..constants import (
-    AWS_ACCOUNT_ID,
-    AWS_REGION,
-    _ITEM,
-    _RESULT,
-)
 from .common import BaseModel, NOTHING
-from .types import T_RESULT_ITEM
-from .token import evaluate_token
+from .types import T_RESOURCE
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager import BotoSesManager
 
 
-class ResultItemIterproxy(IterProxy[T_RESULT_ITEM]):
+class ResourceIterproxy(IterProxy[T_RESOURCE]):
     pass
-
-
-@dataclasses.dataclass
-class Attribute(BaseModel):
-    """
-    代表了 :attr:`Request.result` 中的一个属性. 这个属性是一个可以被 evaluate 的
-    :class:`aws_resource_search.data.token.BaseToken`.
-
-    """
-
-    type: str = dataclasses.field()
-    value: T.Any = dataclasses.field()
-
-    def evaluate(
-        self,
-        item: T.Dict[str, T.Any],
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ):
-        return evaluate_token(self.value, item, context)
 
 
 @dataclasses.dataclass
@@ -61,9 +34,9 @@ class Request(BaseModel):
     :param items_path: 用来从 Response 中获取代表着很多 AWS 资源的列表的 jmespath 表达式.
         例如对于 ``s3_client.list_buckets`` 来说就是 ``$Buckets``, 而对于
         ``ec2_client.describe_instances`` 来说就是 ``$Reservations[].Instances[]``.
-    :param result: 用 jmespath 表达式来描述如何从 Response 中获取到我们想要的结果. 例如
-        筛选部分字段, 重命名字段, 或者用 :class:`~aws_resource_search.data.token.Token`
-        来获取更复杂的结果.
+    :param result: 是一个 result selector, 用 jmespath 表达式来描述如何从
+        raw Response item 中以及 context data (通常是 aws_account_id 和 aws_region)
+        中提取出我们想要的数据, 丰富 raw Response item.
 
     **Usage Example**
 
@@ -140,38 +113,16 @@ class Request(BaseModel):
     kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
     is_paginator: bool = dataclasses.field(default=NOTHING)
     items_path: str = dataclasses.field(default=NOTHING)
-    result: T.Dict[str, Attribute] = dataclasses.field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, dct: T.Dict[str, T.Any]):
-        dct = copy.deepcopy(dct)
-        dct["result"] = {
-            key: Attribute.from_dict(value)
-            for key, value in dct.get("result", dict()).items()
-        }
         return cls(**dct)
 
-    def _select_result(
-        self,
-        item: T_RESULT_ITEM,
-        context: T.Optional[T.Dict[str, T.Any]] = None,
-    ) -> T_RESULT_ITEM:
-        result = {_ITEM: item, _RESULT: {}}
-        if self.result is None:
-            return result
-        for key, attribute in self.result.items():
-            result[_RESULT][key] = attribute.evaluate(item, context)
-        return result
-
-    def _invoke(
+    def _send(
         self,
         bsm: "BotoSesManager",
         boto_kwargs: T.Optional[dict] = None,
-    ) -> T.Iterator[T_RESULT_ITEM]:
-        context = {
-            AWS_ACCOUNT_ID: bsm.aws_account_id,
-            AWS_REGION: bsm.aws_region,
-        }
+    ) -> T.Iterator[T_RESOURCE]:
         boto_client = bsm.get_client(self.client)
         if boto_kwargs is not None:
             kwargs = boto_kwargs
@@ -181,21 +132,19 @@ class Request(BaseModel):
             paginator = boto_client.get_paginator(self.method)
             expr = jmespath.compile(self.items_path[1:])
             for response in paginator.paginate(**kwargs):
-                for item in expr.search(response):
-                    yield self._select_result(item, context)
+                yield from expr.search(response)
         else:
             method = getattr(boto_client, self.method)
             response = method(**kwargs)
             expr = jmespath.compile(self.items_path[1:])
-            for item in expr.search(response):
-                yield self._select_result(item, context)
+            yield from expr.search(response)
 
-    def invoke(
+    def send(
         self,
         bsm: "BotoSesManager",
         boto_kwargs: T.Optional[dict] = None,
-    ) -> ResultItemIterproxy:
+    ) -> ResourceIterproxy:
         """
         todo: add docstring
         """
-        return ResultItemIterproxy(self._invoke(bsm, boto_kwargs))
+        return ResourceIterproxy(self._send(bsm, boto_kwargs))

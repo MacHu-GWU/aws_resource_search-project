@@ -2,28 +2,23 @@
 
 import moto
 from aws_resource_search.constants import TokenTypeEnum, _ITEM, _RESULT
-from aws_resource_search.data.request import Attribute, Request
+from aws_resource_search.data.request import Request
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
 
 
-class TestAttribute:
-    def test(self):
-        attr = Attribute(type="str", value="hello")
-        assert attr.to_dict() == {"type": "str", "value": "hello"}
-        assert Attribute.from_dict({"type": "str", "value": "hello"}) == attr
+class Test(BaseMockTest):
+    mock_list = [
+        moto.mock_s3,
+        moto.mock_iam,
+    ]
 
-
-class TestRequest:
-    def test(self):
+    def _test_Request_seder(self):
         req = Request(
             client="ec2",
             method="describe_instances",
             is_paginator=True,
             items_path="$Reservations[].Instances[] || `[]`",
-            result={
-                "arn": Attribute.from_dict({"type": "str", "value": "ec2_arn"}),
-            },
         )
         assert req.to_dict() == {
             "client": "ec2",
@@ -31,7 +26,6 @@ class TestRequest:
             "kwargs": {},
             "is_paginator": True,
             "items_path": "$Reservations[].Instances[] || `[]`",
-            "result": {"arn": {"type": "str", "value": "ec2_arn"}},
         }
         assert (
             Request.from_dict(
@@ -41,18 +35,10 @@ class TestRequest:
                     "kwargs": {},
                     "is_paginator": True,
                     "items_path": "$Reservations[].Instances[] || `[]`",
-                    "result": {"arn": {"type": "str", "value": "ec2_arn"}},
                 }
             )
             == req
         )
-
-
-class TestS3AndIamRequest(BaseMockTest):
-    mock_list = [
-        moto.mock_s3,
-        moto.mock_iam,
-    ]
 
     def _create_test_buckets(self):
         self.bucket_names = [
@@ -70,60 +56,22 @@ class TestS3AndIamRequest(BaseMockTest):
         for iam_group_name in self.iam_group_names:
             self.bsm.iam_client.create_group(GroupName=iam_group_name)
 
-    def test_no_paginator(self):
+    def _test_s3_not_paginator(self):
         request = Request(
             client="s3",
             method="list_buckets",
             is_paginator=False,
             items_path="$Buckets",
-            result={
-                "name": Attribute.from_dict({"type": "str", "value": "$Name"}),
-                "message": Attribute.from_dict({"type": "str", "value": "hello"}),
-            },
         )
-        assert len(request.invoke(self.bsm).all()) == 0
+        assert len(request.send(self.bsm).all()) == 0
 
         self._create_test_buckets()
 
-        res = request.invoke(self.bsm).all()
-        assert res[0][_RESULT]["name"] == "company-data"
-        assert res[0][_RESULT]["message"] == "hello"
-        assert res[1][_RESULT]["name"] == "enterprise-data"
-        assert res[1][_RESULT]["message"] == "hello"
-        assert set(res[1]) == {_ITEM, _RESULT}
+        res = request.send(self.bsm).all()
+        assert res[0]["Name"] == "company-data"
+        assert res[1]["Name"] == "enterprise-data"
 
-        # ----------------------------------------------------------------------
-        request.result = None
-        item = request.invoke(self.bsm).one()["_item"]
-        assert set(item) == {"Name", "CreationDate"}
-
-        # ----------------------------------------------------------------------
-        request.result = {
-            "Arn": Attribute.from_dict(
-                {
-                    "type": "str",
-                    "value": {
-                        "type": TokenTypeEnum.sub,
-                        "kwargs": {
-                            "template": "arn:aws:s3:{AWS_REGION}:{AWS_ACCOUNT_ID}:bucket/{bucket}",
-                            "params": {"bucket": "$Name"},
-                        },
-                    },
-                }
-            ),
-        }
-
-        res = request.invoke(self.bsm).all()
-        assert (
-            res[0][_RESULT]["Arn"]
-            == "arn:aws:s3:us-east-1:123456789012:bucket/company-data"
-        )
-        assert (
-            res[1][_RESULT]["Arn"]
-            == "arn:aws:s3:us-east-1:123456789012:bucket/enterprise-data"
-        )
-
-    def test_paginator(self):
+    def _test_iam_is_paginator(self):
         request = Request(
             client="iam",
             method="list_groups",
@@ -136,12 +84,18 @@ class TestS3AndIamRequest(BaseMockTest):
             is_paginator=True,
             items_path="$Groups",
         )
-        assert len(request.invoke(self.bsm).all()) == 0
+        assert len(request.send(self.bsm).all()) == 0
 
         self._create_test_iam_groups()
-        res = request.invoke(self.bsm).all()
+        res = request.send(self.bsm).all()
         assert len(res) == 2
-        assert [item[_ITEM]["GroupName"] for item in res] == self.iam_group_names
+        assert res[0]["GroupName"] == "admin_group"
+        assert res[1]["GroupName"] == "developer_group"
+
+    def test(self):
+        self._test_Request_seder()
+        self._test_s3_not_paginator()
+        self._test_iam_is_paginator()
 
 
 if __name__ == "__main__":
