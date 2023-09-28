@@ -19,6 +19,8 @@ _OUT = "_out"
 RAW_DATA = "raw_data"
 CONSOLE_URL = "console_url"
 
+SEP = "____" # separator
+
 
 class DataTypeEnum(BetterStrEnum):
     """

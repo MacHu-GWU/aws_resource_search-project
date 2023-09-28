@@ -21,9 +21,7 @@ fake = Faker()
 
 
 class TestResourceSearcher(BaseMockTest):
-    mock_list = [
-        moto.mock_ec2,
-    ]
+    mock_list = [moto.mock_ec2, moto.mock_glue]
 
     def _create_test_ec2(self):
         image_id = self.bsm.ec2_client.describe_images()["Images"][0]["ImageId"]
@@ -65,7 +63,33 @@ class TestResourceSearcher(BaseMockTest):
                 ]
             self.bsm.ec2_client.run_instances(**kwargs)
 
-    def _test(self):
+    def _create_test_glue(self):
+        db_name_1 = f"dev_db"
+        db_name_2 = f"prd_db"
+        for db_name in [db_name_1, db_name_2]:
+            self.bsm.glue_client.create_database(
+                DatabaseInput=dict(Name=db_name),
+            )
+
+        for ith in range(1, 1 + 2):
+            tb_name = f"dev_table_{ith}"
+            self.bsm.glue_client.create_table(
+                DatabaseName=db_name_1,
+                TableInput=dict(
+                    Name=tb_name,
+                ),
+            )
+
+        for ith in range(1, 1 + 3):
+            tb_name = f"dev_table_{ith}"
+            self.bsm.glue_client.create_table(
+                DatabaseName=db_name_2,
+                TableInput=dict(
+                    Name=tb_name,
+                ),
+            )
+
+    def _test_ec2(self):
         self._create_test_ec2()
 
         rs = ResourceSearcher(
@@ -160,9 +184,75 @@ class TestResourceSearcher(BaseMockTest):
             arn = doc[RAW_DATA][_OUT]["arn"]
             assert arn.startswith("arn:")
 
+    def _test_glue(self):
+        self._create_test_glue()
+
+        rs = ResourceSearcher(
+            bsm=self.bsm,
+            aws_console=aws_console_url.AWSConsole(
+                aws_account_id=self.bsm.aws_account_id,
+                aws_region=self.bsm.aws_region,
+                bsm=self.bsm,
+            ),
+            service_id="glue",
+            resource_type="table",
+            request=parse_req_json_node(
+                {
+                    "client": "glue",
+                    "method": "get_tables",
+                    "kwargs": {"PaginationConfig": {"MaxItems": 1000, "PageSize": 100}},
+                    "is_paginator": True,
+                    "result_path": "$TableList || `[]`",
+                }
+            ),
+            output=parse_out_json_node({}),
+            document=parse_doc_json_node(
+                {
+                    "name": {
+                        "type": "NgramWords",
+                        "token": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "{database}.{table}",
+                                "params": {
+                                    "database": "$_res.DatabaseName",
+                                    "table": "$_res.Name",
+                                },
+                            },
+                        },
+                        "kwargs": {"stored": True},
+                    },
+                }
+            ),
+            url=parse_url_json_node(
+                {
+                    "service_id": "glue",
+                    "method": "get_table",
+                    "kwargs": {
+                        "table_or_arn": "$raw_data._res.Name",
+                        "database": "$raw_data._res.DatabaseName",
+                        "catalog_id": "123456789012",
+                    },
+                }
+            ),
+            cache_expire=1,
+        )
+        db_name = "dev_db"
+        docs = rs.query(
+            "dev",
+            boto_kwargs={"DatabaseName": db_name},
+            refresh_data=True,
+            verbose=True,
+        )
+        for doc in docs:
+            rprint(doc)
+            assert doc["name"].startswith(f"{db_name}.")
+
     def test(self):
         print("")
-        self._test()
+        # self._test_ec2()
+        self._test_glue()
+
 
 if __name__ == "__main__":
     from aws_resource_search.tests.helper import run_cov_test

@@ -13,7 +13,7 @@ from fixa.timer import TimeTimer
 from .logger import logger
 from .compat import cached_property
 from .paths import dir_index, dir_cache
-from .constants import CONSOLE_URL
+from .constants import CONSOLE_URL, SEP
 from .data.request import Request
 from .data.output import Attribute, extract_output
 from .data.document import Field, extract_document
@@ -25,7 +25,6 @@ def get_boto_session_fingerprint(bsm: "BotoSesManager") -> str:
     Get the logical unique fingerprint of the boto3 session. It is used in
     the index name and cache key.
     """
-    sep = "----"
     parts = []
     if bsm.profile_name is None:
         parts.append(bsm.aws_account_id)
@@ -34,7 +33,7 @@ def get_boto_session_fingerprint(bsm: "BotoSesManager") -> str:
         parts.append(bsm.profile_name)
         if bsm.aws_region is not None:
             parts.append(bsm.aws_region)
-    return sep.join(parts)
+    return SEP.join(parts)
 
 
 @dataclasses.dataclass
@@ -78,7 +77,7 @@ class ResourceSearcher:
 
     @cached_property
     def index_name(self) -> str:
-        return f"{get_boto_session_fingerprint(self.bsm)}-{self.service_id}-{self.resource_type}"
+        return f"{get_boto_session_fingerprint(self.bsm)}{SEP}{self.service_id}{SEP}{self.resource_type}"
 
     @cached_property
     def cache_key(self) -> str:
@@ -87,7 +86,7 @@ class ResourceSearcher:
         以及你所要搜索的资源的 service_id, resource_type 组成. 这个 key 最终也会被用于
         构成 Query 结果的 cache key.
         """
-        return f"{get_boto_session_fingerprint(self.bsm)}-{self.service_id}-{self.resource_type}"
+        return f"{get_boto_session_fingerprint(self.bsm)}{SEP}{self.service_id}{SEP}{self.resource_type}"
 
     @cached_property
     def cache_tag(self) -> str:
@@ -161,6 +160,7 @@ class ResourceSearcher:
     ):
         with logger.disabled(disable=not verbose):
             logger.info(f"query: {q!r}")
+            print(self.cache_key)
             if refresh_data:  # force refresh data
                 self._refresh_data(boto_kwargs=boto_kwargs)
             elif self.cache_key not in self.cache:
