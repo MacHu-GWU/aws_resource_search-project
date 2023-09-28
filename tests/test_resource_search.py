@@ -177,8 +177,9 @@ class TestResourceSearcher(BaseMockTest):
             ),
             cache_expire=1,
         )
-        docs = rs.query("john", refresh_data=True, verbose=True)
-        for doc in docs:
+        result = rs.search("john", refresh_data=True, verbose=True)
+        for hit in result["hits"]:
+            doc = hit["_source"]
             ec2_name = doc[RAW_DATA][_RES]["Tags"][0]["Value"]
             assert "john" in ec2_name
             arn = doc[RAW_DATA][_OUT]["arn"]
@@ -201,6 +202,7 @@ class TestResourceSearcher(BaseMockTest):
                     "client": "glue",
                     "method": "get_tables",
                     "kwargs": {"PaginationConfig": {"MaxItems": 1000, "PageSize": 100}},
+                    "cache_key": ["$DatabaseName"],
                     "is_paginator": True,
                     "result_path": "$TableList || `[]`",
                 }
@@ -238,20 +240,38 @@ class TestResourceSearcher(BaseMockTest):
             cache_expire=1,
         )
         db_name = "dev_db"
-        docs = rs.query(
+        result = rs.search(
             "dev",
             boto_kwargs={"DatabaseName": db_name},
             refresh_data=True,
             verbose=True,
         )
-        for doc in docs:
-            rprint(doc)
+        # rprint(result)
+        for hit in result["hits"]:
+            doc = hit["_source"]
+            # print(doc["name"])
+            assert doc["name"].startswith(f"{db_name}.")
+
+        result = rs.search(
+            "dev",
+            boto_kwargs={"DatabaseName": db_name},
+            refresh_data=False,
+            verbose=True,
+        )
+        # rprint(result)
+        for hit in result["hits"]:
+            doc = hit["_source"]
+            # print(doc["name"])
             assert doc["name"].startswith(f"{db_name}.")
 
     def test(self):
         print("")
-        # self._test_ec2()
-        self._test_glue()
+        with logger.disabled(
+            disable=True,  # no log,
+            # disable=False, # show log
+        ):
+            self._test_ec2()
+            self._test_glue()
 
 
 if __name__ == "__main__":

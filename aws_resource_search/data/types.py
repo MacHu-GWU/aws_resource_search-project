@@ -12,6 +12,8 @@ T_DATA = T.Dict[str, T.Any]
 T_RESOURCE = T.Union[T_DATA, str]
 # the data that can be evaluated by token
 T_EVAL_DATA = T.Optional[T.Union[T_DATA, list, str, int, float, bool]]
+# the token that can be evaluated
+T_TOKEN = T.Any
 
 
 class T_OUTPUT(T.TypedDict):

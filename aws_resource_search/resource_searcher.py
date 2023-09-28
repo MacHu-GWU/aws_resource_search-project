@@ -2,10 +2,12 @@
 
 import typing as T
 import dataclasses
+import contextlib
 from pathlib import Path
 
 from diskcache import Cache
 import sayt.api as sayt
+from sayt.dataset import Result
 from boto_session_manager import BotoSesManager
 import aws_console_url.api as aws_console_url
 from fixa.timer import TimeTimer
@@ -14,6 +16,7 @@ from .logger import logger
 from .compat import cached_property
 from .paths import dir_index, dir_cache
 from .constants import CONSOLE_URL, SEP
+from .data.types import T_DATA
 from .data.request import Request
 from .data.output import Attribute, extract_output
 from .data.document import Field, extract_document
@@ -77,7 +80,13 @@ class ResourceSearcher:
 
     @cached_property
     def index_name(self) -> str:
-        return f"{get_boto_session_fingerprint(self.bsm)}{SEP}{self.service_id}{SEP}{self.resource_type}"
+        return SEP.join(
+            [
+                get_boto_session_fingerprint(self.bsm),
+                self.service_id,
+                self.resource_type,
+            ]
+        )
 
     @cached_property
     def cache_key(self) -> str:
@@ -86,7 +95,13 @@ class ResourceSearcher:
         以及你所要搜索的资源的 service_id, resource_type 组成. 这个 key 最终也会被用于
         构成 Query 结果的 cache key.
         """
-        return f"{get_boto_session_fingerprint(self.bsm)}{SEP}{self.service_id}{SEP}{self.resource_type}"
+        return SEP.join(
+            [
+                get_boto_session_fingerprint(self.bsm),
+                self.service_id,
+                self.resource_type,
+            ]
+        )
 
     @cached_property
     def cache_tag(self) -> str:
@@ -95,7 +110,13 @@ class ResourceSearcher:
         过期后, 才需要清理掉所有这个数据集所有的 Query 的缓存. 同样, 这个 Tag 也是由
         boto session 的 fingerprint, service_id, resource_type 组成.
         """
-        return f"{get_boto_session_fingerprint(self.bsm)}-{self.service_id}-{self.resource_type}"
+        return SEP.join(
+            [
+                get_boto_session_fingerprint(self.bsm),
+                self.service_id,
+                self.resource_type,
+            ]
+        )
 
     @cached_property
     def sayt_dataset(self) -> sayt.DataSet:
@@ -116,17 +137,69 @@ class ResourceSearcher:
             "AWS_REGION": self.bsm.aws_region,
         }
 
-    def _refresh_data(self, boto_kwargs: T.Optional[dict] = None):
+    def _process_boto_kwargs(
+        self,
+        boto_kwargs: T.Optional[dict] = None,
+    ) -> T.Tuple[T_DATA, str, T.Union[str, T.Tuple[str, ...]], str]:
+        """
+        Sometime the :meth:`ResourceSearcher.index_name` / :meth:`ResourceSearcher.cache_key`
+        is not enough to isolate boto API response based on different arguments.
+        For example, the AWS Glue get_tables method requires the database name as an argument.
+        We should use the ``ResourceSearcher.cache_key`` / ``ResourceSearcher.cache_key``,
+        plus the database name as the index name / cache key.
+
+        :param boto_kwargs: The user provided boto3 API call arguments, which will
+            be used to generate the final boto kwargs.
+
+        :return: tuple of final_boto_kwargs, index_name_for_data_pull, cache_key_for_data_pull,
+            cache_tag_for_cache_remove
+        """
+        final_boto_kwargs = self.request._merge_boto_kwargs(boto_kwargs, self.context)
+        more_cache_keys = self.request._get_additional_cache_key(final_boto_kwargs)
+        index_name_for_data_pull = SEP.join((self.index_name, *more_cache_keys))
+        cache_key_for_data_pull = (self.cache_key, *more_cache_keys)
+        cache_tag_for_cache_remove = SEP.join((self.cache_tag, *more_cache_keys))
+        return (
+            final_boto_kwargs,
+            index_name_for_data_pull,
+            cache_key_for_data_pull,
+            cache_tag_for_cache_remove,
+        )
+
+    @contextlib.contextmanager
+    def _temp_sayt(
+        self,
+        index_name: str,
+        cache_key: str,
+        cache_tag: str,
+    ):
+        existing_index_name = self.sayt_dataset.index_name
+        existing_cache_key = self.sayt_dataset.cache_key
+        existing_cache_tag = self.sayt_dataset.cache_tag
+        try:
+            self.sayt_dataset.index_name = index_name
+            self.sayt_dataset.cache_key = cache_key
+            self.sayt_dataset.cache_tag = cache_tag
+            yield self
+        finally:
+            self.sayt_dataset.index_name = existing_index_name
+            self.sayt_dataset.cache_key = existing_cache_key
+            self.sayt_dataset.cache_tag = existing_cache_tag
+
+    def _refresh_data(
+        self,
+        final_boto_kwargs: T.Optional[dict] = None,
+    ):
         with TimeTimer(display=False) as timer:
             self.sayt_dataset.remove_index()
-        logger.info(f"remove index time: {timer.elapsed:.3f}s")
+        logger.info(f"remove index, elapsed: {timer.elapsed:.3f}s")
 
         with TimeTimer(display=False) as timer:
             self.sayt_dataset.remove_cache()
-        logger.info(f"remove cache time: {timer.elapsed:.3f}s")
+        logger.info(f"remove cache, elapsed: {timer.elapsed:.3f}s")
 
         with TimeTimer(display=False) as timer:
-            res_list = self.request.send(self.bsm, boto_kwargs)
+            res_list = self.request.send(self.bsm, _boto_kwargs=final_boto_kwargs)
             context = self.context
             doc_list = [
                 extract_document(
@@ -139,7 +212,8 @@ class ResourceSearcher:
                 )
                 for res in res_list
             ]
-        logger.info(f"pull data time: {timer.elapsed:.3f}s")
+        logger.info(f"pull data, elapsed: {timer.elapsed:.3f}s")
+        logger.info(f"got {len(doc_list)} documents")
         self.cache.set(
             self.cache_key,
             1,
@@ -147,10 +221,27 @@ class ResourceSearcher:
             tag=self.cache_tag,
         )
         with TimeTimer(display=False) as timer:
+            logger.info(f"build {self.sayt_dataset.normalized_index_name!r} index")
             self.sayt_dataset.build_index(doc_list, rebuild=False)
-        logger.info(f"build index time: {timer.elapsed:.3f}s")
+        logger.info(f"build index, elapsed: {timer.elapsed:.3f}s")
 
-    def query(
+    def _search(
+        self,
+        q: str,
+        limit: int = 20,
+    ) -> Result:
+        logger.info(f"search on {self.sayt_dataset.normalized_index_name!r} index")
+        result = self.sayt_dataset.search(q, limit=limit, simple_response=False)
+        for hit in result["hits"]:
+            url = self.url.get(document=hit["_source"], aws_console=self.aws_console)
+            hit["_source"][CONSOLE_URL] = url
+        elapsed = result["took"] / 1000
+        with logger.indent():
+            logger.info(f"search time, elapsed: {elapsed:.3f}s")
+            logger.info(f"hit {result['size']} docs.")
+        return result
+
+    def search(
         self,
         q: str,
         limit: int = 20,
@@ -158,19 +249,54 @@ class ResourceSearcher:
         refresh_data: bool = False,
         verbose: bool = False,
     ):
+        """
+        The main public API for AWS Resource Search.
+
+        :param q:
+        :param limit:
+        :param boto_kwargs:
+        :param refresh_data:
+        :param verbose:
+        """
         with logger.disabled(disable=not verbose):
             logger.info(f"query: {q!r}")
-            print(self.cache_key)
-            if refresh_data:  # force refresh data
-                self._refresh_data(boto_kwargs=boto_kwargs)
-            elif self.cache_key not in self.cache:
-                self._refresh_data(boto_kwargs=boto_kwargs)
+            if self.request.cache_key:
+                (
+                    final_boto_kwargs,
+                    index_name_for_data_pull,
+                    cache_key_for_data_pull,
+                    cache_tag_for_cache_remove,
+                ) = self._process_boto_kwargs(boto_kwargs)
+                need_temp_index_name_and_cache_key = True
             else:
-                pass
-            with TimeTimer(display=False) as timer:
-                docs = self.sayt_dataset.search(q, limit=limit)
-            logger.info(f"search time: {timer.elapsed:.3f}s")
-            for doc in docs:
-                url = self.url.get(document=doc, aws_console=self.aws_console)
-                doc[CONSOLE_URL] = url
-            return docs
+                final_boto_kwargs = self.request._merge_boto_kwargs(
+                    boto_kwargs, self.context
+                )
+                index_name_for_data_pull = self.index_name
+                cache_key_for_data_pull = self.cache_key
+                cache_tag_for_cache_remove = self.cache_tag
+                need_temp_index_name_and_cache_key = False
+            logger.info(f"final_boto_kwargs = {final_boto_kwargs!r}")
+            logger.info(f"index_name_for_data_pull = {index_name_for_data_pull!r}")
+            logger.info(f"cache_key_for_data_pull = {cache_key_for_data_pull!r}")
+            logger.info(f"cache_tag_for_cache_remove = {cache_tag_for_cache_remove!r}")
+            if refresh_data or cache_key_for_data_pull not in self.cache:
+                logger.info("refreshing data ...")
+                if need_temp_index_name_and_cache_key:
+                    logger.info(
+                        f"need_temp_index_name_and_cache_key: {need_temp_index_name_and_cache_key}",
+                        indent=1,
+                    )
+                    with self._temp_sayt(
+                        index_name=index_name_for_data_pull,
+                        cache_key=cache_key_for_data_pull,
+                        cache_tag=cache_tag_for_cache_remove,
+                    ):
+                        with logger.indent():
+                            self._refresh_data(final_boto_kwargs)
+                        result = self._search(q=q, limit=limit)
+                else:
+                    with logger.indent():
+                        self._refresh_data(final_boto_kwargs)
+                    result = self._search(q=q, limit=limit)
+            return result

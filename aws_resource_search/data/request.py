@@ -12,7 +12,8 @@ import jmespath
 from iterproxy import IterProxy
 
 from .common import BaseModel, NOTHING
-from .types import T_RESOURCE
+from .types import T_DATA, T_RESOURCE, T_TOKEN
+from .token import evaluate_token
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
@@ -92,7 +93,8 @@ class Request(BaseModel):
 
     client: str = dataclasses.field(default=NOTHING)
     method: str = dataclasses.field(default=NOTHING)
-    kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
+    kwargs: T.Dict[str, T_TOKEN] = dataclasses.field(default_factory=dict)
+    cache_key: T.List[T_TOKEN] = dataclasses.field(default_factory=list)
     is_paginator: bool = dataclasses.field(default=NOTHING)
     result_path: str = dataclasses.field(default=NOTHING)
 
@@ -100,20 +102,53 @@ class Request(BaseModel):
     def from_dict(cls, dct: T.Dict[str, T.Any]):
         return cls(**dct)
 
+    def _merge_boto_kwargs(
+        self,
+        boto_kwargs: T.Optional[T_DATA] = None,
+        context: T.Optional[T.Dict[str, T.Any]] = None,
+    ) -> T_DATA:
+        """
+        Merge default kwargs into custom boto_kwargs, if a field already exists
+        in boto_kwargs, then do nothing.
+
+        .. note::
+
+            we don't copy boto_kwargs here.
+        """
+        if boto_kwargs is None:
+            return {
+                key: evaluate_token(token, data=context)
+                for key, token in self.kwargs.items()
+            }
+        else:
+            for key, token in self.kwargs.items():
+                if key not in boto_kwargs:
+                    boto_kwargs[key] = evaluate_token(token, data=context)
+            return boto_kwargs
+
+    def _get_additional_cache_key(self, boto_kwargs: T_DATA) -> T.List[str]:
+        """
+        Generate additional cache key for this request.
+
+        :param boto_kwargs: final boto kwargs that will be used to call boto3 API.
+        """
+        return [evaluate_token(token, data=boto_kwargs) for token in self.cache_key]
+
     def _send(
         self,
         bsm: "BotoSesManager",
         boto_kwargs: T.Optional[dict] = None,
+        _boto_kwargs: T.Optional[dict] = None,
     ) -> T.Iterator[T_RESOURCE]:
         boto_client = bsm.get_client(self.client)
-        if boto_kwargs is not None:  # pragma: no cover
-            kwargs = boto_kwargs
-            for k, v in self.kwargs.items():
-                kwargs.setdefault(k, v)
-        else:
-            kwargs = self.kwargs
+        if _boto_kwargs is None:
+            kwargs = self._merge_boto_kwargs(boto_kwargs)
+        else:  # pragma: no cover
+            kwargs = _boto_kwargs
         if self.is_paginator:
             paginator = boto_client.get_paginator(self.method)
+            # since the jmespath expression will be used many times,
+            # we compile it before the for loop
             expr = jmespath.compile(self.result_path[1:])
             for response in paginator.paginate(**kwargs):
                 yield from expr.search(response)
@@ -127,11 +162,16 @@ class Request(BaseModel):
         self,
         bsm: "BotoSesManager",
         boto_kwargs: T.Optional[dict] = None,
+        _boto_kwargs: T.Optional[dict] = None,
     ) -> ResourceIterproxy:
         """
-        todo: add docstring
+        :param bsm:
+        :param boto_kwargs: custom boto kwargs.
+        :param _boto_kwargs: used internally for implementation, end user please
+            don't use it. It is used to pass the final boto_kwargs diretly withou
+            any processing using :meth:`_merge_boto_kwargs`.
         """
-        return ResourceIterproxy(self._send(bsm, boto_kwargs))
+        return ResourceIterproxy(self._send(bsm, boto_kwargs, _boto_kwargs))
 
 
 def parse_req_json_node(dct: T.Dict[str, T.Any]) -> Request:  # pragma: no cover

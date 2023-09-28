@@ -23,6 +23,7 @@ class Test(BaseMockTest):
             "client": "ec2",
             "method": "describe_instances",
             "kwargs": {},
+            "cache_key": [],
             "is_paginator": True,
             "result_path": "$Reservations[].Instances[] || `[]`",
         }
@@ -32,12 +33,58 @@ class Test(BaseMockTest):
                     "client": "ec2",
                     "method": "describe_instances",
                     "kwargs": {},
+                    "cache_key": [],
                     "is_paginator": True,
                     "result_path": "$Reservations[].Instances[] || `[]`",
                 }
             )
             == req
         )
+
+    def _test_Request_merge_boto_kwargs(self):
+        request = Request(
+            client="ec2",
+            method="describe_instances",
+            is_paginator=True,
+            kwargs=dict(
+                PaginationConfig=dict(
+                    MaxItems=9999,
+                    PageSize=1000,
+                )
+            ),
+            result_path="",
+        )
+        assert request._merge_boto_kwargs({"InstanceIds": []}) == {
+            "InstanceIds": [],
+            "PaginationConfig": {
+                "MaxItems": 9999,
+                "PageSize": 1000,
+            },
+        }
+        assert request._merge_boto_kwargs({"PaginationConfig": {}}) == {
+            "PaginationConfig": {},
+        }
+
+        request.client = "glue"
+        request.method = "get_databases"
+        request.kwargs = dict(CatalogId="$AWS_ACCOUNT_ID")
+        assert request._merge_boto_kwargs(
+            None, context={"AWS_ACCOUNT_ID": "123456789012"}
+        ) == {
+            "CatalogId": "123456789012",
+        }
+
+    def _test_Request_get_additional_cache_key(self):
+        request = Request(
+            client="glue",
+            method="get_databases",
+            is_paginator=True,
+            cache_key=["$CatalogId"],
+            result_path="",
+        )
+        assert request._get_additional_cache_key({"CatalogId": "123456789012"}) == [
+            "123456789012"
+        ]
 
     def _create_test_buckets(self):
         self.bucket_names = [
@@ -93,6 +140,8 @@ class Test(BaseMockTest):
 
     def test(self):
         self._test_Request_seder()
+        self._test_Request_merge_boto_kwargs()
+        self._test_Request_get_additional_cache_key()
         self._test_s3_not_paginator()
         self._test_iam_is_paginator()
 
