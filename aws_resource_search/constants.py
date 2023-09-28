@@ -13,10 +13,10 @@ FILTER_API_CACHE_EXPIRE = 1
 AWS_ACCOUNT_ID = "AWS_ACCOUNT_ID"
 AWS_REGION = "AWS_REGION"
 
-_ITEM = "_item"
-_RESULT = "_result"
-RAW_ITEM = "raw_item"
-RAW_RESULT = "raw_result"
+_RES = "_res"
+_CTX = "_ctx"
+_OUT = "_out"
+RAW_DATA = "raw_data"
 
 
 class DataTypeEnum(BetterStrEnum):

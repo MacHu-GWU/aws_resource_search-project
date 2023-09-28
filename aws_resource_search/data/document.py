@@ -7,16 +7,12 @@ json node, and create the searchable document data using AWS resource data and
 """
 
 import typing as T
-import copy
 import dataclasses
 
 import sayt.api as sayt
-from aws_console_url.api import AWSConsole
 
 from ..constants import (
     FieldTypeEnum,
-    _RES,
-    _OUT,
     RAW_DATA,
 )
 from .types import T_OUTPUT, T_EVAL_DATA
@@ -40,6 +36,17 @@ _type_to_field_class_mapper = {
 
 @dataclasses.dataclass
 class Field(BaseModel):
+    """
+    代表了 doc 中一个可以被搜索的字段.
+
+    :param name: 这个字段的名字. 不能以下划线开头.
+    :param type: 用于最终生成 ``whoosh.fields.Field`` 的类型. 必须要是
+        :class:`aws_resource_search.constants.FieldTypeEnum` 中定义的值.
+    :param token: 一个可以被最终 evaluate 的 token.
+    :param kwargs: 用于最终生成 ``whoosh.fields.Field`` 的其他参数, 例如 Ngram 就可以
+        指定 ``minsize`` 和 ``maxsize``.
+    """
+
     name: str = dataclasses.field()
     type: str = dataclasses.field()
     token: T.Any = dataclasses.field()
@@ -65,123 +72,27 @@ def parse_doc_json_node(
 def extract_document(
     document: T.Dict[str, Field],
     output: T_OUTPUT,
-):
+) -> T.Dict[str, T.Any]:
+    """
+    Example:
+
+        >>> extract_document(
+        ...     document={
+        ...         "id": Field(
+        ...             name="id",
+        ...             type="Id",
+        ...             token="$_res.instance_id",
+        ...         ),
+        ...     }
+        ...     output={"_res": {"instance_id": "i-1a2b"}, "_out": {}},
+        ... )
+        {
+            "id": "i-1a2b",
+            'raw_data': {'_res': {'instance_id': 'i-1a2b'}, '_out': {}},
+        }
+    """
     data = {}
     for key, field in document.items():
         data[key] = field.evaluate(output)
     data[RAW_DATA] = output
     return data
-#
-#
-# a = {
-#     "id": "str",
-#     "name": "str",
-#     "raw_data": {
-#         "_res": {},
-#         "_out": {},
-#     },
-# }
-#
-#
-# @dataclasses.dataclass
-# class Search(BaseModel):
-#     """
-#     Defines how to index the result of a :class:`Request`.
-#     """
-#
-#     fields: T.List[Field] = dataclasses.field()
-#     url_getter: UrlGetter = dataclasses.field()
-#
-#     def __post_init__(self):
-#         super().__post_init__()
-#         self.fields.extend(
-#             [
-#                 Field(
-#                     name=RAW_RES,
-#                     type=FieldTypeEnum.Stored.value,
-#                     value=f"${_RES}",
-#                 ),
-#                 Field(
-#                     name=RAW_RESULT,
-#                     type=FieldTypeEnum.Stored.value,
-#                     value=f"${_OUT}",
-#                 ),
-#             ]
-#         )
-#
-#     @classmethod
-#     def from_dict(cls, dct: dict):
-#         dct = copy.deepcopy(dct)
-#         fields = []
-#         for field in dct.get("fields", []):
-#             fields.append(Field(**field))
-#         dct["fields"] = fields
-#         dct["url_getter"] = UrlGetter(**dct["url_getter"])
-#         return cls(**dct)
-#
-#     def _item_to_doc(
-#         self,
-#         item: T.Dict[str, T.Any],
-#     ) -> T.Dict[str, T.Any]:
-#         """
-#         Convert the item into a document that can be indexed by whoosh.
-#
-#
-#         Sample item::
-#             >>> item ={
-#             ...     "${additional_attribute_extracted_by_result_selector}": "...",
-#             ...     "arn": "arn:aws:s3:::my-bucket",
-#             ...     "_item": {
-#             ...         "Bucket": "my-bucket"
-#             ...     },
-#             ... }
-#             >>> fields = [
-#             ...     {
-#             ...         "name": "id",
-#             ...         "type": "Id",
-#             ...         "value": "$arn"
-#             ...     },
-#             ... ]
-#             >>> Search(fields=fields)._item_to_doc(item)
-#             {
-#                 'id': 'arn:aws:s3:::my-bucket',
-#                 'raw_item': {
-#                     'Bucket': 'my-bucket'
-#                 }
-#             }
-#         """
-#         doc = {}
-#         for field in self.fields:
-#             doc[field.name] = evaluate_token(field.value, item)
-#         return doc
-#
-#     def _doc_to_url(
-#         self,
-#         doc: T.Dict[str, T.Any],
-#         console: AWSConsole,
-#     ) -> str:
-#         """
-#         Get the aws console url from the document data. A document usually has a
-#         ``id`` field that can be used as a unique identifier, a human friendly
-#         ``name`` field that can be searched by ngram, and a ``raw_item`` field
-#         that contains the original item data.
-#
-#         Sample document::
-#
-#             {
-#                 "id": ...
-#                 "name": ...
-#                 "console_url": ...
-#                 "raw_item": {
-#                     ...,
-#                     "arn": ...
-#                 }
-#             }
-#         """
-#         kwargs = dict()
-#         for key, value in self.url_getter.kwargs.items():
-#             kwargs[key] = evaluate_token(value, doc)
-#         return getattr(
-#             getattr(console, self.url_getter.service_id),
-#             self.url_getter.method,
-#         )(**kwargs)
