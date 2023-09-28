@@ -302,6 +302,8 @@ class ResourceSearcher:
                     with logger.indent():
                         self._refresh_data(final_boto_kwargs)
                     result = self._search(q=q, limit=limit)
+            else:
+                result = self._search(q=q, limit=limit)
 
             if simple_response: # pragma: no cover
                 result = [hit["_source"] for hit in result["hits"]]

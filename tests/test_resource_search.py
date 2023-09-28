@@ -81,7 +81,7 @@ class TestResourceSearcher(BaseMockTest):
             )
 
         for ith in range(1, 1 + 3):
-            tb_name = f"dev_table_{ith}"
+            tb_name = f"prd_table_{ith}"
             self.bsm.glue_client.create_table(
                 DatabaseName=db_name_2,
                 TableInput=dict(
@@ -239,6 +239,7 @@ class TestResourceSearcher(BaseMockTest):
             ),
             cache_expire=1,
         )
+
         db_name = "dev_db"
         result = rs.search(
             "dev",
@@ -247,6 +248,8 @@ class TestResourceSearcher(BaseMockTest):
             verbose=True,
         )
         # rprint(result)
+        assert result["size"] == 2
+        assert result["cache"] == False
         for hit in result["hits"]:
             doc = hit["_source"]
             # print(doc["name"])
@@ -259,6 +262,37 @@ class TestResourceSearcher(BaseMockTest):
             verbose=True,
         )
         # rprint(result)
+        assert result["size"] == 2
+        assert result["cache"] == True
+        for hit in result["hits"]:
+            doc = hit["_source"]
+            # print(doc["name"])
+            assert doc["name"].startswith(f"{db_name}.")
+
+        db_name = "prd_db"
+        result = rs.search(
+            "prd",
+            boto_kwargs={"DatabaseName": db_name},
+            refresh_data=True,
+            verbose=True,
+        )
+        # rprint(result)
+        assert result["size"] == 3
+        assert result["cache"] == False
+        for hit in result["hits"]:
+            doc = hit["_source"]
+            # print(doc["name"])
+            assert doc["name"].startswith(f"{db_name}.")
+
+        result = rs.search(
+            "prd",
+            boto_kwargs={"DatabaseName": db_name},
+            refresh_data=False,
+            verbose=True,
+        )
+        # rprint(result)
+        assert result["size"] == 3
+        assert result["cache"] == True
         for hit in result["hits"]:
             doc = hit["_source"]
             # print(doc["name"])
