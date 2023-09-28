@@ -7,11 +7,14 @@ from faker import Faker
 from rich import print as rprint
 
 import aws_console_url.api as aws_console_url
-from aws_resource_search.data.request import Request
-from aws_resource_search.data.search import Search
+from aws_resource_search.constants import _RES, _OUT, RAW_DATA
+from aws_resource_search.data.request import parse_req_json_node
+from aws_resource_search.data.output import parse_out_json_node
+from aws_resource_search.data.document import parse_doc_json_node
+from aws_resource_search.data.url import parse_url_json_node
+
 from aws_resource_search.resource_searcher import ResourceSearcher
 from aws_resource_search.tests.mock_test import BaseMockTest
-
 
 fake = Faker()
 
@@ -64,68 +67,6 @@ class TestResourceSearcher(BaseMockTest):
     def test(self):
         self._create_test_ec2()
 
-        request_data = {
-            "client": "ec2",
-            "method": "describe_instances",
-            "kwargs": {"PaginationConfig": {"MaxItems": 1000, "PageSize": 100}},
-            "is_paginator": True,
-            "items_path": "$Reservations[].Instances[] || `[]`",
-            "result": {
-                "arn": {
-                    "type": "str",
-                    "value": {
-                        "type": "sub",
-                        "kwargs": {
-                            "template": "arn:aws:ec2:{AWS_REGION}:{AWS_ACCOUNT_ID}:instance/{instance_id}",
-                            "params": {"instance_id": "$InstanceId"},
-                        },
-                    },
-                },
-                "title": {
-                    "type": "str",
-                    "value": "$Tags[?Key=='Name'].Value | [0] || 'No instance name'",
-                },
-                "subtitle": {
-                    "type": "str",
-                    "value": {
-                        "type": "sub",
-                        "kwargs": {
-                            "template": "{state} | {inst_id} | {inst_type}",
-                            "params": {
-                                "state": "$State.Name",
-                                "inst_id": "$InstanceId",
-                                "inst_type": "$InstanceType",
-                            },
-                        },
-                    },
-                },
-            },
-        }
-        request = Request.from_dict(request_data)
-        search_data = {
-            "fields": [
-                {
-                    "name": "instance_id",
-                    "type": "Id",
-                    "value": "$_item.InstanceId",
-                    "kwargs": {
-                        "field_boost": 10,
-                    },
-                },
-                {
-                    "name": "instance_id_ngram",
-                    "type": "Ngram",
-                    "value": "$_item.InstanceId",
-                },
-                {
-                    "name": "name",
-                    "type": "NgramWords",
-                    "value": "$_item.Tags[?Key=='Name'].Value | [0] || 'No instance name'",
-                },
-            ]
-        }
-        search = Search.from_dict(search_data)
-
         rs = ResourceSearcher(
             bsm=self.bsm,
             aws_console=aws_console_url.AWSConsole(
@@ -135,14 +76,88 @@ class TestResourceSearcher(BaseMockTest):
             ),
             service_id="ec2",
             resource_type="instance",
-            request=request,
-            search=search,
+            request=parse_req_json_node(
+                {
+                    "client": "ec2",
+                    "method": "describe_instances",
+                    "kwargs": {"PaginationConfig": {"MaxItems": 1000, "PageSize": 100}},
+                    "is_paginator": True,
+                    "result_path": "$Reservations[].Instances[] || `[]`",
+                }
+            ),
+            output=parse_out_json_node(
+                {
+                    "arn": {
+                        "type": "str",
+                        "token": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "arn:aws:ec2:{aws_region}:{aws_account_id}:instance/{instance_id}",
+                                "params": {
+                                    "instance_id": "$_res.InstanceId",
+                                    "aws_region": "$_ctx.AWS_REGION",
+                                    "aws_account_id": "$_ctx.AWS_ACCOUNT_ID",
+                                },
+                            },
+                        },
+                    },
+                    "title": {
+                        "type": "str",
+                        "token": "$_res.Tags[?Key=='Name'].Value | [0] || 'No instance name'",
+                    },
+                    "subtitle": {
+                        "type": "str",
+                        "token": {
+                            "type": "sub",
+                            "kwargs": {
+                                "template": "{state} | {inst_id} | {inst_type}",
+                                "params": {
+                                    "state": "$_res.State.Name",
+                                    "inst_id": "$_res.InstanceId",
+                                    "inst_type": "$_res.InstanceType",
+                                },
+                            },
+                        },
+                    },
+                }
+            ),
+            document=parse_doc_json_node(
+                {
+                    "id": {
+                        "type": "Id",
+                        "token": "$_res.InstanceId",
+                        "kwargs": {
+                            "stored": True,
+                            "field_boost": 10,
+                        },
+                    },
+                    "instance_id_ngram": {
+                        "type": "Ngram",
+                        "token": "$_res.InstanceId",
+                        "kwargs": {"stored": False},
+                    },
+                    "name": {
+                        "type": "NgramWords",
+                        "token": "$_res.Tags[?Key=='Name'].Value | [0] || 'No instance name'",
+                        "kwargs": {"stored": True},
+                    },
+                }
+            ),
+            url=parse_url_json_node(
+                {
+                    "service_id": "ec2",
+                    "method": "get_instance",
+                    "kwargs": {"instance_id_or_arn": "$raw_data._res.InstanceId"},
+                }
+            ),
             cache_expire=1,
         )
-        docs = rs.query("john")
+        docs = rs.query("john", refresh_data=True)
         for doc in docs:
-            ec2_name = doc["raw_item"]["Tags"][0]["Value"]
+            ec2_name = doc[RAW_DATA][_RES]["Tags"][0]["Value"]
             assert "john" in ec2_name
+            arn = doc[RAW_DATA][_OUT]["arn"]
+            assert arn.startswith("arn:")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ _RES = "_res"
 _CTX = "_ctx"
 _OUT = "_out"
 RAW_DATA = "raw_data"
+CONSOLE_URL = "console_url"
 
 
 class DataTypeEnum(BetterStrEnum):

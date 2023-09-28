@@ -66,7 +66,13 @@ _ = T.Dict[str, Field]
 def parse_doc_json_node(
     dct: T.Dict[str, T.Any]
 ) -> T.Dict[str, "Field"]:  # pragma: no cover
-    return {k: Field.from_dict(dict(name=k, **v)) for k, v in dct.items()}
+    fields = {k: Field.from_dict(dict(name=k, **v)) for k, v in dct.items()}
+    fields[RAW_DATA] = Field(
+        name=RAW_DATA,
+        type=FieldTypeEnum.Stored.value,
+        token=f"$@",
+    )
+    return fields
 
 
 def extract_document(
@@ -91,8 +97,4 @@ def extract_document(
             'raw_data': {'_res': {'instance_id': 'i-1a2b'}, '_out': {}},
         }
     """
-    data = {}
-    for key, field in document.items():
-        data[key] = field.evaluate(output)
-    data[RAW_DATA] = output
-    return data
+    return {key: field.evaluate(output) for key, field in document.items()}

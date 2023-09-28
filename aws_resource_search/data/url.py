@@ -76,3 +76,7 @@ class Url(BaseModel):
         for key, token in self.kwargs.items():
             kwargs[key] = evaluate_token(token, document)
         return getattr(getattr(aws_console, self.service_id), self.method)(**kwargs)
+
+
+def parse_url_json_node(dct: T.Dict[str, T.Any]) -> Url:  # pragma: no cover
+    return Url.from_dict(dct)

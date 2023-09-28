@@ -12,8 +12,11 @@ from fixa.timer import DateTimeTimer
 
 from .compat import cached_property
 from .paths import dir_index, dir_cache
+from .constants import CONSOLE_URL
 from .data.request import Request
-from .data.search import Search
+from .data.output import Attribute, extract_output
+from .data.document import Field, extract_document
+from .data.url import Url
 
 
 def get_boto_session_fingerprint(bsm: "BotoSesManager") -> str:
@@ -41,9 +44,12 @@ class ResourceSearcher:
     :param service_id:
     :param resource_type:
     :param request:
-    :param search:
+    :param output:
+    :param document:
+    :param url:
     :param dir_index:
     :param dir_cache:
+    :param cache:
     :param cache_expire: 指定被搜索的数据集的缓存过期时间, 单位秒. 当缓存过期时, 会重新
         调用 boto3 API 获取数据并重新构建索引.
     """
@@ -53,7 +59,9 @@ class ResourceSearcher:
     service_id: str = dataclasses.field()
     resource_type: str = dataclasses.field()
     request: Request = dataclasses.field()
-    search: Search = dataclasses.field()
+    output: T.Dict[str, Attribute] = dataclasses.field()
+    document: T.Dict[str, Field] = dataclasses.field()
+    url: Url = dataclasses.field()
     dir_index: Path = dataclasses.field(default=dir_index)
     dir_cache: Path = dataclasses.field(default=dir_cache)
     cache: Cache = dataclasses.field(default=None)
@@ -94,12 +102,19 @@ class ResourceSearcher:
         return sayt.DataSet(
             dir_index=self.dir_index,
             index_name=self.index_name,
-            fields=[field._to_sayt_field() for field in self.search.fields],
+            fields=[field._to_sayt_field() for field in self.document.values()],
             cache=self.cache,
             cache_key=self.cache_key,
             cache_tag=self.cache_tag,
             cache_expire=self.cache_expire,
         )
+
+    @cached_property
+    def context(self) -> T.Dict[str, T.Any]:
+        return {
+            "AWS_ACCOUNT_ID": self.bsm.aws_account_id,
+            "AWS_REGION": self.bsm.aws_region,
+        }
 
     def _refresh_data(self, boto_kwargs: T.Optional[dict] = None):
         # with DateTimeTimer("remove index"):
@@ -107,9 +122,20 @@ class ResourceSearcher:
         # with DateTimeTimer("remove cache"):
         self.sayt_dataset.remove_cache()
         # with DateTimeTimer("call api"):
-        items = self.request.invoke(self.bsm, boto_kwargs).all()
+        res_list = self.request.send(self.bsm, boto_kwargs)
         # with DateTimeTimer("item to doc"):
-        docs = [self.search._item_to_doc(item) for item in items]
+        context = self.context
+        doc_list = [
+            extract_document(
+                document=self.document,
+                output=extract_output(
+                    output=self.output,
+                    resource=res,
+                    context=context,
+                ),
+            )
+            for res in res_list
+        ]
         self.cache.set(
             self.cache_key,
             1,
@@ -117,7 +143,7 @@ class ResourceSearcher:
             tag=self.cache_tag,
         )
         # with DateTimeTimer("build index"):
-        self.sayt_dataset.build_index(docs, rebuild=False)
+        self.sayt_dataset.build_index(doc_list, rebuild=False)
 
     def query(
         self,
@@ -136,6 +162,5 @@ class ResourceSearcher:
         # with DateTimeTimer("search"):
         docs = self.sayt_dataset.search(q, limit=limit)
         for doc in docs:
-            console_url = self.search._doc_to_url(doc, self.aws_console)
-            doc["console_url"] = console_url
+            doc[CONSOLE_URL] = self.url.get(document=doc, aws_console=self.aws_console)
         return docs
