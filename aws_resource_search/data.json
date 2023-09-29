@@ -204,6 +204,66 @@
         "_shared": {
             "*.url.service_id": "glue"
         },
+        "glue-crawler": {
+            "req": {
+                "method": "get_crawlers",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Crawlers || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "arn:aws:glue:{aws_region}:{aws_account_id}:crawler/{crawler}",
+                            "params": {
+                                "crawler": "$_res.Name",
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_ctx.AWS_ACCOUNT_ID"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.Name"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res.Description || 'No Description'"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_crawler",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._out.arn"
+                }
+            }
+        },
         "glue-database": {
             "req": {
                 "method": "get_databases",
@@ -265,6 +325,66 @@
                 "method": "get_database",
                 "kwargs": {
                     "database_or_arn": "$raw_data._out.arn"
+                }
+            }
+        },
+        "glue-job": {
+            "req": {
+                "method": "get_jobs",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Jobs || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "arn:aws:glue:{aws_region}:{aws_account_id}:job/{job}",
+                            "params": {
+                                "job": "$_res.Name",
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_ctx.AWS_ACCOUNT_ID"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.Name"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res.Description || 'No Description'"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_job",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._out.arn"
                 }
             }
         },
@@ -355,6 +475,265 @@
                 "method": "get_table",
                 "kwargs": {
                     "table_or_arn": "$raw_data._out.arn"
+                }
+            }
+        }
+    },
+    "iam": {
+        "_shared": {
+            "*.url.service_id": "iam"
+        },
+        "iam-group": {
+            "req": {
+                "method": "list_groups",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Groups || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.Arn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.GroupName"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$to_string(CreateDate)"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Arn",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.GroupName",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_user_group",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._out.arn"
+                }
+            }
+        },
+        "iam-policy": {
+            "req": {
+                "method": "list_policies",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Policies || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.Arn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.PolicyName"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$to_string(CreateDate)"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Arn",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.PolicyName",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_policy",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._out.arn"
+                }
+            }
+        },
+        "iam-role": {
+            "req": {
+                "method": "list_roles",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Roles || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.Arn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.RoleName"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$to_string(CreateDate)"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Arn",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.RoleName",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_role",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._out.arn"
+                }
+            }
+        },
+        "iam-user": {
+            "req": {
+                "method": "list_users",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Users || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.Arn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.UserName"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$to_string(CreateDate)"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Arn",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.UserName",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_user",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._out.arn"
+                }
+            }
+        }
+    },
+    "s3": {
+        "_shared": {
+            "*.url.service_id": "s3"
+        },
+        "s3-bucket": {
+            "req": {
+                "method": "list_buckets",
+                "is_paginator": false,
+                "result_path": "$Buckets || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "template": "arn:aws:s3:::{bucket}",
+                        "params": {
+                            "bucket": "$_res.Name"
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.Name"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$to_string(CreateDate)"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_console_url",
+                "kwargs": {
+                    "bucket": "$raw_data._res.Name"
                 }
             }
         }
