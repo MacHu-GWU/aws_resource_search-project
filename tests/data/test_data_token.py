@@ -6,6 +6,7 @@ from aws_resource_search.data.token import (
     JmespathToken,
     SubToken,
     JoinToken,
+    MapToken,
     evaluate_token,
 )
 from rich import print as rprint
@@ -77,6 +78,31 @@ class Test:
                         "$lastname",
                         {"type": "jmespath", "kwargs": {"path": "$firstname"}},
                     ],
+                }
+            )
+            == token
+        )
+
+    def _test_MapToken(self):
+        token = MapToken(
+            key="$name",
+            mapper={"alice": "$female", "bob": "$male"},
+            default="unknown",
+        )
+        assert (
+            token.evaluate({"name": "alice", "female": "girl", "male": "boy"}) == "girl"
+        )
+        assert token.to_dict() == {
+            "key": "$name",
+            "mapper": {"alice": "$female", "bob": "$male"},
+            "default": "unknown",
+        }
+        assert (
+            MapToken.from_dict(
+                {
+                    "key": "$name",
+                    "mapper": {"alice": "$female", "bob": "$male"},
+                    "default": "unknown",
                 }
             )
             == token
@@ -162,6 +188,21 @@ class Test:
             )
             == "Doe, John"
         )
+        # map token
+        assert (
+            evaluate_token(
+                {
+                    "type": TokenTypeEnum.map,
+                    "kwargs": {
+                        "key": "$name",
+                        "mapper": {"alice": "$female", "bob": "$male"},
+                        "default": "unknown",
+                    },
+                },
+                {"name": "alice", "female": "girl", "male": "boy"},
+            )
+            == "girl"
+        )
 
     def _test_evaluate_deeply_nested_token(self):
         token = {
@@ -206,6 +247,7 @@ class Test:
         self._test_JmespathToken()
         self._test_SubToken()
         self._test_JoinToken()
+        self._test_MapToken()
         self._test_evaluate_token()
         self._test_evaluate_deeply_nested_token()
 

@@ -49,6 +49,7 @@ class TokenTypeEnum(BetterStrEnum):
     jmespath = "jmespath"
     sub = "sub"
     join = "join"
+    map = "map"
 
 
 class FieldTypeEnum(BetterStrEnum):

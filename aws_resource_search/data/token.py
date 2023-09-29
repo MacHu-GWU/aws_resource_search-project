@@ -10,7 +10,7 @@ import dataclasses
 import jmespath
 
 from .common import BaseModel
-from .types import T_EVAL_DATA
+from .types import T_EVAL_DATA, T_TOKEN
 from ..constants import TokenTypeEnum
 
 
@@ -112,7 +112,7 @@ class SubToken(BaseToken):
     """
 
     template: str = dataclasses.field()
-    params: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
+    params: T.Dict[str, T_TOKEN] = dataclasses.field(default_factory=dict)
 
     def _evaluate_params(self, data: T_EVAL_DATA) -> T.Dict[str, T.Any]:
         """ """
@@ -132,7 +132,7 @@ class SubToken(BaseToken):
 @dataclasses.dataclass
 class JoinToken(BaseToken):
     sep: str = dataclasses.field()
-    array: T.List[T.Any] = dataclasses.field(default_factory=list)
+    array: T.List[T_TOKEN] = dataclasses.field(default_factory=list)
 
     def _evaluate_array(self, data: T_EVAL_DATA) -> T.List[str]:
         """ """
@@ -149,11 +149,36 @@ class JoinToken(BaseToken):
         return self.sep.join(array)
 
 
+@dataclasses.dataclass
+class MapToken(BaseToken):
+    key: T_TOKEN = dataclasses.field()
+    mapper: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
+    default: T_TOKEN = dataclasses.field(default=None)
+
+    def _evaluate_mapper(self, data: T_EVAL_DATA) -> T.Dict[str, T.Any]:
+        """ """
+        mapper = dict()
+        for k, v in self.mapper.items():
+            mapper[k] = evaluate_token(v, data)
+        return mapper
+
+    def evaluate(self, data: T_EVAL_DATA) -> str:
+        """
+        todo: add docstring
+        """
+        mapper = self._evaluate_mapper(data)
+        return mapper.get(
+            evaluate_token(self.key, data),
+            evaluate_token(self.default, data),
+        )
+
+
 token_class_mapper = {
     TokenTypeEnum.raw.value: RawToken,
     TokenTypeEnum.jmespath.value: JmespathToken,
     TokenTypeEnum.sub.value: SubToken,
     TokenTypeEnum.join.value: JoinToken,
+    TokenTypeEnum.map.value: MapToken,
 }
 
 
