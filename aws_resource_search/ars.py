@@ -6,12 +6,12 @@ import dataclasses
 from .ars_base import ARSBase
 from .compat import cached_property
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from .resource_searcher import ResourceSearcher
 
 
 @dataclasses.dataclass
-class ARS(ARSBase):
+class ARS(ARSBase):  # pragma: no cover
     @cached_property
     def cloudformation_stack(self) -> "ResourceSearcher":
         return self._get_rs(service_id="cloudformation", resource_type="stack")
@@ -23,6 +23,10 @@ class ARS(ARSBase):
     @cached_property
     def ec2_instance(self) -> "ResourceSearcher":
         return self._get_rs(service_id="ec2", resource_type="instance")
+    
+    @cached_property
+    def ec2_vpc(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="ec2", resource_type="vpc")
     
     @cached_property
     def glue_crawler(self) -> "ResourceSearcher":

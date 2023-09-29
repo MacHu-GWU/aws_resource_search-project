@@ -166,12 +166,12 @@
                                     "kwargs": {
                                         "key": "$_res.State.Name",
                                         "mapper": {
-                                            "pending": "🟡",
-                                            "running": "🟢",
-                                            "shutting-down": "🟤",
-                                            "terminated": "⚫",
-                                            "stopping": "🟠",
-                                            "stopped": "🔴️"
+                                            "pending": "\ud83d\udfe1",
+                                            "running": "\ud83d\udfe2",
+                                            "shutting-down": "\ud83d\udfe4",
+                                            "terminated": "\u26ab",
+                                            "stopping": "\ud83d\udfe0",
+                                            "stopped": "\ud83d\udd34\ufe0f"
                                         }
                                     }
                                 },
@@ -210,6 +210,94 @@
                 "method": "get_instance",
                 "kwargs": {
                     "instance_id_or_arn": "$raw_data._res.InstanceId"
+                }
+            }
+        },
+        "ec2-vpc": {
+            "req": {
+                "method": "describe_vpcs",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Vpcs || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "arn:aws:ec2:{aws_region}:{aws_account_id}:vpc/{vpc_id}",
+                            "params": {
+                                "vpc_id": "$_res.VpcId",
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_ctx.AWS_ACCOUNT_ID"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.Tags[?Key=='Name'].Value | [0] || 'No VPC name'"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "{state_icon} {state} | is_default = {is_default}",
+                            "params": {
+                                "state": "$_res.State",
+                                "state_icon": {
+                                    "type": "map",
+                                    "kwargs": {
+                                        "key": "$_res.State",
+                                        "mapper": {
+                                            "pending": "\ud83d\udfe1",
+                                            "available": "\ud83d\udfe2"
+                                        }
+                                    }
+                                },
+                                "vpc_id": "$_res.VpcId",
+                                "is_default": "$_res.IsDefault"
+                            }
+                        }
+                    }
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.VpcId",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "vpc_id": {
+                    "type": "Ngram",
+                    "token": "$_res.VpcId",
+                    "kwargs": {
+                        "stored": true
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.Tags[?Key=='Name'].Value | [0] || 'No VPC name'",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "service_id": "vpc",
+                "method": "get_vpc",
+                "kwargs": {
+                    "vpc_id": "$raw_data._res.VpcId"
                 }
             }
         }

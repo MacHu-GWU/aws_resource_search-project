@@ -6,12 +6,12 @@ import dataclasses
 from .ars_base import ARSBase
 from .compat import cached_property
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from .resource_searcher import ResourceSearcher
 
 
 @dataclasses.dataclass
-class ARS(ARSBase):
+class ARS(ARSBase):  # pragma: no cover
     {%- for service_id, resource_type in service_id_resource_type_pairs %}
     @cached_property
     def {{ service_id }}_{{ resource_type }}(self) -> "ResourceSearcher":

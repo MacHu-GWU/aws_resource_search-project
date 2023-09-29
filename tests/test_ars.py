@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import moto
-import random
-
-from faker import Faker
 from rich import print as rprint
 
-import aws_console_url.api as aws_console_url
 from aws_resource_search.ars import ARS
 from aws_resource_search.logger import logger
 from aws_resource_search.tests.fake_aws_res import FakeAws, guid
@@ -26,6 +21,7 @@ class TestARS(FakeAws):
         cls.create_glue_database_table_job_and_crawler()
         cls.create_iam()
         cls.create_s3_bucket()
+        cls.create_vpc()
 
     def _test_all(self):
         ignore = {
@@ -33,7 +29,7 @@ class TestARS(FakeAws):
         }
 
         ars = self.ars
-        # ars.aws_console.dynamodb.get_table(table_or_arn=)
+        # ars.aws_console.vpc.get_vpc(table_or_arn=)
         for service_id, resource_type in ars._service_id_and_resource_type_pairs():
             if f"{service_id}-{resource_type}" in ignore:
                 continue

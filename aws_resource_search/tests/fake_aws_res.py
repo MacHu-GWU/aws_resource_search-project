@@ -188,3 +188,19 @@ class FakeAws(BaseMockTest):
         for ith in range(1, 1 + 10):
             env = random.choice(envs)
             cls.bsm.s3_client.create_bucket(Bucket=f"{env}-{guid}-{ith}-s3-bucket")
+
+    @classmethod
+    def create_vpc(cls):
+        for ith, env in enumerate(envs, start=1):
+            kwargs = {
+                "CidrBlock": f"10.0.{ith}.0/24",
+                "TagSpecifications": [
+                    dict(
+                        ResourceType="vpc",
+                        Tags=[
+                            dict(Key="Name", Value=f"{env}-{guid}-vpc")
+                        ],
+                    )
+                ],
+            }
+            cls.bsm.ec2_client.create_vpc(**kwargs)
