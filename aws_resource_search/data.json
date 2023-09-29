@@ -158,9 +158,23 @@
                     "token": {
                         "type": "sub",
                         "kwargs": {
-                            "template": "{state} | {inst_id} | {inst_type}",
+                            "template": "{state_icon} {state} | {inst_id} | {inst_type}",
                             "params": {
                                 "state": "$_res.State.Name",
+                                "state_icon": {
+                                    "type": "map",
+                                    "kwargs": {
+                                        "key": "$_res.State.Name",
+                                        "mapper": {
+                                            "pending": "🟡",
+                                            "running": "🟢",
+                                            "shutting-down": "🟤",
+                                            "terminated": "⚫",
+                                            "stopping": "🟠",
+                                            "stopped": "🔴️"
+                                        }
+                                    }
+                                },
                                 "inst_id": "$_res.InstanceId",
                                 "inst_type": "$_res.InstanceType"
                             }
