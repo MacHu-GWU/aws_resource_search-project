@@ -240,6 +240,7 @@ class TestResourceSearcher(BaseMockTest):
             cache_expire=1,
         )
 
+        # --- dev
         db_name = "dev_db"
         result = rs.search(
             "dev",
@@ -247,12 +248,10 @@ class TestResourceSearcher(BaseMockTest):
             refresh_data=True,
             verbose=True,
         )
-        # rprint(result)
         assert result["size"] == 2
         assert result["cache"] == False
         for hit in result["hits"]:
             doc = hit["_source"]
-            # print(doc["name"])
             assert doc["name"].startswith(f"{db_name}.")
 
         result = rs.search(
@@ -261,14 +260,25 @@ class TestResourceSearcher(BaseMockTest):
             refresh_data=False,
             verbose=True,
         )
-        # rprint(result)
         assert result["size"] == 2
         assert result["cache"] == True
         for hit in result["hits"]:
             doc = hit["_source"]
-            # print(doc["name"])
             assert doc["name"].startswith(f"{db_name}.")
 
+        result = rs.search(
+            "dev",
+            boto_kwargs={"DatabaseName": db_name},
+            refresh_data=True,
+            verbose=True,
+        )
+        assert result["size"] == 2
+        assert result["cache"] == False
+        for hit in result["hits"]:
+            doc = hit["_source"]
+            assert doc["name"].startswith(f"{db_name}.")
+
+        # --- prod
         db_name = "prd_db"
         result = rs.search(
             "prd",
@@ -276,12 +286,10 @@ class TestResourceSearcher(BaseMockTest):
             refresh_data=True,
             verbose=True,
         )
-        # rprint(result)
         assert result["size"] == 3
         assert result["cache"] == False
         for hit in result["hits"]:
             doc = hit["_source"]
-            # print(doc["name"])
             assert doc["name"].startswith(f"{db_name}.")
 
         result = rs.search(
@@ -290,13 +298,27 @@ class TestResourceSearcher(BaseMockTest):
             refresh_data=False,
             verbose=True,
         )
-        # rprint(result)
         assert result["size"] == 3
         assert result["cache"] == True
         for hit in result["hits"]:
             doc = hit["_source"]
-            # print(doc["name"])
             assert doc["name"].startswith(f"{db_name}.")
+
+    def _test_clear(self):
+        rs = ResourceSearcher(
+            bsm=self.bsm,
+            aws_console=None,
+            service_id="s3",
+            resource_type="bucket",
+            request=None,
+            output=None,
+            document=None,
+            url=None,
+        )
+        rs.clear_aws_account_and_region_cache()
+        for k in rs.cache.iterkeys():
+            _, tag = rs.cache.get(k, tag=True)
+            assert k[-1] is False
 
     def test(self):
         print("")
@@ -306,6 +328,7 @@ class TestResourceSearcher(BaseMockTest):
         ):
             self._test_ec2()
             self._test_glue()
+            self._test_clear()
 
 
 if __name__ == "__main__":
