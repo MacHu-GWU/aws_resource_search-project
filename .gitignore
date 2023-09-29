@@ -5,7 +5,7 @@ aws_resource_search-*/
 tmp/
 .index/
 .cache/
-
+drawio.bkp
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
