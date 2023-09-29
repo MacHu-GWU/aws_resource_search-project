@@ -108,6 +108,13 @@ class Test:
             == token
         )
 
+        token = MapToken(
+            key="alice",
+            mapper="$@",
+            default="unknown",
+        )
+        assert token.evaluate(data={"alice": "girl"}) == "girl"
+
     def _test_evaluate_token(self):
         # implicit raw token
         assert evaluate_token("hello", data) == "hello"

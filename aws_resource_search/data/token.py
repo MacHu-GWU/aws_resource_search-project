@@ -152,15 +152,18 @@ class JoinToken(BaseToken):
 @dataclasses.dataclass
 class MapToken(BaseToken):
     key: T_TOKEN = dataclasses.field()
-    mapper: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
+    mapper: T.Union[T_TOKEN, T.Dict[str, T_TOKEN]] = dataclasses.field()
     default: T_TOKEN = dataclasses.field(default=None)
 
     def _evaluate_mapper(self, data: T_EVAL_DATA) -> T.Dict[str, T.Any]:
         """ """
-        mapper = dict()
-        for k, v in self.mapper.items():
-            mapper[k] = evaluate_token(v, data)
-        return mapper
+        if isinstance(self.mapper, dict):
+            mapper = dict()
+            for k, v in self.mapper.items():
+                mapper[k] = evaluate_token(v, data)
+            return mapper
+        else:
+            return evaluate_token(self.mapper, data)
 
     def evaluate(self, data: T_EVAL_DATA) -> str:
         """
