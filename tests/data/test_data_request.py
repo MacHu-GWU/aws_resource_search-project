@@ -85,6 +85,17 @@ class Test(BaseMockTest):
         assert request._get_additional_cache_key({"CatalogId": "123456789012"}) == [
             "123456789012"
         ]
+        request.cache_key = [
+            "$Filters[?Name=='vpc-id'].Values[] || `[]` | join(', ', sort(@))"
+        ]
+        assert request._get_additional_cache_key(
+            {"Filters": [{"Name": "vpc-id", "Values": ["vpc-123", "vpc-456"]}]}
+        ) == ["vpc-123, vpc-456"]
+        assert request._get_additional_cache_key(
+            {"Filters": [{"Name": "tag:Name", "Values": ["dev"]}]}
+        ) == [""]
+        assert request._get_additional_cache_key({"Filters": []}) == [""]
+        assert request._get_additional_cache_key({}) == [""]
 
     def _create_test_buckets(self):
         self.bucket_names = [

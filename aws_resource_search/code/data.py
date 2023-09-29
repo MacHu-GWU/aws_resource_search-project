@@ -31,4 +31,4 @@ def reformat_path_data_json():
                 new_resource_type = f"{service_id}-{resource_type}"
             new_sub_data[new_resource_type] = sub_data[resource_type]
         new_data[service_id] = new_sub_data
-    path_data_json.write_text(json.dumps(new_data, indent=4))
+    path_data_json.write_text(json.dumps(new_data, indent=4, ensure_ascii=False))

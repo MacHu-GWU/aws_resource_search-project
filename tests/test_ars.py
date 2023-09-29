@@ -11,25 +11,30 @@ class TestARS(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
         ars = ARS(bsm=cls.bsm)
-        # ars.clear_all_cache()
+        ars.clear_all_cache()
+
         cls.ars = ars
         if cls.bsm.aws_account_id != "123456789012":
             raise ValueError("This test only works with fake AWS account 123456789012")
-        cls.create_cloudformation_stack()
-        cls.create_dynamodb_table()
-        cls.create_ec2_inst()
-        cls.create_glue_database_table_job_and_crawler()
-        cls.create_iam()
-        cls.create_s3_bucket()
-        cls.create_vpc()
+
+        # cls.create_cloudformation_stack()
+        # cls.create_dynamodb_table()
+        # cls.create_ec2_inst()
+        vpc_id_list = cls.create_ec2_vpc()
+        cls.vpc_id_list = vpc_id_list
+        cls.create_ec2_securitygroup(vpc_id_list=vpc_id_list)
+        # cls.create_glue_database_table_job_and_crawler()
+        # cls.create_iam()
+        # cls.create_s3_bucket()
 
     def _test_all(self):
         ignore = {
+            "ec2-securitygroup",
             "glue-table",
         }
 
         ars = self.ars
-        # ars.aws_console.vpc.get_vpc(table_or_arn=)
+        # ars.aws_console.vpc.get_security_group(sg_id=)
         for service_id, resource_type in ars._service_id_and_resource_type_pairs():
             if f"{service_id}-{resource_type}" in ignore:
                 continue
@@ -45,6 +50,37 @@ class TestARS(FakeAws):
             for doc in result:
                 print(doc["id"], doc["name"], doc["console_url"])
                 assert guid in doc["name"]
+
+    def _test_ec2_securitygroup(self):
+        print(f"--- ec2-securitygroup ---")
+        rs_ec2_sg = self.ars._get_rs("ec2", "securitygroup")
+        for doc in rs_ec2_sg.search(
+            guid,
+            refresh_data=True,
+            simple_response=True,
+            verbose=True,
+        ):
+            print(doc["id"], doc["name"], doc["console_url"])
+            assert guid in doc["name"]
+
+        for doc in rs_ec2_sg.search(
+            guid,
+            boto_kwargs={
+                "Filters": [
+                    {
+                        "Name": "vpc-id",
+                        "Values": [
+                            self.vpc_id_list[0],
+                        ],
+                    },
+                ]
+            },
+            refresh_data=True,
+            simple_response=True,
+            verbose=True,
+        ):
+            print(doc["id"], doc["name"], doc["console_url"])
+            assert guid in doc["name"]
 
     def _test_glue_table(self):
         print(f"--- glue-table ---")
@@ -96,8 +132,9 @@ class TestARS(FakeAws):
             disable=True,  # no log,
             # disable=False, # show log
         ):
-            self._test_all()
-            self._test_glue_table()
+            # self._test_all()
+            self._test_ec2_securitygroup()
+            # self._test_glue_table()
 
 
 if __name__ == "__main__":

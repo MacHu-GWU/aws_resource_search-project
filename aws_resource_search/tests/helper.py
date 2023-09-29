@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from ..paths import dir_project_root, dir_htmlcov
+import shutil
+from ..paths import dir_project_root, dir_htmlcov, dir_index, dir_cache
 from ..vendor.pytest_cov_helper import run_cov_test as _run_cov_test
 
 
@@ -15,3 +16,8 @@ def run_cov_test(
         preview=preview,
         is_folder=is_folder,
     )
+
+
+def clear_all_cache():
+    shutil.rmtree(dir_index, ignore_errors=True)
+    shutil.rmtree(dir_cache, ignore_errors=True)

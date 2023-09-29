@@ -15,6 +15,7 @@ from aws_resource_search.data.document import parse_doc_json_node
 from aws_resource_search.data.url import parse_url_json_node
 
 from aws_resource_search.resource_searcher import ResourceSearcher
+from aws_resource_search.tests.helper import clear_all_cache
 from aws_resource_search.tests.mock_test import BaseMockTest
 
 fake = Faker()
@@ -22,6 +23,10 @@ fake = Faker()
 
 class TestResourceSearcher(BaseMockTest):
     mock_list = [moto.mock_ec2, moto.mock_glue]
+
+    @classmethod
+    def setup_class_post_hook(cls):
+        clear_all_cache()
 
     def _create_test_ec2(self):
         image_id = self.bsm.ec2_client.describe_images()["Images"][0]["ImageId"]

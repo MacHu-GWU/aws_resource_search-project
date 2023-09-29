@@ -4,6 +4,7 @@
 Setup a fake AWS account with a lot of resources using moto
 """
 
+import typing as T
 import random
 import json
 import moto
@@ -116,6 +117,48 @@ class FakeAws(BaseMockTest):
             cls.bsm.ec2_client.run_instances(**kwargs)
 
     @classmethod
+    def create_ec2_vpc(cls):
+        vpc_id_list = list()
+        for ith, env in enumerate(envs, start=1):
+            kwargs = {
+                "CidrBlock": f"10.0.{ith}.0/24",
+                "TagSpecifications": [
+                    dict(
+                        ResourceType="vpc",
+                        Tags=[
+                            dict(Key="Name", Value=f"{env}-{guid}-vpc")
+                        ],
+                    )
+                ],
+            }
+            res = cls.bsm.ec2_client.create_vpc(**kwargs)
+            vpc_id = res["Vpc"]["VpcId"]
+            vpc_id_list.append(vpc_id)
+        return vpc_id_list
+
+    @classmethod
+    def create_ec2_securitygroup(cls, vpc_id_list: T.List[str] = None):
+        if vpc_id_list is None:
+            vpc_id_list = []
+        for vpc_id in (None, *vpc_id_list):
+            for ith, env in enumerate(envs, start=1):
+                kwargs = {
+                    "GroupName": f"{env}-{guid}-security-group",
+                    "Description": "fake security group",
+                    "TagSpecifications": [
+                        dict(
+                            ResourceType="security-group",
+                            Tags=[
+                                dict(Key="Name", Value=f"{env}-{guid}-security-group")
+                            ],
+                        )
+                    ],
+                }
+                if vpc_id:
+                    kwargs["VpcId"] = vpc_id
+                res = cls.bsm.ec2_client.create_security_group(**kwargs)
+
+    @classmethod
     def create_iam(cls):
         for ith in range(1, 1 + 10):
             env = random.choice(envs)
@@ -189,18 +232,3 @@ class FakeAws(BaseMockTest):
             env = random.choice(envs)
             cls.bsm.s3_client.create_bucket(Bucket=f"{env}-{guid}-{ith}-s3-bucket")
 
-    @classmethod
-    def create_vpc(cls):
-        for ith, env in enumerate(envs, start=1):
-            kwargs = {
-                "CidrBlock": f"10.0.{ith}.0/24",
-                "TagSpecifications": [
-                    dict(
-                        ResourceType="vpc",
-                        Tags=[
-                            dict(Key="Name", Value=f"{env}-{guid}-vpc")
-                        ],
-                    )
-                ],
-            }
-            cls.bsm.ec2_client.create_vpc(**kwargs)
