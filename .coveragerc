@@ -4,10 +4,10 @@
 omit =
     aws_resource_search/_version.py
     aws_resource_search/cli.py
-    aws_resource_search/pkg/*
+    aws_resource_search/res/*
     aws_resource_search/docs/*
     aws_resource_search/tests/*
-    aws_resource_search/handlers/*
+    aws_resource_search/vendor/*
 
 [report]
 # Regexes for lines to exclude from consideration

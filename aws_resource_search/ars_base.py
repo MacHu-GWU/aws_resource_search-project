@@ -2,6 +2,7 @@
 
 import typing as T
 import json
+import shutil
 import dataclasses
 from pathlib import Path
 
@@ -32,9 +33,9 @@ class ARSBase:
         self.dir_index = Path(self.dir_index)
         if self.dir_cache is not None:  # pragma: no cover
             self.dir_cache = Path(self.dir_cache)
-        if self.cache is None:  # pragma: no cover
-            self.cache = Cache(str(self.dir_cache))
-        else:
+        if self.cache is None:
+            self.cache = Cache(str(self.dir_cache), disk_pickle_protocol=5)
+        else:  # pragma: no cover
             self.dir_cache = Path(self.cache.directory)
 
     @cached_property
@@ -86,3 +87,7 @@ class ARSBase:
                             resource_type = resource_type[len(service_id) + 1 :]
                         pairs.append((service_id, resource_type))
         return pairs
+
+    def clear_all_cache(self):
+        shutil.rmtree(self.dir_index, ignore_errors=True)
+        shutil.rmtree(self.dir_cache, ignore_errors=True)

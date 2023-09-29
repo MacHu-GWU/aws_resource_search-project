@@ -199,5 +199,164 @@
                 }
             }
         }
+    },
+    "glue": {
+        "_shared": {
+            "*.url.service_id": "glue"
+        },
+        "glue-database": {
+            "req": {
+                "method": "get_databases",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$DatabaseList || `[]`"
+            },
+            "out": {
+                "catalog_id": {
+                    "type": "str",
+                    "token": "$_res.CatalogId"
+                },
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "arn:aws:glue:{aws_region}:{aws_account_id}:database/{database}",
+                            "params": {
+                                "database": "$_res.Name",
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_res.CatalogId"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.Name"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res.Description || 'No Description'"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.Name",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_database",
+                "kwargs": {
+                    "database_or_arn": "$raw_data._out.arn"
+                }
+            }
+        },
+        "glue-table": {
+            "req": {
+                "method": "get_tables",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "cache_key": [
+                    "$DatabaseName"
+                ],
+                "is_paginator": true,
+                "result_path": "$TableList || `[]`"
+            },
+            "out": {
+                "catalog_id": {
+                    "type": "str",
+                    "token": "$_res.CatalogId"
+                },
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "arn:aws:glue:{aws_region}:{aws_account_id}:table/{database}/{table}",
+                            "params": {
+                                "database": "$_res.DatabaseName",
+                                "table": "$_res.Name",
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_res.CatalogId"
+                            }
+                        }
+                    }
+                },
+                "database_and_table": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "{database}.{table}",
+                            "params": {
+                                "database": "$_res.DatabaseName",
+                                "table": "$_res.Name"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": {
+                        "type": "sub",
+                        "kwargs": {
+                            "template": "{database}.{table}",
+                            "params": {
+                                "database": "$_res.DatabaseName",
+                                "table": "$_res.Name"
+                            }
+                        }
+                    }
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res.Description || 'No Description'"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_out.database_and_table",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_out.database_and_table",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_table",
+                "kwargs": {
+                    "table_or_arn": "$raw_data._out.arn"
+                }
+            }
+        }
     }
 }

@@ -17,6 +17,10 @@ class ARS(ARSBase):
         return self._get_rs(service_id="cloudformation", resource_type="stack")
     
     @cached_property
+    def dynamodb_table(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="dynamodb", resource_type="table")
+    
+    @cached_property
     def ec2_instance(self) -> "ResourceSearcher":
         return self._get_rs(service_id="ec2", resource_type="instance")
     
@@ -27,32 +31,4 @@ class ARS(ARSBase):
     @cached_property
     def glue_table(self) -> "ResourceSearcher":
         return self._get_rs(service_id="glue", resource_type="table")
-    
-    @cached_property
-    def glue_job(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="glue", resource_type="job")
-    
-    @cached_property
-    def glue_crawler(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="glue", resource_type="crawler")
-    
-    @cached_property
-    def iam_group(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="group")
-    
-    @cached_property
-    def iam_user(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="user")
-    
-    @cached_property
-    def iam_role(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="role")
-    
-    @cached_property
-    def iam_policy(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="policy")
-    
-    @cached_property
-    def s3_bucket(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="s3", resource_type="bucket")
     
