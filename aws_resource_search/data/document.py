@@ -9,6 +9,7 @@ json node, and create the searchable document data using AWS resource data and
 import typing as T
 import dataclasses
 
+import jmespath_token.api as jt
 import sayt.api as sayt
 
 from ..constants import (
@@ -17,7 +18,6 @@ from ..constants import (
 )
 from .types import T_OUTPUT, T_EVAL_DATA
 from .common import BaseModel
-from .token import evaluate_token
 
 
 _type_to_field_class_mapper = {
@@ -53,7 +53,7 @@ class Field(BaseModel):
     kwargs: T.Dict[str, T.Any] = dataclasses.field(default_factory=dict)
 
     def evaluate(self, data: T_EVAL_DATA):
-        return evaluate_token(self.token, data)
+        return jt.evaluate_token(self.token, data)
 
     def _to_sayt_field(self) -> sayt.T_Field:
         field_class = _type_to_field_class_mapper[self.type]

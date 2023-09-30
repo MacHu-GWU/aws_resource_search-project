@@ -9,11 +9,11 @@ import typing as T
 import dataclasses
 
 import jmespath
+import jmespath_token.api as jt
 from iterproxy import IterProxy
 
 from .common import BaseModel, NOTHING
 from .types import T_DATA, T_RESOURCE, T_TOKEN
-from .token import evaluate_token
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
@@ -116,14 +116,11 @@ class Request(BaseModel):
             we don't copy boto_kwargs here.
         """
         if boto_kwargs is None:
-            return {
-                key: evaluate_token(token, data=context)
-                for key, token in self.kwargs.items()
-            }
+            return jt.evaluate_token(self.kwargs, data=context)
         else:
             for key, token in self.kwargs.items():
                 if key not in boto_kwargs:
-                    boto_kwargs[key] = evaluate_token(token, data=context)
+                    boto_kwargs[key] = jt.evaluate_token(token, data=context)
             return boto_kwargs
 
     def _get_additional_cache_key(self, boto_kwargs: T_DATA) -> T.List[str]:
@@ -132,7 +129,7 @@ class Request(BaseModel):
 
         :param boto_kwargs: final boto kwargs that will be used to call boto3 API.
         """
-        return [evaluate_token(token, data=boto_kwargs) for token in self.cache_key]
+        return jt.evaluate_token(self.cache_key, data=boto_kwargs)
 
     def _send(
         self,

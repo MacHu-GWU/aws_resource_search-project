@@ -9,6 +9,8 @@ json node, and extract additional data from the AWS resource data returned by
 import typing as T
 import dataclasses
 
+import jmespath_token.api as jt
+
 from ..constants import (
     _RES,
     _CTX,
@@ -16,7 +18,6 @@ from ..constants import (
 )
 from .common import BaseModel
 from .types import T_RESOURCE, T_EVAL_DATA, T_OUTPUT
-from .token import evaluate_token
 
 
 @dataclasses.dataclass
@@ -36,7 +37,7 @@ class Attribute(BaseModel):
     token: T.Any = dataclasses.field()
 
     def evaluate(self, data: T_EVAL_DATA):
-        return evaluate_token(self.token, data)
+        return jt.evaluate_token(self.token, data)
 
 
 def parse_out_json_node(

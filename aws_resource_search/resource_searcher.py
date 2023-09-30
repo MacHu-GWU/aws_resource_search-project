@@ -77,7 +77,7 @@ class ResourceSearcher:
         Get the logical unique fingerprint of the boto3 session. It will be
         used in the index name and cache key naming convention.
         """
-        if self.bsm.profile_name is None:
+        if str(self.bsm.profile_name) == "Sentinel('NOTHING')":
             account_or_profile = self.bsm.aws_account_id
         else:  # pragma: no cover
             account_or_profile = self.bsm.profile_name
@@ -258,7 +258,6 @@ class ResourceSearcher:
 
         with TimeTimer(display=False) as timer:
             res_list = self.request.send(self.bsm, _boto_kwargs=final_boto_kwargs)
-            res_list = res_list.all()
             context = self.context
             doc_list = [
                 extract_document(
@@ -271,6 +270,7 @@ class ResourceSearcher:
                 )
                 for res in res_list
             ]
+        # print(doc_list)
         # print(doc_list[0])
         logger.info(f"pull data, elapsed: {timer.elapsed:.3f}s")
         logger.info(f"got {len(doc_list)} documents")

@@ -73,7 +73,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:dynamodb:{aws_region}:{aws_account_id}:table/{table}",
                             "params": {
@@ -138,7 +138,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:ec2:{aws_region}:{aws_account_id}:instance/{instance_id}",
                             "params": {
@@ -156,13 +156,13 @@
                 "subtitle": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "{state_icon} {state} | {inst_id} | {inst_type}",
                             "params": {
                                 "state": "$_res.State.Name",
                                 "state_icon": {
-                                    "type": "map",
+                                    "type": "Token::Map",
                                     "kwargs": {
                                         "key": "$_res.State.Name",
                                         "mapper": {
@@ -222,7 +222,9 @@
                         "PageSize": 1000
                     }
                 },
-                "cache_key": ["$Filters[?Name=='vpc-id'].Values[] || `[]` | join(', ', sort(@))"],
+                "cache_key": [
+                    "$Filters[?Name=='vpc-id'].Values[] || `[]` | join(', ', sort(@))"
+                ],
                 "is_paginator": true,
                 "result_path": "$SecurityGroups || `[]`"
             },
@@ -230,7 +232,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:ec2:{aws_region}:{aws_account_id}:security-group/{sg_id}",
                             "params": {
@@ -248,7 +250,7 @@
                 "subtitle": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "{sg_id} | {description}",
                             "params": {
@@ -307,7 +309,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:ec2:{aws_region}:{aws_account_id}:vpc/{vpc_id}",
                             "params": {
@@ -325,13 +327,13 @@
                 "subtitle": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "{state_icon} {state} | is_default = {is_default}",
                             "params": {
                                 "state": "$_res.State",
                                 "state_icon": {
-                                    "type": "map",
+                                    "type": "Token::Map",
                                     "kwargs": {
                                         "key": "$_res.State",
                                         "mapper": {
@@ -400,7 +402,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:glue:{aws_region}:{aws_account_id}:crawler/{crawler}",
                             "params": {
@@ -464,7 +466,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:glue:{aws_region}:{aws_account_id}:database/{database}",
                             "params": {
@@ -524,7 +526,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:glue:{aws_region}:{aws_account_id}:job/{job}",
                             "params": {
@@ -591,7 +593,7 @@
                 "arn": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "arn:aws:glue:{aws_region}:{aws_account_id}:table/{database}/{table}",
                             "params": {
@@ -606,7 +608,7 @@
                 "database_and_table": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "{database}.{table}",
                             "params": {
@@ -619,7 +621,7 @@
                 "title": {
                     "type": "str",
                     "token": {
-                        "type": "sub",
+                        "type": "Token::Sub",
                         "kwargs": {
                             "template": "{database}.{table}",
                             "params": {

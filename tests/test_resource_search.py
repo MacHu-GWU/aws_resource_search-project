@@ -120,7 +120,7 @@ class TestResourceSearcher(BaseMockTest):
                     "arn": {
                         "type": "str",
                         "token": {
-                            "type": "sub",
+                            "type": "Token::Sub",
                             "kwargs": {
                                 "template": "arn:aws:ec2:{aws_region}:{aws_account_id}:instance/{instance_id}",
                                 "params": {
@@ -138,7 +138,7 @@ class TestResourceSearcher(BaseMockTest):
                     "subtitle": {
                         "type": "str",
                         "token": {
-                            "type": "sub",
+                            "type": "Token::Sub",
                             "kwargs": {
                                 "template": "{state} | {inst_id} | {inst_type}",
                                 "params": {
@@ -218,7 +218,7 @@ class TestResourceSearcher(BaseMockTest):
                     "name": {
                         "type": "NgramWords",
                         "token": {
-                            "type": "sub",
+                            "type": "Token::Sub",
                             "kwargs": {
                                 "template": "{database}.{table}",
                                 "params": {

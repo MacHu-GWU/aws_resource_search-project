@@ -8,10 +8,10 @@ json node, and create aws console url that can view the given AWS resource detai
 import typing as T
 import dataclasses
 
+import jmespath_token.api as jt
 from aws_console_url.api import AWSConsole
 
 from .common import BaseModel
-from .token import evaluate_token
 
 
 @dataclasses.dataclass
@@ -72,9 +72,7 @@ class Url(BaseModel):
         ``name`` field that can be searched by ngram, and a ``raw_data`` field
         that contains the original boto3 api response and extracted output data.
         """
-        kwargs = dict()
-        for key, token in self.kwargs.items():
-            kwargs[key] = evaluate_token(token, document)
+        kwargs = jt.evaluate_token(self.kwargs, document)
         return getattr(getattr(aws_console, self.service_id), self.method)(**kwargs)
 
 

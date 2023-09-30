@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from aws_resource_search.constants import TokenTypeEnum, _RES, _CTX, _OUT
+import jmespath_token.api as jt
+from aws_resource_search.constants import _RES, _CTX, _OUT
 from aws_resource_search.data.output import (
     Attribute,
     parse_out_json_node,
@@ -26,7 +27,7 @@ class Test:
                     "arn": {
                         "type": "str",
                         "token": {
-                            "type": TokenTypeEnum.sub,
+                            "type": jt.TokenTypeEnum.sub,
                             "kwargs": {
                                 "template": "arn:aws:s3:{aws_region}:{aws_account_id}:bucket/{bucket}",
                                 "params": {

@@ -40,18 +40,6 @@ class DataTypeEnum(BetterStrEnum):
     kv_dict = "T.Dict[str, T.Any]"
 
 
-class TokenTypeEnum(BetterStrEnum):
-    """
-    List of token types.
-    """
-
-    raw = "raw"
-    jmespath = "jmespath"
-    sub = "sub"
-    join = "join"
-    map = "map"
-
-
 class FieldTypeEnum(BetterStrEnum):
     """
     List of searchable document field types.
