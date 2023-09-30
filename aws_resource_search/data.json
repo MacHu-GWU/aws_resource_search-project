@@ -131,6 +131,9 @@
                         "PageSize": 1000
                     }
                 },
+                "cache_key": [
+                    "$Filters[?Name=='vpc-id'].Values[] || `[]` | join(', ', sort(@))"
+                ],
                 "is_paginator": true,
                 "result_path": "$Reservations[].Instances[] || `[]`"
             },
@@ -290,6 +293,86 @@
                 "method": "get_security_group",
                 "kwargs": {
                     "sg_id": "$raw_data._res.GroupId"
+                }
+            }
+        },
+        "ec2-subnet": {
+            "req": {
+                "method": "describe_subnets",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "cache_key": [
+                    "$Filters[?Name=='vpc-id'].Values[] || `[]` | join(', ', sort(@))"
+                ],
+                "is_paginator": true,
+                "result_path": "$Subnets || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.SubnetArn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.Tags[?Key=='Name'].Value | [0] || 'No Subnet name'"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "{vpc_id} | {subnet_id} | {az_id}",
+                            "params": {
+                                "vpc_id": "$_res.VpcId",
+                                "subnet_id": "$_res.SubnetId",
+                                "az_id": "$_res.AvailabilityZoneId"
+                            }
+                        }
+                    }
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.SubnetId",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "vpc_id_and_subnet_id": {
+                    "type": "Ngram",
+                    "token": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "{vpc_id} {subnet_id}",
+                            "params": {
+                                "vpc_id": "$_res.VpcId",
+                                "subnet_id": "$_res.SubnetId"
+                            }
+                        }
+                    },
+                    "kwargs": {
+                        "stored": true
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.Tags[?Key=='Name'].Value | [0] || 'No Subnet name'",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "service_id": "vpc",
+                "method": "get_subnet",
+                "kwargs": {
+                    "subnet_id": "$raw_data._res.SubnetId"
                 }
             }
         },

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Setup a fake AWS account with a lot of resources using moto
+Setup a fake AWS account with a lot of resources using moto for testing.
 """
 
 import typing as T
@@ -18,6 +18,12 @@ envs = ["sbx", "tst", "prd"]
 
 
 class FakeAws(BaseMockTest):
+    """
+    .. note::
+
+        methods are sorted alphabetically.
+    """
+
     mock_list = [
         moto.mock_cloudformation,
         moto.mock_dynamodb,
@@ -121,13 +127,11 @@ class FakeAws(BaseMockTest):
         vpc_id_list = list()
         for ith, env in enumerate(envs, start=1):
             kwargs = {
-                "CidrBlock": f"10.0.{ith}.0/24",
+                "CidrBlock": f"10.{ith}.0.0/16",
                 "TagSpecifications": [
                     dict(
                         ResourceType="vpc",
-                        Tags=[
-                            dict(Key="Name", Value=f"{env}-{guid}-vpc")
-                        ],
+                        Tags=[dict(Key="Name", Value=f"{env}-{guid}-vpc")],
                     )
                 ],
             }
@@ -135,6 +139,25 @@ class FakeAws(BaseMockTest):
             vpc_id = res["Vpc"]["VpcId"]
             vpc_id_list.append(vpc_id)
         return vpc_id_list
+
+    @classmethod
+    def create_ec2_subnet(cls, vpc_id_list: T.List[str]):
+        for ith_vpc, vpc_id in enumerate(vpc_id_list, start=1):
+            for ith_subnet, env in enumerate(envs, start=1):
+                kwargs = {
+                    "CidrBlock": f"10.{ith_vpc}.{ith_subnet}.0/24",
+                    "TagSpecifications": [
+                        dict(
+                            ResourceType="subnet",
+                            Tags=[
+                                dict(Key="Name", Value=f"{vpc_id}/{env}-{guid}-subnet")
+                            ],
+                        )
+                    ],
+                }
+                if vpc_id:
+                    kwargs["VpcId"] = vpc_id
+                res = cls.bsm.ec2_client.create_subnet(**kwargs)
 
     @classmethod
     def create_ec2_securitygroup(cls, vpc_id_list: T.List[str] = None):
@@ -149,7 +172,10 @@ class FakeAws(BaseMockTest):
                         dict(
                             ResourceType="security-group",
                             Tags=[
-                                dict(Key="Name", Value=f"{env}-{guid}-security-group")
+                                dict(
+                                    Key="Name",
+                                    Value=f"{vpc_id}/{env}-{guid}-security-group",
+                                )
                             ],
                         )
                     ],
@@ -231,4 +257,3 @@ class FakeAws(BaseMockTest):
         for ith in range(1, 1 + 10):
             env = random.choice(envs)
             cls.bsm.s3_client.create_bucket(Bucket=f"{env}-{guid}-{ith}-s3-bucket")
-

@@ -29,6 +29,10 @@ class ARS(ARSBase):  # pragma: no cover
         return self._get_rs(service_id="ec2", resource_type="securitygroup")
     
     @cached_property
+    def ec2_subnet(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="ec2", resource_type="subnet")
+    
+    @cached_property
     def ec2_vpc(self) -> "ResourceSearcher":
         return self._get_rs(service_id="ec2", resource_type="vpc")
     

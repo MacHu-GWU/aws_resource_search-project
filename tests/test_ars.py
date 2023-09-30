@@ -22,19 +22,24 @@ class TestARS(FakeAws):
         # cls.create_ec2_inst()
         vpc_id_list = cls.create_ec2_vpc()
         cls.vpc_id_list = vpc_id_list
+        cls.create_ec2_subnet(vpc_id_list=vpc_id_list)
         cls.create_ec2_securitygroup(vpc_id_list=vpc_id_list)
         # cls.create_glue_database_table_job_and_crawler()
         # cls.create_iam()
         # cls.create_s3_bucket()
 
     def _test_all(self):
+        """
+        这个方法用来测试 list resource 的时候无需任何额外参数的情况, 也就是简单情况.
+        """
         ignore = {
+            "ec2-subnet",
             "ec2-securitygroup",
             "glue-table",
         }
 
         ars = self.ars
-        # ars.aws_console.vpc.get_security_group(sg_id=)
+        # ars.aws_console.vpc.get_security_group(sg_id=123)
         for service_id, resource_type in ars._service_id_and_resource_type_pairs():
             if f"{service_id}-{resource_type}" in ignore:
                 continue
@@ -50,6 +55,37 @@ class TestARS(FakeAws):
             for doc in result:
                 print(doc["id"], doc["name"], doc["console_url"])
                 assert guid in doc["name"]
+
+    def _test_ec2_subnet(self):
+        print(f"--- ec2-subnet ---")
+        rs_ec2_subnet = self.ars._get_rs("ec2", "subnet")
+        for doc in rs_ec2_subnet.search(
+            guid,
+            refresh_data=True,
+            simple_response=True,
+            verbose=True,
+        ):
+            print(doc["id"], doc["name"], doc["console_url"])
+            assert guid in doc["name"]
+
+        for doc in rs_ec2_subnet.search(
+            guid,
+            boto_kwargs={
+                "Filters": [
+                    {
+                        "Name": "vpc-id",
+                        "Values": [
+                            self.vpc_id_list[0],
+                        ],
+                    },
+                ]
+            },
+            refresh_data=True,
+            simple_response=True,
+            verbose=True,
+        ):
+            print(doc["id"], doc["name"], doc["console_url"])
+            assert guid in doc["name"]
 
     def _test_ec2_securitygroup(self):
         print(f"--- ec2-securitygroup ---")
@@ -133,6 +169,7 @@ class TestARS(FakeAws):
             # disable=False, # show log
         ):
             self._test_all()
+            self._test_ec2_subnet()
             self._test_ec2_securitygroup()
             self._test_glue_table()
 
