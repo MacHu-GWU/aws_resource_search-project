@@ -12,7 +12,6 @@ from pathlib import Path
 
 from diskcache import Cache
 import sayt.api as sayt
-from sayt.dataset import Result
 from boto_session_manager import BotoSesManager
 import aws_console_url.api as aws_console_url
 from fixa.timer import TimeTimer
@@ -289,7 +288,7 @@ class ResourceSearcher:
         self,
         q: str,
         limit: int = 20,
-    ) -> Result:
+    ) -> sayt.T_Result:
         logger.info(f"search on {self.sayt_dataset.index_name!r} index")
         result = self.sayt_dataset.search(q, limit=limit, simple_response=False)
         for hit in result["hits"]:
@@ -305,7 +304,7 @@ class ResourceSearcher:
         return result
 
     @staticmethod
-    def _simplify_result(result: Result) -> T.List[dict]:  # pragma: no cover
+    def _simplify_result(result: sayt.T_Result) -> T.List[dict]:  # pragma: no cover
         return [hit["_source"] for hit in result["hits"]]
 
     def search(
@@ -316,7 +315,7 @@ class ResourceSearcher:
         refresh_data: bool = False,
         simple_response: bool = False,
         verbose: bool = False,
-    ) -> T.Union[Result, T.List[dict]]:
+    ) -> T.Union[sayt.T_Result, T.List[dict]]:
         """
         The main public API for AWS Resource Search.
 
