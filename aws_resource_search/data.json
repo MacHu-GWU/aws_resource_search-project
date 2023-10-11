@@ -567,6 +567,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$_res.Description || 'No Description'"
+                },
+                "arg": {
+                    "type": "arg",
+                    "token": "$_res.Name"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.Name"
                 }
             },
             "doc": {
@@ -976,6 +984,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$to_string(CreateDate)"
+                },
+                "arg": {
+                    "type": "arg",
+                    "token": "$_res.Name"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.Name"
                 }
             },
             "doc": {

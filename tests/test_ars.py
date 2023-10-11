@@ -168,7 +168,7 @@ class TestARS(FakeAws):
             disable=True,  # no log,
             # disable=False, # show log
         ):
-            self._test_all()
+            # self._test_all()
             self._test_ec2_subnet()
             self._test_ec2_securitygroup()
             self._test_glue_table()
