@@ -26,6 +26,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$_res.StackStatus"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.StackName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.StackName"
                 }
             },
             "doc": {
@@ -91,6 +99,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": ""
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res"
                 }
             },
             "doc": {
@@ -183,6 +199,14 @@
                             }
                         }
                     }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.InstanceId"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.InstanceId"
                 }
             },
             "doc": {
@@ -255,13 +279,22 @@
                     "token": {
                         "type": "Token::Sub",
                         "kwargs": {
-                            "template": "{sg_id} | {description}",
+                            "template": "{sg_id} | {vpc_id} | {description}",
                             "params": {
                                 "sg_id": "$_res.GroupId",
+                                "vpc_id": "$_res.VpcId",
                                 "description": "$_res.Description || 'No Description'"
                             }
                         }
                     }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.GroupId"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.GroupId"
                 }
             },
             "doc": {
@@ -273,9 +306,18 @@
                         "field_boost": 10
                     }
                 },
-                "sg_id": {
+                "vpc_id_and_sg_id": {
                     "type": "Ngram",
-                    "token": "$_res.GroupId",
+                    "token": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "{vpc_id} {sg_id}",
+                            "params": {
+                                "vpc_id": "$_res.VpcId",
+                                "sg_id": "$_res.GroupId"
+                            }
+                        }
+                    },
                     "kwargs": {
                         "stored": true
                     }
@@ -333,6 +375,14 @@
                             }
                         }
                     }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.SubnetId"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.SubnetId"
                 }
             },
             "doc": {
@@ -412,7 +462,7 @@
                     "token": {
                         "type": "Token::Sub",
                         "kwargs": {
-                            "template": "{state_icon} {state} | is_default = {is_default}",
+                            "template": "{state_icon} {state} | {vpc_id} | is_default = {is_default}",
                             "params": {
                                 "state": "$_res.State",
                                 "state_icon": {
@@ -430,6 +480,14 @@
                             }
                         }
                     }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.VpcId"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.VpcId"
                 }
             },
             "doc": {
@@ -503,6 +561,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$_res.Description || 'No Description'"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.Name"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.Name"
                 }
             },
             "doc": {
@@ -569,7 +635,7 @@
                     "token": "$_res.Description || 'No Description'"
                 },
                 "arg": {
-                    "type": "arg",
+                    "type": "str",
                     "token": "$_res.Name"
                 },
                 "autocomplete": {
@@ -635,6 +701,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$_res.Description || 'No Description'"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.Name"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.Name"
                 }
             },
             "doc": {
@@ -797,6 +871,14 @@
                     "kwargs": {
                         "stored": true
                     }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.GroupName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.GroupName"
                 }
             },
             "url": {
@@ -847,6 +929,14 @@
                     "kwargs": {
                         "stored": true
                     }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.PolicyName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.PolicyName"
                 }
             },
             "url": {
@@ -897,6 +987,14 @@
                     "kwargs": {
                         "stored": true
                     }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.RoleName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.RoleName"
                 }
             },
             "url": {
@@ -930,6 +1028,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$to_string(CreateDate)"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.UserName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.UserName"
                 }
             },
             "doc": {
@@ -986,7 +1092,7 @@
                     "token": "$to_string(CreateDate)"
                 },
                 "arg": {
-                    "type": "arg",
+                    "type": "str",
                     "token": "$_res.Name"
                 },
                 "autocomplete": {

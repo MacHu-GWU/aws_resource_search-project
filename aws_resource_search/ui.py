@@ -53,7 +53,12 @@ def handler(query: str, ui: afwf_shell.UI):
         q = parts[0]
         if not q:
             q = "*"
-        docs = srv_and_res_ds.search(download_kwargs={}, query=q, simple_response=True)
+        docs = srv_and_res_ds.search(
+            download_kwargs={},
+            query=q,
+            simple_response=True,
+            limit=50,
+        )
         return [
             afwf_shell.Item(
                 uid=doc["id"],
@@ -89,6 +94,7 @@ def handler(query: str, ui: afwf_shell.UI):
         docs = rs.search(
             q=q,
             simple_response=True,
+            limit=50,
         )
         # rprint(docs[:1])
         return docs_to_items(
@@ -97,56 +103,63 @@ def handler(query: str, ui: afwf_shell.UI):
             docs=docs,
         )
 
+
 # TODO: refactor this ugly code
 def search_glue_table(
     q: str,
 ):
-    if q:
-        parts = q.split(".")
-        if len(parts) == 1:
-            docs = ars.glue_database.search(
-                q=parts[0],
-                simple_response=True,
-            )
-            items = docs_to_items(
-                service_id=ars.glue_table.service_id,
-                resource_type=ars.glue_table.resource_type,
-                docs=docs,
-            )
-            for item in items:
-                item.autocomplete += "."
-            return items
-        else:
-            database = parts[0]
-            q = parts[1]
-            if not q:
-                q = "*"
-            docs = ars.glue_table.search(
-                q=q,
-                boto_kwargs={"DatabaseName": database},
-                simple_response=True,
-            )
-            items = docs_to_items(
-                service_id=ars.glue_table.service_id,
-                resource_type=ars.glue_table.resource_type,
-                docs=docs,
-            )
-            for item in items:
-                database_and_table = item.variables["doc"]["raw_data"]["_out"][
-                    "database_and_table"
-                ]
-                item.autocomplete = f"{ars.glue_table.service_id}-{ars.glue_table.resource_type}: {database_and_table}"
-            return items
+    parts = q.split(".")
+    if len(parts) == 1:
+        # print(f"---- q: {q!r}")
+        q = parts[0]
+        if not q:
+            q = "*"
+        docs = ars.glue_database.search(
+            q=q,
+            simple_response=True,
+            limit=50,
+        )
+        items = docs_to_items(
+            service_id=ars.glue_table.service_id,
+            resource_type=ars.glue_table.resource_type,
+            docs=docs,
+        )
+        for item in items:
+            item.title = f"Database: {item.title} (hit tab to search tables)"
+            item.autocomplete += "."
+        return items
     else:
-        return [
-            AwsResItem(
-                uid="uid",
-                title="Enter database name to search tables",
-                subtitle="",
-                arg="",
-                variables={},
-            )
-        ]
+        database = parts[0]
+        q = parts[1]
+        if not q:
+            q = "*"
+        docs = ars.glue_table.search(
+            q=q,
+            boto_kwargs={"DatabaseName": database},
+            simple_response=True,
+            limit=50,
+        )
+        items = docs_to_items(
+            service_id=ars.glue_table.service_id,
+            resource_type=ars.glue_table.resource_type,
+            docs=docs,
+        )
+        for item in items:
+            database_and_table = item.variables["doc"]["raw_data"]["_out"][
+                "database_and_table"
+            ]
+            item.autocomplete = f"{ars.glue_table.service_id}-{ars.glue_table.resource_type}: {database_and_table}"
+        return items
+    # else:
+    #     return [
+    #         AwsResItem(
+    #             uid="uid",
+    #             title="Enter database name to search tables",
+    #             subtitle="",
+    #             arg="",
+    #             variables={},
+    #         )
+    #     ]
 
 
 _mapper = {"glue-table": search_glue_table}
