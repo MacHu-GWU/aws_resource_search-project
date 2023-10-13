@@ -854,6 +854,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$to_string(CreateDate)"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.GroupName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.GroupName"
                 }
             },
             "doc": {
@@ -871,14 +879,6 @@
                     "kwargs": {
                         "stored": true
                     }
-                },
-                "arg": {
-                    "type": "str",
-                    "token": "$_res.GroupName"
-                },
-                "autocomplete": {
-                    "type": "str",
-                    "token": "$_res.GroupName"
                 }
             },
             "url": {
@@ -912,6 +912,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$to_string(CreateDate)"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.PolicyName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.PolicyName"
                 }
             },
             "doc": {
@@ -929,14 +937,6 @@
                     "kwargs": {
                         "stored": true
                     }
-                },
-                "arg": {
-                    "type": "str",
-                    "token": "$_res.PolicyName"
-                },
-                "autocomplete": {
-                    "type": "str",
-                    "token": "$_res.PolicyName"
                 }
             },
             "url": {
@@ -970,6 +970,14 @@
                 "subtitle": {
                     "type": "str",
                     "token": "$to_string(CreateDate)"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.RoleName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.RoleName"
                 }
             },
             "doc": {
@@ -987,14 +995,6 @@
                     "kwargs": {
                         "stored": true
                     }
-                },
-                "arg": {
-                    "type": "str",
-                    "token": "$_res.RoleName"
-                },
-                "autocomplete": {
-                    "type": "str",
-                    "token": "$_res.RoleName"
                 }
             },
             "url": {

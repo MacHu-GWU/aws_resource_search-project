@@ -17,16 +17,16 @@ class TestARS(FakeAws):
         if cls.bsm.aws_account_id != "123456789012":
             raise ValueError("This test only works with fake AWS account 123456789012")
 
-        # cls.create_cloudformation_stack()
-        # cls.create_dynamodb_table()
-        # cls.create_ec2_inst()
+        cls.create_cloudformation_stack()
+        cls.create_dynamodb_table()
+        cls.create_ec2_inst()
         vpc_id_list = cls.create_ec2_vpc()
         cls.vpc_id_list = vpc_id_list
         cls.create_ec2_subnet(vpc_id_list=vpc_id_list)
         cls.create_ec2_securitygroup(vpc_id_list=vpc_id_list)
-        # cls.create_glue_database_table_job_and_crawler()
-        # cls.create_iam()
-        # cls.create_s3_bucket()
+        cls.create_glue_database_table_job_and_crawler()
+        cls.create_iam()
+        cls.create_s3_bucket()
 
     def _test_all(self):
         """
@@ -168,7 +168,7 @@ class TestARS(FakeAws):
             disable=True,  # no log,
             # disable=False, # show log
         ):
-            # self._test_all()
+            self._test_all()
             self._test_ec2_subnet()
             self._test_ec2_securitygroup()
             self._test_glue_table()
