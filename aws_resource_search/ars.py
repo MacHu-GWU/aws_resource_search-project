@@ -17,6 +17,10 @@ class ARS(ARSBase):  # pragma: no cover
         return self._get_rs(service_id="cloudformation", resource_type="stack")
     
     @cached_property
+    def codepipeline_pipeline(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="codepipeline", resource_type="pipeline")
+    
+    @cached_property
     def dynamodb_table(self) -> "ResourceSearcher":
         return self._get_rs(service_id="dynamodb", resource_type="table")
     

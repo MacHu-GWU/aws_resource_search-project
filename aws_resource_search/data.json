@@ -134,6 +134,89 @@
             }
         }
     },
+    "codepipeline": {
+        "_shared": {
+            "*.url.service_id": "codepipeline"
+        },
+        "codepipeline-pipeline": {
+            "req": {
+                "method": "list_pipelines",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 100
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$pipelines || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "arn:aws:codepipeline:{aws_region}:{aws_account_id}:{pipeline}",
+                            "params": {
+                                "pipeline": "$_res.name",
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_ctx.AWS_ACCOUNT_ID"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.name"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "version {version}, create at {create_at}, update at {update_at}",
+                            "params": {
+                                "version": "$_res.version",
+                                "create_at": "$_res.created",
+                                "update_at": "$_res.updated"
+                            }
+                        }
+                    }
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.name"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.name"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.name",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.name",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_pipeline",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._res.name"
+                }
+            }
+        }
+    },
     "dynamodb": {
         "_shared": {
             "*.url.service_id": "dynamodb"
