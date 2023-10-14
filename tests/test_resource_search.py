@@ -13,8 +13,9 @@ from aws_resource_search.data.request import parse_req_json_node
 from aws_resource_search.data.output import parse_out_json_node
 from aws_resource_search.data.document import parse_doc_json_node
 from aws_resource_search.data.url import parse_url_json_node
-
 from aws_resource_search.resource_searcher import ResourceSearcher
+
+from aws_resource_search.paths import dir_unit_test
 from aws_resource_search.tests.helper import clear_all_cache
 from aws_resource_search.tests.mock_test import BaseMockTest
 
@@ -22,7 +23,10 @@ fake = Faker()
 
 
 class TestResourceSearcher(BaseMockTest):
-    mock_list = [moto.mock_ec2, moto.mock_glue]
+    mock_list = [
+        moto.mock_ec2,
+        moto.mock_glue,
+    ]
 
     @classmethod
     def setup_class_post_hook(cls):
@@ -180,15 +184,32 @@ class TestResourceSearcher(BaseMockTest):
                     "kwargs": {"instance_id_or_arn": "$raw_data._res.InstanceId"},
                 }
             ),
+            dir_index=dir_unit_test.joinpath(".index"),
+            dir_cache=dir_unit_test.joinpath(".cache"),
             cache_expire=1,
         )
+        rs.clear_all_cache()
+
         result = rs.search("john", refresh_data=True, verbose=True)
+        assert result["fresh"] is True
+        assert result["cache"] is False
         for hit in result["hits"]:
+            # rprint(hit)
             doc = hit["_source"]
             ec2_name = doc[RAW_DATA][_RES]["Tags"][0]["Value"]
             assert "john" in ec2_name
             arn = doc[RAW_DATA][_OUT]["arn"]
             assert arn.startswith("arn:")
+
+        result = rs.search("john", verbose=True)
+        assert result["fresh"] is False
+        assert result["cache"] is True
+
+        rs.clear_aws_account_and_region_cache()
+
+        result = rs.search("john", verbose=True)
+        assert result["fresh"] is True
+        assert result["cache"] is False
 
     def _test_glue(self):
         self._create_test_glue()
@@ -256,6 +277,7 @@ class TestResourceSearcher(BaseMockTest):
         assert result["size"] == 2
         assert result["cache"] == False
         for hit in result["hits"]:
+            # rprint(hit)
             doc = hit["_source"]
             assert doc["name"].startswith(f"{db_name}.")
 
@@ -268,6 +290,7 @@ class TestResourceSearcher(BaseMockTest):
         assert result["size"] == 2
         assert result["cache"] == True
         for hit in result["hits"]:
+            # rprint(hit)
             doc = hit["_source"]
             assert doc["name"].startswith(f"{db_name}.")
 
@@ -280,6 +303,7 @@ class TestResourceSearcher(BaseMockTest):
         assert result["size"] == 2
         assert result["cache"] == False
         for hit in result["hits"]:
+            # rprint(hit)
             doc = hit["_source"]
             assert doc["name"].startswith(f"{db_name}.")
 
@@ -309,31 +333,14 @@ class TestResourceSearcher(BaseMockTest):
             doc = hit["_source"]
             assert doc["name"].startswith(f"{db_name}.")
 
-    def _test_clear(self):
-        rs = ResourceSearcher(
-            bsm=self.bsm,
-            aws_console=None,
-            service_id="s3",
-            resource_type="bucket",
-            request=None,
-            output=None,
-            document=None,
-            url=None,
-        )
-        rs.clear_aws_account_and_region_cache()
-        for k in rs.cache.iterkeys():
-            _, tag = rs.cache.get(k, tag=True)
-            assert k[-1] is False
-
     def test(self):
         print("")
         with logger.disabled(
             disable=True,  # no log,
-            # disable=False, # show log
+            # disable=False,  # show log
         ):
             self._test_ec2()
             self._test_glue()
-            self._test_clear()
 
 
 if __name__ == "__main__":

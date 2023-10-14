@@ -3,12 +3,17 @@
 import typing as T
 import subprocess
 import dataclasses
-import afwf_shell.api as afwf_shell
-from rich import print as rprint
 
+import afwf_shell.api as afwf_shell
 from boto_session_manager import BotoSesManager
 
+try:
+    import pyperclip
+except ImportError:
+    pass
+
 from .ars import ARS
+from .utils import open_url
 from .service_searcher import srv_and_res_ds
 
 bsm = BotoSesManager()
@@ -23,12 +28,17 @@ class AwsServiceItem(afwf_shell.Item):
 @dataclasses.dataclass
 class AwsResItem(afwf_shell.Item):
     def enter_handler(self, ui: afwf_shell.UI):
-        subprocess.run(["open", self.variables["doc"]["console_url"]])
+        # open AWS console url
+        console_url = self.variables["doc"].get("console_url")
+        if not console_url:
+            console_url = "www.console-url-not-available.com"
+        open_url(console_url)
 
     def ctrl_a_handler(self, ui: afwf_shell.UI):
         # copy ARN
-        self.variables["doc"]["raw_data"]["_out"].get("arg", "")
-        pass
+        arn = self.variables["doc"]["raw_data"]["_out"].get("arn", "")
+        if arn:
+            pyperclip.copy(arn)
 
 
 def srv_docs_to_srv_items(
@@ -38,7 +48,7 @@ def srv_docs_to_srv_items(
         AwsServiceItem(
             uid=doc["id"],
             title=doc["id"],
-            subtitle="no id",
+            subtitle="hit 'Tab' and enter your query to search.",
             arg=doc["id"],
             autocomplete=doc["id"] + ": ",
         )
@@ -92,30 +102,52 @@ def _select_service(query: str) -> T.List[AwsServiceItem]:
     return srv_docs_to_srv_items(docs)
 
 
+def print_creating_index(ui: afwf_shell.UI):
+    """
+    Print a message to tell user that we are creating index.
+
+    This method is used when we need to create or recreate the index.
+    """
+    items = [
+        afwf_shell.Item(
+            uid="uid",
+            title="Pulling data, it may takes 1-2 minutes ...",
+            subtitle="please wait, don't press any key",
+        )
+    ]
+    ui.print_items(items=items)
+
+
 def sub_handler(
     service_id: str,
     resource_type: str,
     query: str,
     ui: afwf_shell.UI,
 ) -> T.List[AwsResItem]:
-    print(f"query: {query!r}")
+    # print(f"query: {query!r}")
     key = f"{service_id}-{resource_type}"
     service_id, resource_type = key.split("-")
-    if key in _mapper:
-        return _mapper[key](query)
+    if key in _special_handler_mapper:
+        return _special_handler_mapper[key](query)
 
     q = afwf_shell.Query.from_str(query)
     final_query = query
     rs = ars._get_rs(service_id, resource_type)
+
     if len(q.trimmed_parts) == 0:
         final_query = "*"
     if final_query.endswith("!~"):
+        print_creating_index(ui)
+        final_query = final_query[:-2]
+        if not final_query:
+            final_query = "*"
         rs.search(q="*", refresh_data=True, limit=1)
         ui.line_editor.press_backspace(n=2)
         ui.move_to_end()
         ui.clear_items()
         ui.clear_query()
         ui.print_query()
+
     docs = rs.search(
         q=final_query,
         simple_response=True,
@@ -144,7 +176,7 @@ def handler(
     # srv id is the service_id-resource_type compound identifier
     # req query is the query string for the resource search
     q = afwf_shell.QueryParser(delimiter=":").parse(query)
-    print(f"q.trimmed_parts = {q.trimmed_parts}")
+    # print(f"q.trimmed_parts = {q.trimmed_parts}")
 
     # example: "  "
     if len(q.trimmed_parts) == 0:
@@ -184,16 +216,16 @@ def handler(
 
 # TODO: refactor this ugly code
 def search_glue_table(
-    q: str,
+    query: str,
 ):
-    parts = q.split(".")
-    if len(parts) == 1:
-        # print(f"---- q: {q!r}")
-        q = parts[0]
-        if not q:
-            q = "*"
+    q = afwf_shell.QueryParser(delimiter=".").parse(query)
+    if len(q.trimmed_parts) in [0, 1]:
+        if len(q.trimmed_parts) == 0:
+            final_query = "*"
+        else:
+            final_query = q.trimmed_parts[0]
         docs = ars.glue_database.search(
-            q=q,
+            q=final_query,
             simple_response=True,
             limit=50,
         )
@@ -207,12 +239,14 @@ def search_glue_table(
             item.autocomplete += "."
         return items
     else:
-        database = parts[0]
-        q = parts[1]
-        if not q:
-            q = "*"
+        q_table = afwf_shell.Query.from_str(q.trimmed_parts[1])
+        database = q.trimmed_parts[0]
+        if len(q_table.trimmed_parts) == 0:
+            final_query = "*"
+        else:
+            final_query = " ".join(q_table.trimmed_parts[0])
         docs = ars.glue_table.search(
-            q=q,
+            q=final_query,
             boto_kwargs={"DatabaseName": database},
             simple_response=True,
             limit=50,
@@ -228,19 +262,11 @@ def search_glue_table(
             ]
             item.autocomplete = f"{ars.glue_table.service_id}-{ars.glue_table.resource_type}: {database_and_table}"
         return items
-    # else:
-    #     return [
-    #         AwsResItem(
-    #             uid="uid",
-    #             title="Enter database name to search tables",
-    #             subtitle="",
-    #             arg="",
-    #             variables={},
-    #         )
-    #     ]
 
 
-_mapper = {"glue-table": search_glue_table}
+_special_handler_mapper = {
+    "glue-table": search_glue_table,
+}
 
 
 def run_ui():

@@ -71,7 +71,7 @@
                 "kwargs": {
                     "PaginationConfig": {
                         "MaxItems": 9999,
-                        "PageSize": 1000
+                        "PageSize": 100
                     }
                 },
                 "is_paginator": true,
