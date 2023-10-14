@@ -219,49 +219,63 @@ def search_glue_table(
     query: str,
 ):
     q = afwf_shell.QueryParser(delimiter=".").parse(query)
+    # --- search database
+    # example: "  ", "my database"
     if len(q.trimmed_parts) in [0, 1]:
+        # example: "  "
         if len(q.trimmed_parts) == 0:
             final_query = "*"
+        # example: "my database"
         else:
             final_query = q.trimmed_parts[0]
-        docs = ars.glue_database.search(
-            q=final_query,
-            simple_response=True,
-            limit=50,
-        )
-        items = res_docs_to_res_items(
-            service_id=ars.glue_table.service_id,
-            resource_type=ars.glue_table.resource_type,
-            docs=docs,
-        )
-        for item in items:
-            item.title = f"Database: {item.title} (hit tab to search tables)"
-            item.autocomplete += "."
-        return items
+
+        if len(q.parts) == 1:
+            docs = ars.glue_database.search(
+                q=final_query,
+                simple_response=True,
+                limit=50,
+            )
+            items = res_docs_to_res_items(
+                service_id=ars.glue_table.service_id,
+                resource_type=ars.glue_table.resource_type,
+                docs=docs,
+            )
+            for item in items:
+                item.title = f"Database: {item.title} (hit tab to search tables)"
+                item.autocomplete += "."
+            return items
+
+    # --- search table
+    # example: "my_database."
+    if len(q.trimmed_parts) == 1:
+        database = q.trimmed_parts[0]
+        final_query = "*"
     else:
         q_table = afwf_shell.Query.from_str(q.trimmed_parts[1])
         database = q.trimmed_parts[0]
+        # example: "my_database.    "
         if len(q_table.trimmed_parts) == 0:
             final_query = "*"
+        # example: "my_database.my table"
         else:
-            final_query = " ".join(q_table.trimmed_parts[0])
-        docs = ars.glue_table.search(
-            q=final_query,
-            boto_kwargs={"DatabaseName": database},
-            simple_response=True,
-            limit=50,
-        )
-        items = res_docs_to_res_items(
-            service_id=ars.glue_table.service_id,
-            resource_type=ars.glue_table.resource_type,
-            docs=docs,
-        )
-        for item in items:
-            database_and_table = item.variables["doc"]["raw_data"]["_out"][
-                "database_and_table"
-            ]
-            item.autocomplete = f"{ars.glue_table.service_id}-{ars.glue_table.resource_type}: {database_and_table}"
-        return items
+            final_query = " ".join(q_table.trimmed_parts)
+    docs = ars.glue_table.search(
+        q=final_query,
+        boto_kwargs={"DatabaseName": database},
+        simple_response=True,
+        limit=50,
+    )
+    items = res_docs_to_res_items(
+        service_id=ars.glue_table.service_id,
+        resource_type=ars.glue_table.resource_type,
+        docs=docs,
+    )
+    for item in items:
+        database_and_table = item.variables["doc"]["raw_data"]["_out"][
+            "database_and_table"
+        ]
+        item.autocomplete = f"{ars.glue_table.service_id}-{ars.glue_table.resource_type}: {database_and_table}"
+    return items
 
 
 _special_handler_mapper = {
