@@ -31,6 +31,7 @@ class FakeAws(BaseMockTest):
         moto.mock_glue,
         moto.mock_iam,
         moto.mock_s3,
+        moto.mock_lambda,
     ]
 
     @classmethod
@@ -123,7 +124,7 @@ class FakeAws(BaseMockTest):
             cls.bsm.ec2_client.run_instances(**kwargs)
 
     @classmethod
-    def create_ec2_vpc(cls):
+    def create_ec2_vpc(cls) -> T.List[str]:
         vpc_id_list = list()
         for ith, env in enumerate(envs, start=1):
             kwargs = {
@@ -253,7 +254,57 @@ class FakeAws(BaseMockTest):
             )
 
     @classmethod
-    def create_s3_bucket(cls):
+    def create_lambda_layers(cls, s3_bucket):
+        cls.bsm.s3_client.put_object(Bucket=s3_bucket, Key="my-layer.zip", Body=b"")
         for ith in range(1, 1 + 10):
             env = random.choice(envs)
-            cls.bsm.s3_client.create_bucket(Bucket=f"{env}-{guid}-{ith}-s3-bucket")
+            cls.bsm.lambda_client.publish_layer_version(
+                LayerName=f"{env}-{guid}-{ith}-lbd-layer",
+                Content=dict(
+                    S3Bucket=s3_bucket,
+                    S3Key="my-key.zip",
+                ),
+            )
+
+    @classmethod
+    def create_lambda_function(cls, s3_bucket):
+        cls.bsm.iam_client.create_role(
+            RoleName=f"AwsLambdaDefaultRole",
+            AssumeRolePolicyDocument=json.dumps(
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {"Service": "lambda.amazonaws.com"},
+                            "Action": "sts:AssumeRole",
+                        }
+                    ],
+                }
+            ),
+        )
+
+        cls.bsm.s3_client.put_object(Bucket=s3_bucket, Key="my-source.zip", Body=b"")
+        for ith in range(1, 1 + 10):
+            env = random.choice(envs)
+            cls.bsm.lambda_client.create_function(
+                FunctionName=f"{env}-{guid}-{ith}-lbd-func",
+                Role="arn:aws:iam::123456789012:role/AwsLambdaDefaultRole",
+                Handler="lambda_function.lambda_handler",
+                MemorySize=256,
+                Timeout=3,
+                Code=dict(
+                    S3Bucket=s3_bucket,
+                    S3Key="my-key.zip",
+                ),
+            )
+
+    @classmethod
+    def create_s3_bucket(cls) -> T.List[str]:
+        s3_bucket_list = list()
+        for ith in range(1, 1 + 10):
+            env = random.choice(envs)
+            bucket = f"{env}-{guid}-{ith}-s3-bucket"
+            cls.bsm.s3_client.create_bucket(Bucket=bucket)
+            s3_bucket_list.append(bucket)
+        return s3_bucket_list

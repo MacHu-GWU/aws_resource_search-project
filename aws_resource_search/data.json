@@ -1,4 +1,77 @@
 {
+    "_example_dynamodb": {
+        "_shared": {
+            "*.url.service_id": "dynamodb"
+        },
+        "dynamodb-table": {
+            "req": {
+                "method": "list_tables",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 100
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$TableNames || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "arn:aws:dynamodb:{aws_region}:{aws_account_id}:table/{table}",
+                            "params": {
+                                "table": "$_res",
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_ctx.AWS_ACCOUNT_ID"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": ""
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_table",
+                "kwargs": {
+                    "table_or_arn": "$raw_data._res"
+                }
+            }
+        }
+    },
     "cloudformation": {
         "_shared": {
             "*.url.service_id": "cloudformation"
@@ -1059,6 +1132,135 @@
                 "method": "get_user",
                 "kwargs": {
                     "name_or_arn": "$raw_data._out.arn"
+                }
+            }
+        }
+    },
+    "lambda": {
+        "_shared": {
+            "*.url.service_id": "awslambda"
+        },
+        "lambda-function": {
+            "req": {
+                "method": "list_functions",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 50000,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Functions || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.FunctionArn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.FunctionName"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res.Description || `No description`"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.FunctionName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.FunctionName"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.FunctionName",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.FunctionName",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_function",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._res.FunctionArn"
+                }
+            }
+        },
+        "lambda-layer": {
+            "req": {
+                "method": "list_layers",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 1000,
+                        "PageSize": 50
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Layers || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.LayerArn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": "$_res.LayerName"
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res.LatestMatchingVersion.Description || `No description`"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.LayerName"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": "$_res.LayerName"
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.LayerName",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_res.LayerName",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_layer",
+                "kwargs": {
+                    "name_or_arn": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "{arn}:1",
+                            "params": {
+                                "arn": "$raw_data._res.LayerArn"
+                            }
+                        }
+                    }
                 }
             }
         }

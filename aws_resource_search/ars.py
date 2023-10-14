@@ -69,6 +69,14 @@ class ARS(ARSBase):  # pragma: no cover
         return self._get_rs(service_id="iam", resource_type="user")
     
     @cached_property
+    def lambda_function(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="lambda", resource_type="function")
+    
+    @cached_property
+    def lambda_layer(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="lambda", resource_type="layer")
+    
+    @cached_property
     def s3_bucket(self) -> "ResourceSearcher":
         return self._get_rs(service_id="s3", resource_type="bucket")
     

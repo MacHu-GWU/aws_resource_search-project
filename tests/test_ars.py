@@ -26,7 +26,9 @@ class TestARS(FakeAws):
         cls.create_ec2_securitygroup(vpc_id_list=vpc_id_list)
         cls.create_glue_database_table_job_and_crawler()
         cls.create_iam()
-        cls.create_s3_bucket()
+        s3_bucket_list = cls.create_s3_bucket()
+        # cls.create_lambda_layers(s3_bucket=s3_bucket_list[0])
+        cls.create_lambda_function(s3_bucket=s3_bucket_list[0])
 
     def _test_all(self):
         """
@@ -39,7 +41,7 @@ class TestARS(FakeAws):
         }
 
         ars = self.ars
-        # ars.aws_console.vpc.get_security_group(sg_id=123)
+        # ars.aws_console.awslambda.get_layer(sg_id=123)
         for service_id, resource_type in ars._service_id_and_resource_type_pairs():
             if f"{service_id}-{resource_type}" in ignore:
                 continue
