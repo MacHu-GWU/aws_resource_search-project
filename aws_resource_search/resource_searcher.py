@@ -186,7 +186,7 @@ class ResourceSearcher:
         ):
             final_boto_kwargs = self.request._merge_boto_kwargs(
                 download_kwargs["boto_kwargs"],
-                self.context,
+                context,
             )
             if self.request.cache_key:
                 more_cache_keys: T.List[str] = self.request._get_additional_cache_key(
@@ -220,6 +220,7 @@ class ResourceSearcher:
             dir_cache=self.dir_cache,
             cache=self.cache,
             cache_expire=self.cache_expire,
+            context=self.context,
         )
 
     @cached_property

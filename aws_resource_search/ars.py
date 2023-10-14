@@ -84,3 +84,11 @@ class ARS(ARSBase):  # pragma: no cover
     def s3_bucket(self) -> "ResourceSearcher":
         return self._get_rs(service_id="s3", resource_type="bucket")
     
+    @cached_property
+    def sns_topic(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="sns", resource_type="topic")
+    
+    @cached_property
+    def sqs_queue(self) -> "ResourceSearcher":
+        return self._get_rs(service_id="sqs", resource_type="queue")
+    

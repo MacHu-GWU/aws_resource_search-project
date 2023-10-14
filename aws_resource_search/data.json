@@ -1409,5 +1409,200 @@
                 }
             }
         }
+    },
+    "sns": {
+        "_shared": {
+            "*.url.service_id": "sns"
+        },
+        "sns-topic": {
+            "req": {
+                "method": "list_topics",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$Topics || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": "$_res.TopicArn"
+                },
+                "title": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Select",
+                        "kwargs": {
+                            "index": -1,
+                            "array": {
+                                "type": "Token::Split",
+                                "kwargs": {
+                                    "sep": ":",
+                                    "text": "$_res.TopicArn"
+                                }
+                            }
+                        }
+                    }
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res.TopicArn"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res.TopicArn"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Select",
+                        "kwargs": {
+                            "index": -1,
+                            "array": {
+                                "type": "Token::Split",
+                                "kwargs": {
+                                    "sep": ":",
+                                    "text": "$_res.TopicArn"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_res.TopicArn",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_out.title",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_topic",
+                "kwargs": {
+                    "name_or_arn": "$raw_data._res.TopicArn"
+                }
+            }
+        }
+    },
+    "sqs": {
+        "_shared": {
+            "*.url.service_id": "sqs"
+        },
+        "sqs-queue": {
+            "req": {
+                "method": "list_queues",
+                "kwargs": {
+                    "PaginationConfig": {
+                        "MaxItems": 9999,
+                        "PageSize": 1000
+                    }
+                },
+                "is_paginator": true,
+                "result_path": "$QueueUrls || `[]`"
+            },
+            "out": {
+                "arn": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Sub",
+                        "kwargs": {
+                            "template": "arn:aws:sqs:{aws_region}:{aws_account_id}:{queue}",
+                            "params": {
+                                "queue": {
+                                    "type": "Token::Select",
+                                    "kwargs": {
+                                        "index": -1,
+                                        "array": {
+                                            "type": "Token::Split",
+                                            "kwargs": {
+                                                "sep": "/",
+                                                "text": "$_res"
+                                            }
+                                        }
+                                    }
+                                },
+                                "aws_region": "$_ctx.AWS_REGION",
+                                "aws_account_id": "$_ctx.AWS_ACCOUNT_ID"
+                            }
+                        }
+                    }
+                },
+                "title": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Select",
+                        "kwargs": {
+                            "index": -1,
+                            "array": {
+                                "type": "Token::Split",
+                                "kwargs": {
+                                    "sep": "/",
+                                    "text": "$_res"
+                                }
+                            }
+                        }
+                    }
+                },
+                "subtitle": {
+                    "type": "str",
+                    "token": "$_res"
+                },
+                "arg": {
+                    "type": "str",
+                    "token": "$_res"
+                },
+                "autocomplete": {
+                    "type": "str",
+                    "token": {
+                        "type": "Token::Select",
+                        "kwargs": {
+                            "index": -1,
+                            "array": {
+                                "type": "Token::Split",
+                                "kwargs": {
+                                    "sep": "/",
+                                    "text": "$_res"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "doc": {
+                "id": {
+                    "type": "Id",
+                    "token": "$_out.arn",
+                    "kwargs": {
+                        "stored": true,
+                        "field_boost": 10
+                    }
+                },
+                "name": {
+                    "type": "NgramWords",
+                    "token": "$_out.title",
+                    "kwargs": {
+                        "stored": true
+                    }
+                }
+            },
+            "url": {
+                "method": "get_queue",
+                "kwargs": {
+                    "name_or_arn_or_url": "$raw_data._res"
+                }
+            }
+        }
     }
 }

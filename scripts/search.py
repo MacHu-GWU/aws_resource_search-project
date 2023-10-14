@@ -29,6 +29,8 @@ if __name__ == "__main__":
     # docs = ars.lambda_function.search(query, limit=limit, refresh_data=refresh_data, simple_response=True)
     # docs = ars.lambda_layer.search(query, limit=limit, refresh_data=refresh_data, simple_response=True)
     # docs = ars.codepipeline_pipeline.search(query, limit=limit, refresh_data=refresh_data, simple_response=True)
+    # docs = ars.sns_topic.search(query, limit=limit, refresh_data=refresh_data, simple_response=True)
+    docs = ars.sqs_queue.search(query, limit=limit, refresh_data=refresh_data, simple_response=True)
     for doc in docs:
         # print(doc)
         print(doc["id"], doc["name"], doc["console_url"], doc["raw_data"]["_out"]["subtitle"])
