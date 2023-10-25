@@ -11,7 +11,7 @@ class S3Bucket(res_lib.BaseDocument):
     creation_date: str = dataclasses.field()
 
     @classmethod
-    def from_resource(cls, resource: res_lib.T_RESULT_DATA):
+    def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
             id=resource["Name"],

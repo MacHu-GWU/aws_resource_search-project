@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import moto
+import pytest
+
+from datetime import datetime
+
 from aws_resource_search.res_lib import (
     ResultPath,
     list_resources,
+    extract_datetime,
+    preprocess_query,
 )
+from aws_resource_search.res.s3 import s3_bucket_searcher
+from aws_resource_search.res.iam import iam_group_searcher
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
 
@@ -29,7 +37,13 @@ class Test(BaseMockTest):
             "developer_group",
         ]
         for iam_group_name in self.iam_group_names:
-            self.bsm.iam_client.create_group(GroupName=iam_group_name)
+            try:
+                self.bsm.iam_client.create_group(GroupName=iam_group_name)
+            except Exception as e:
+                if "already exists" in str(e):
+                    pass
+                else:
+                    raise e
 
     def _test_list_resources_1_s3_not_paginator(self):
         def func():
@@ -76,8 +90,59 @@ class Test(BaseMockTest):
         self._test_list_resources_1_s3_not_paginator()
         self._test_list_resources_2_iam_is_paginator()
 
+    def _test_preprocess_query(self):
+        assert preprocess_query(None) == "*"
+        assert preprocess_query("") == "*"
+        assert preprocess_query("*") == "*"
+        assert preprocess_query("abc") == "abc~1"
+        assert preprocess_query("abc~2") == "abc~2"
+        assert preprocess_query("abc xyz") == "abc~1 xyz~1"
+        assert preprocess_query("abc~2 xyz") == "abc~2 xyz~1"
+        assert preprocess_query("a") == "a~1"
+        assert preprocess_query("a b c xyz") == "a~1 b~1 c~1 xyz~1"
+
+    def _test_extract_datetime(self):
+        assert extract_datetime({}, "create_time") == "No datetime"
+        assert (
+            extract_datetime({"create_time": datetime(2021, 1, 1)}, "create_time")
+            == "2021-01-01T00:00:00"
+        )
+        assert extract_datetime({"create_time": "2021"}, "create_time") == "2021"
+
+    def _test_extractor(self):
+        self._test_extract_datetime()
+
+    def _test_searcher_get_bsm(self):
+        with pytest.raises(TypeError):
+            s3_bucket_searcher._get_bsm()
+
+        s3_bucket_searcher._get_bsm(self.bsm)
+        s3_bucket_searcher.bsm = self.bsm
+        s3_bucket_searcher._get_bsm(self.bsm)
+
+    def _test_searcher_search(self):
+        self._create_test_buckets()
+        s3_bucket_searcher.bsm = self.bsm
+        res = s3_bucket_searcher.search(refresh_data=True)
+        assert len(res) == 2
+
+        res = s3_bucket_searcher.search(simple_response=False)
+        assert len(res["hits"]) == 2
+
+        self._create_test_iam_groups()
+        iam_group_searcher.bsm = self.bsm
+        res = iam_group_searcher.search(refresh_data=True)
+        assert len(res) == 2
+
+    def _test_searcher(self):
+        self._test_searcher_get_bsm()
+        self._test_searcher_search()
+
     def test(self):
         self._test_list_resources()
+        self._test_preprocess_query()
+        self._test_extractor()
+        self._test_searcher()
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ Utility class and function in this module will be used in
 import typing as T
 import copy
 import dataclasses
-from functools import cached_property
+from datetime import datetime
 
 import jmespath
 import aws_console_url.api as acu
@@ -20,8 +20,12 @@ from boto_session_manager import BotoSesManager
 from .model import BaseModel
 from .utils import get_md5_hash
 from .paths import dir_index, dir_cache
+from .compat import cached_property
 
 
+# ------------------------------------------------------------------------------
+# Boto3 API Call
+# ------------------------------------------------------------------------------
 T_RESULT_DATA = T.Union[sayt.T_DOCUMENT, str]
 
 
@@ -101,7 +105,7 @@ def list_resources(
         if boto_kwargs is None:
             kwargs = {}
         else:
-            kwargs = {}
+            kwargs = boto_kwargs
         client = bsm.get_client(service)
         if is_paginator:
             paginator = client.get_paginator(method)
@@ -114,14 +118,26 @@ def list_resources(
     return ResourceIterproxy(func())
 
 
+# ------------------------------------------------------------------------------
+# Document
+# ------------------------------------------------------------------------------
+
+
 @dataclasses.dataclass
 class BaseDocument(BaseModel):
     raw_data: T_RESULT_DATA = dataclasses.field()
 
     @classmethod
-    def from_resource(cls, resource: T_RESULT_DATA):
+    def from_resource(
+        cls,
+        resource: T_RESULT_DATA,
+        bsm: BotoSesManager,
+        boto_kwargs: dict,
+    ):
         """
         Create a document object from the boto3 API response data.
+        Since the API response data is based on the bsm object and boto_kwargs,
+        we also need those information to create the document object.
 
         For example, ``s3_client.list_buckets`` api returns::
 
@@ -196,9 +212,47 @@ class BaseDocument(BaseModel):
 
 T_DOCUMENT_OBJ = T.TypeVar("T_DOCUMENT_OBJ", bound=BaseDocument)
 
+
+def extract_datetime(
+    resource: T_RESULT_DATA,
+    jpath: str,
+    default: str = "No datetime",
+) -> str:
+    res = jmespath.search(jpath, resource)
+    if res is None:
+        return default
+    elif isinstance(res, datetime):
+        return res.isoformat()
+    else:
+        return res
+
+
+# ------------------------------------------------------------------------------
+# Searcher
+# ------------------------------------------------------------------------------
 SEP = "____"
 
 T_MORE_CACHE_KEY = T.Callable[[sayt.T_DOCUMENT], T.List[str]]
+
+
+def preprocess_query(query: T.Optional[str]) -> str:
+    """
+    Preprocess query, automatically add fuzzy search term if applicable.
+    """
+    if query:
+        words = list()
+        for word in query.split():
+            if word.strip():
+                if word != "*":
+                    try:
+                        if word[-2] != "~":
+                            word = f"{word}~1"
+                    except IndexError:
+                        word = f"{word}~1"
+                words.append(word)
+        return " ".join(words)
+    else:
+        return "*"
 
 
 @dataclasses.dataclass
@@ -216,6 +270,7 @@ class Searcher(BaseModel):
     :param more_cache_key:
     :param bsm:
     """
+
     # list resources
     service: str = dataclasses.field()
     method: str = dataclasses.field()
@@ -294,7 +349,14 @@ class Searcher(BaseModel):
                 boto_kwargs=final_boto_kwargs,
                 result_path=self.result_path,
             ):
-                yield self.doc_class.from_resource(resource=resource).to_dict()
+                # print(resource) # for DEBUG ONLY
+                doc_dict = self.doc_class.from_resource(
+                    resource=resource,
+                    bsm=bsm,
+                    boto_kwargs=final_boto_kwargs,
+                ).to_dict()
+                # print(doc_dict) # for DEBUG ONLY
+                yield doc_dict
 
         return sayt.DataSet(
             dir_index=dir_index,
@@ -306,24 +368,6 @@ class Searcher(BaseModel):
             cache_expire=self.cache_expire,
             downloader=downloader,
         )
-
-    def _preprocess_query(self, query: T.Optional[str]) -> str:
-        """
-        Preprocess query, automatically add fuzzy search term if applicable.
-        """
-        if query:
-            words = list()
-            for word in query.split():
-                if word.strip():
-                    try:
-                        if not word[-2] != "~":
-                            word = f"{word}~1"
-                    except IndexError:
-                        word = f"{word}~1"
-                    words.append(word)
-            return " ".join(words)
-        else:
-            return "*"
 
     def search(
         self,
@@ -358,7 +402,7 @@ class Searcher(BaseModel):
             bsm=self._get_bsm(bsm),
             final_boto_kwargs=final_boto_kwargs,
         )
-        final_query = self._preprocess_query(query)
+        final_query = preprocess_query(query)
         result = ds.search(
             query=final_query,
             limit=limit,

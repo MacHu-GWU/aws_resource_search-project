@@ -8,20 +8,16 @@ from ..searchers import lookup
 
 dir_here = Path(__file__).absolute().parent
 path_tpl = dir_here.joinpath("ars_v2.py.jinja")
-path_py = dir_python_lib.joinpath("searchers.py")
+path_py = dir_python_lib.joinpath("ars_v2.py")
 
 
-
-def generate_ars_py_module():
+def generate_ars_v2_py_module():
     """
-    Generate ``aws_resource_search/ars.py`` module.
+    Generate ``aws_resource_search/ars_v2.py`` module.
     """
-    path_tpl = dir_here.joinpath("ars.py.jinja")
-    path_py = dir_aws_resource_search.joinpath("ars.py")
-    ars = ARSBase(bsm=None)
+    tuples = [
+        (resource_type.replace("-", "_"), resource_type) for resource_type in lookup
+    ]
+    tuples = list(sorted(tuples, key=lambda x: x[0]))
     tpl = jinja2.Template(path_tpl.read_text())
-    path_py.write_text(
-        tpl.render(
-            service_id_resource_type_pairs=ars._service_id_and_resource_type_pairs()
-        )
-    )
+    path_py.write_text(tpl.render(tuples=tuples))
