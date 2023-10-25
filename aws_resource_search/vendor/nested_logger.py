@@ -178,7 +178,7 @@ def format_ruler(
         if len(_pipes) != nest:
             raise ValueError
     nesting = "".join(_pipes)
-    s = f"{nesting}{corner}{left_pad}{msg:{char}{align}{length}}{right_pad}{corner}"
+    s = f"{nesting}{corner}{left_pad}{msg:{char}{align.value}{length}}{right_pad}{corner}"
     return s
 
 
