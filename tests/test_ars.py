@@ -41,7 +41,8 @@ class TestARS(FakeAws):
         }
 
         ars = self.ars
-        ars.aws_console.codepipeline.get_pipeline(sg_id=123)
+
+        # ars.aws_console.sqs.get_queue(name_or_arn_or_url=123)
         for service_id, resource_type in ars._service_id_and_resource_type_pairs():
             if f"{service_id}-{resource_type}" in ignore:
                 continue
