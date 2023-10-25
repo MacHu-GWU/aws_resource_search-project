@@ -1,0 +1,7 @@
+# -*- coding: utf-8 -*-
+
+lookup = {
+    {%- for resource_type, module_name, variable_name in tuples %}
+    "{{ resource_type }}": {"mod": "{{ module_name}}", "var": "{{ variable_name }}"},
+    {%- endfor %}
+}

@@ -6,14 +6,20 @@ Utility class and function in this module will be used in
 """
 
 import typing as T
+import copy
 import dataclasses
+from functools import cached_property
 
 import jmespath
+import aws_console_url.api as acu
 import sayt.api as sayt
+import zelfred.api as zf
 from iterproxy import IterProxy
 from boto_session_manager import BotoSesManager
 
 from .model import BaseModel
+from .utils import get_md5_hash
+from .paths import dir_index, dir_cache
 
 
 T_RESULT_DATA = T.Union[sayt.T_DOCUMENT, str]
@@ -106,3 +112,261 @@ def list_resources(
             yield from result_path.extract(response)
 
     return ResourceIterproxy(func())
+
+
+@dataclasses.dataclass
+class BaseDocument(BaseModel):
+    raw_data: T_RESULT_DATA = dataclasses.field()
+
+    @classmethod
+    def from_resource(cls, resource: T_RESULT_DATA):
+        """
+        Create a document object from the boto3 API response data.
+
+        For example, ``s3_client.list_buckets`` api returns::
+
+            {
+                'Name': '...',
+                'CreationDate': datetime.datetime(...)
+            }
+
+        The implementation should be::
+
+            >>> @dataclasses.dataclass
+            ... class S3BucketDocument(BaseDocument):
+            ...
+            ...     id: str = dataclasses.field()
+            ...     name: str = dataclasses.field()
+            ...     creation_date: str = dataclasses.field()
+            ...
+            ...     @classmethod
+            ...     def from_resource(cls, resource: T_RESULT_DATA):
+            ...         return cls(
+            ...             raw_data=resource,
+            ...             id=resource["Name"],
+            ...             name=resource["Name"],
+            ...             creation_date=resource["CreationDate"].isoformat(),
+            ...         )
+        """
+        raise NotImplementedError
+
+    @property
+    def title(self) -> str:
+        """
+        The title in the zelfred UI.
+        """
+        raise NotImplementedError
+
+    @property
+    def subtitle(self) -> str:
+        """
+        The subtitle in the zelfred UI.
+        """
+        raise NotImplementedError
+
+    @property
+    def autocomplete(self) -> str:
+        """
+        Autocomplete text for the zelfred UI.
+        """
+        raise NotImplementedError
+
+    @property
+    def arn(self) -> str:
+        """
+        AWS Resource ARN, if applicable. User can tap 'Ctrl + A' to copy the ARN.
+        """
+        raise NotImplementedError
+
+    def get_console_url(self, console: acu.AWSConsole) -> str:
+        """
+        AWS Console URL, if applicable, User can tap 'Enter' to open in browser.
+        """
+        raise NotImplementedError
+
+    @property
+    def details(self) -> T.List[zf.T_ITEM]:
+        """
+        Additional details for the resource, it will be rendered in the
+        dropdown menu. User can tap tab 'Ctrl + P' to view the details,
+        and tap 'F1' to go back to the previous view.
+        """
+        raise NotImplementedError
+
+
+T_DOCUMENT_OBJ = T.TypeVar("T_DOCUMENT_OBJ", bound=BaseDocument)
+
+SEP = "____"
+
+T_MORE_CACHE_KEY = T.Callable[[sayt.T_DOCUMENT], T.List[str]]
+
+
+@dataclasses.dataclass
+class Searcher(BaseModel):
+    """
+    :param service:
+    :param method:
+    :param is_paginator:
+    :param default_boto_kwargs:
+    :param result_path:
+    :param doc_class:
+    :param resource_type:
+    :param fields:
+    :param cache_expire:
+    :param more_cache_key:
+    :param bsm:
+    """
+    # list resources
+    service: str = dataclasses.field()
+    method: str = dataclasses.field()
+    is_paginator: bool = dataclasses.field()
+    default_boto_kwargs: T.Optional[dict] = dataclasses.field()
+    result_path: ResultPath = dataclasses.field()
+    # extract document
+    doc_class: T.Type[T_DOCUMENT_OBJ] = dataclasses.field()
+    # search
+    resource_type: str = dataclasses.field()
+    fields: T.List[sayt.T_Field] = dataclasses.field()
+    cache_expire: int = dataclasses.field()
+    more_cache_key: T.Optional[T_MORE_CACHE_KEY] = dataclasses.field()
+
+    bsm: T.Optional[BotoSesManager] = dataclasses.field(default=None)
+
+    def _get_bsm(self, bsm: T.Optional[BotoSesManager] = None) -> BotoSesManager:
+        """
+        Preprocess the bsm arguments.
+        """
+        if bsm is None:
+            final_bsm = self.bsm
+        else:
+            final_bsm = bsm
+        if not isinstance(final_bsm, BotoSesManager):
+            raise TypeError(f"bsm must be BotoSesManager, not {type(bsm)}")
+        return final_bsm
+
+    def _get_bsm_fingerprint(
+        self,
+        bsm: BotoSesManager,
+    ) -> T.Tuple[str, T.Optional[str]]:
+        """
+        Get the logical unique fingerprint of the boto3 session. It will be
+        used in the index name and cache key naming convention.
+        """
+        if str(bsm.profile_name) == "Sentinel('NOTHING')":
+            account_or_profile = bsm.aws_account_id
+        else:  # pragma: no cover
+            account_or_profile = bsm.profile_name
+        if bsm.aws_region is None:  # pragma: no cover
+            region = "unknown-region"
+        else:
+            region = bsm.aws_region
+        return account_or_profile, region
+
+    def _get_ds(
+        self,
+        bsm: BotoSesManager,
+        final_boto_kwargs: dict,
+    ) -> sayt.DataSet:
+        """
+        Get the corresponding ``sayt.DataSet`` object.
+        """
+        account_or_profile, region = self._get_bsm_fingerprint(bsm=bsm)
+        if self.more_cache_key is None:
+            index_name = SEP.join([account_or_profile, region, self.resource_type])
+        else:
+            index_name = SEP.join(
+                [
+                    account_or_profile,
+                    region,
+                    self.resource_type,
+                    get_md5_hash(SEP.join(self.more_cache_key(final_boto_kwargs))),
+                ]
+            )
+        cache_key = index_name
+        cache_tag = index_name
+
+        def downloader():
+            for resource in list_resources(
+                bsm=bsm,
+                service=self.service,
+                method=self.method,
+                is_paginator=self.is_paginator,
+                boto_kwargs=final_boto_kwargs,
+                result_path=self.result_path,
+            ):
+                yield self.doc_class.from_resource(resource=resource).to_dict()
+
+        return sayt.DataSet(
+            dir_index=dir_index,
+            index_name=index_name,
+            fields=self.fields,
+            dir_cache=dir_cache,
+            cache_key=cache_key,
+            cache_tag=cache_tag,
+            cache_expire=self.cache_expire,
+            downloader=downloader,
+        )
+
+    def _preprocess_query(self, query: T.Optional[str]) -> str:
+        """
+        Preprocess query, automatically add fuzzy search term if applicable.
+        """
+        if query:
+            words = list()
+            for word in query.split():
+                if word.strip():
+                    try:
+                        if not word[-2] != "~":
+                            word = f"{word}~1"
+                    except IndexError:
+                        word = f"{word}~1"
+                    words.append(word)
+            return " ".join(words)
+        else:
+            return "*"
+
+    def search(
+        self,
+        query: str = "*",
+        limit: int = 20,
+        boto_kwargs: T.Optional[dict] = None,
+        refresh_data: bool = False,
+        simple_response: bool = True,
+        verbose: bool = False,
+        bsm: T.Optional[BotoSesManager] = None,
+    ) -> T.Union[sayt.T_Result, T.List[T_DOCUMENT_OBJ]]:
+        """
+        Search the dataset
+
+        :param query: query string
+        :param limit: the max number of results to return
+        :param boto_kwargs: additional boto3 keyword arguments
+        :param refresh_data: force to refresh the data
+        :param simple_response: if True, then return a list of ``T_DOCUMENT_OBJ``
+            objects, otherwise return the elasticsearch liked result.
+        :param verbose: whether to print the log
+        :param bsm: you can explicitly use a ``BotoSesManager`` object to override
+            the default one you defined when creating the :class:`Searcher`` object.
+        """
+        if self.default_boto_kwargs:
+            final_boto_kwargs = copy.deepcopy(self.default_boto_kwargs)
+        else:
+            final_boto_kwargs = {}
+        if boto_kwargs is not None:
+            final_boto_kwargs.update(boto_kwargs)
+        ds = self._get_ds(
+            bsm=self._get_bsm(bsm),
+            final_boto_kwargs=final_boto_kwargs,
+        )
+        final_query = self._preprocess_query(query)
+        result = ds.search(
+            query=final_query,
+            limit=limit,
+            simple_response=False,
+            refresh_data=refresh_data,
+            verbose=verbose,
+        )
+        if simple_response:
+            return [self.doc_class.from_dict(dct["_source"]) for dct in result["hits"]]
+        else:
+            return result
