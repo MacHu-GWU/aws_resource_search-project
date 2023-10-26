@@ -34,8 +34,20 @@ class ARS(ARSBase):  # pragma: no cover
         return self._get_searcher("iam-role")
     
     @cached_property
+    def lambda_function(self) -> Searcher:
+        return self._get_searcher("lambda-function")
+    
+    @cached_property
+    def lambda_layer(self) -> Searcher:
+        return self._get_searcher("lambda-layer")
+    
+    @cached_property
     def s3_bucket(self) -> Searcher:
         return self._get_searcher("s3-bucket")
+    
+    @cached_property
+    def sfn_execution(self) -> Searcher:
+        return self._get_searcher("sfn-execution")
     
     @cached_property
     def sfn_statemachine(self) -> Searcher:

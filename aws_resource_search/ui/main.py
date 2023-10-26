@@ -13,16 +13,14 @@ except ImportError:
 
 from ..ars_v2 import ARS
 from ..searchers import searchers_metadata, SearcherEnum
-from ..resource_type_searcher import resource_type_searcher
 from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, Searcher
+from .search_resource_type import (
+    AwsResourceTypeItem,
+    select_resource_type_handler,
+)
 
 bsm = BotoSesManager()
 ars = ARS(bsm=bsm)
-
-
-@dataclasses.dataclass
-class AwsResourceTypeItem(zf.Item):
-    pass
 
 
 class TVariables(T.TypedDict):
@@ -67,50 +65,32 @@ class AwsResourceItem(zf.Item):
         except NotImplementedError:
             raise NotImplementedError(f"{doc.__class__.__name__} doesn't support ARN")
 
+    def ctrl_p_handler(self, ui: zf.UI):
+        """
+        View details.
+        """
+        doc: T_DOCUMENT_OBJ = self.variables["doc"]
+        try:
+            items = doc.details()
+            ui.run_handler(items=items)
 
-def resource_type_to_resource_type_items(
-    docs: T.Iterable[T.Dict[str, T.Any]],
-) -> T.List[AwsResourceTypeItem]:
-    """
-    Convert AWS resource type search result document into zelfred Items.
-    """
-    return [
-        AwsResourceTypeItem(
-            uid=doc["name"],
-            title=doc["name"],
-            subtitle="hit 'Tab' and enter your query to search.",
-            arg=doc["name"],
-            autocomplete=doc["name"] + ": ",
-        )
-        for doc in docs
-    ]
+            # enter the main event loop of the sub query
+            # user can tap 'F1' to exit the sub query session,
+            # and go back to the folder selection session.
+            def handler(query: str, ui: zf.UI):
+                """
+                A partial function that using the given folder.
+                """
+                return items
 
+            ui.replace_handler(handler)
 
-def list_resource_types_handler() -> T.List[AwsResourceTypeItem]:
-    """
-    This handler returns a list of available resource types.
-    """
-    docs = resource_type_searcher.search(
-        query="*",
-        limit=50,
-        simple_response=True,
-    )
-    return resource_type_to_resource_type_items(docs)
-
-
-def select_resource_type_handler(query: str) -> T.List[AwsResourceTypeItem]:
-    """
-    This handle filter resource types by query.
-
-    :param query: service id and resource type search query input. For example:
-        "s3 bucket", "ec2 inst"
-    """
-    docs = resource_type_searcher.search(
-        query=preprocess_query(query),
-        limit=50,
-        simple_response=True,
-    )
-    return resource_type_to_resource_type_items(docs)
+            # re-paint the UI
+            ui.line_editor.clear_line()
+            repaint_ui(ui)
+            ui.run(_do_init=False)
+        except NotImplementedError:
+            raise NotImplementedError(f"{doc.__class__.__name__} doesn't support ARN")
 
 
 def creating_index_items(resource_type: str) -> T.List[zf.Item]:
@@ -221,8 +201,9 @@ def search_resource_handler_may_has_kwargs(
         ui.line_editor.press_backspace(n=2)
         return search_and_return_items(
             searcher=searcher,
-            query=final_query[:-2],
+            query=preprocess_query(final_query[:-2]),
             boto_kwargs=boto_kwargs,
+            refresh_data=True,
             doc_to_item_func=doc_to_item_func,
         )
 
@@ -330,7 +311,6 @@ def search_resource_handler_has_partitioner(
     zf.debugger.log(f"search_resource_handler_v2_has_partitioner Query: {query}")
     q = zf.QueryParser(delimiter="@").parse(query)
     # --- search partitioner
-    # 下面的情况都是需要处理 partitioner 的
     # examples
     # - "  "
     # - "my database"
@@ -436,7 +416,7 @@ def handler(
 
     # example: "  "
     if len(q.trimmed_parts) == 0:
-        return list_resource_types_handler()
+        return select_resource_type_handler(ui=ui, query="*")
     # example:
     # - "ec2 inst"
     # - "s3-bucket"
@@ -448,7 +428,7 @@ def handler(
         # - "ec2 inst: "
         # - "s3-bucket: "
         if len(q.parts) == 1:
-            return select_resource_type_handler(query=service_query)
+            return select_resource_type_handler(ui=ui, query=service_query)
         # example:
         # - "ec2 inst"
         # - "s3-bucket"
@@ -463,7 +443,7 @@ def handler(
                 )
             # example: "ec2 inst"
             else:
-                return select_resource_type_handler(query=service_query)
+                return select_resource_type_handler(ui=ui, query=service_query)
     # example: "ec2 inst: something", "s3-bucket: something"
     else:
         # example:
@@ -479,7 +459,7 @@ def handler(
             )
         # example: # ec2 inst: something", "ec2 inst" is not a valid srv_id
         else:
-            return select_resource_type_handler(query=service_query)
+            return select_resource_type_handler(ui=ui, query=service_query)
 
 
 K_PARTITIONER_RESOURCE_TYPE = "partitioner_resource_type"
