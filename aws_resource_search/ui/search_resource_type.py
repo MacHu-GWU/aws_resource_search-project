@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+This module implements the resource type search feature.
+"""
+
 import typing as T
 import dataclasses
 
@@ -64,17 +68,17 @@ class AwsResourceTypeItem(zf.Item):
         Then the item will be::
 
             {
-                "uid": "s3-bucket",
                 "title": "s3-bucket",
                 "subtitle": "hit 'Tab' and enter your query to search.",
+                "uid": "s3-bucket",
                 "arg": "s3-bucket",
                 "autocomplete": "s3-bucket: ",
             }
         """
         return cls(
-            uid=doc["id"],
             title=doc["name"],
             subtitle="hit 'Tab' and enter your query to search.",
+            uid=doc["id"],
             arg=doc["name"],
             autocomplete=doc["name"] + ": ",
         )

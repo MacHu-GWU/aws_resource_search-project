@@ -25,7 +25,7 @@ class S3Bucket(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return self.creation_date
+        return f"Create at: {self.creation_date}"
 
     @property
     def autocomplete(self) -> str:

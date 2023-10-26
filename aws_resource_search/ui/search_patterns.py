@@ -1,34 +1,19 @@
 # -*- coding: utf-8 -*-
 
-import zelfred.api as zf
-
 from ..searchers import SearcherEnum
 
 from .boto_ses import ars
 
 
-def repaint_ui(ui: zf.UI):
-    """
-    Repaint the UI right after the items is ready. This is useful when you want
-    to show a message before running the real handler.
-    """
-    # you should handle the ``ui.run_handler()`` logic yourself
-    ui.move_to_end()
-    ui.clear_items()
-    ui.clear_query()
-    ui.print_query()
-    ui.print_items()
-
-
 K_PARTITIONER_RESOURCE_TYPE = "partitioner_resource_type"
 K_GET_BOTO_KWARGS = "get_boto_kwargs"
 
-# This mapper is used to specify those resource types that require
-# a parent resource name for the boto3 API call.
-# for example,
-# in order to search glue table, you need to specify glue database
-# in order to search glue job run, you need to specify glue job
-_has_partitioner_mapper = {
+# This variable defines those resource types that requires a parent resource name
+# for the boto3 API call. For example:
+#
+# - in order to search glue table, you need to specify glue database
+# - in order to search glue job run, you need to specify glue job
+has_partitioner_search_patterns = {
     SearcherEnum.glue_table: {
         K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_database,
         K_GET_BOTO_KWARGS: lambda partitioner_query: {
@@ -48,3 +33,20 @@ _has_partitioner_mapper = {
         },
     },
 }
+
+
+def has_partitioner(resource_type: str) -> bool:
+    return resource_type in has_partitioner_search_patterns
+
+
+def get_partitioner_resource_type(resource_type: str) -> str:
+    dct = has_partitioner_search_patterns[resource_type]
+    return dct[K_PARTITIONER_RESOURCE_TYPE]
+
+
+def get_partitioner_boto_kwargs(
+    resource_type: str,
+    partitioner_query: str,
+) -> dict:
+    dct = has_partitioner_search_patterns[resource_type]
+    return dct[K_GET_BOTO_KWARGS](partitioner_query)
