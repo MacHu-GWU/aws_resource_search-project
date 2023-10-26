@@ -20,7 +20,6 @@ from boto_session_manager import BotoSesManager
 from .model import BaseModel
 from .utils import get_md5_hash
 from .paths import dir_index, dir_cache
-from .compat import cached_property
 
 
 # ------------------------------------------------------------------------------
@@ -178,14 +177,21 @@ class BaseDocument(BaseModel):
         """
         The subtitle in the zelfred UI.
         """
-        raise NotImplementedError
+        return "No Subtitle"
+
+    @property
+    def uid(self) -> str:
+        """
+        The uid in the zelfred UI.
+        """
+        return self.title
 
     @property
     def autocomplete(self) -> str:
         """
         Autocomplete text for the zelfred UI.
         """
-        raise NotImplementedError
+        return ""
 
     @property
     def arn(self) -> str:
@@ -218,6 +224,12 @@ def extract_datetime(
     jpath: str,
     default: str = "No datetime",
 ) -> str:
+    """
+    Example:
+
+        >>> extract_datetime({"CreateDate": datetime(2021, 1, 1)}, path="CreateDate")
+        "2021-01-01T00:00:00"
+    """
     res = jmespath.search(jpath, resource)
     if res is None:
         return default
@@ -239,18 +251,28 @@ def preprocess_query(query: T.Optional[str]) -> str:
     """
     Preprocess query, automatically add fuzzy search term if applicable.
     """
+    delimiter = ".-_@+"
     if query:
+        for char in delimiter:
+            query = query.replace(char, " ")
         words = list()
         for word in query.split():
             if word.strip():
-                if word != "*":
+                word = word.strip()
+                if len(word) == 1:
+                    if word == "*":
+                        words.append(word)
+                else:
                     try:
-                        if word[-2] != "~":
+                        if word[-2] != "~" and not word.endswith("!~"):
                             word = f"{word}~1"
                     except IndexError:
                         word = f"{word}~1"
-                words.append(word)
-        return " ".join(words)
+                    words.append(word)
+        if words:
+            return " ".join(words)
+        else:
+            return "*"
     else:
         return "*"
 
@@ -349,7 +371,6 @@ class Searcher(BaseModel):
                 boto_kwargs=final_boto_kwargs,
                 result_path=self.result_path,
             ):
-                # print(resource) # for DEBUG ONLY
                 doc_dict = self.doc_class.from_resource(
                     resource=resource,
                     bsm=bsm,
@@ -380,7 +401,7 @@ class Searcher(BaseModel):
         bsm: T.Optional[BotoSesManager] = None,
     ) -> T.Union[sayt.T_Result, T.List[T_DOCUMENT_OBJ]]:
         """
-        Search the dataset
+        Search the dataset.
 
         :param query: query string
         :param limit: the max number of results to return

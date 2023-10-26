@@ -55,7 +55,7 @@ iam_group_searcher = res_lib.Searcher(
     # extract document
     doc_class=IamGroup,
     # search
-    resource_type="iam-role",
+    resource_type="iam-group",
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),

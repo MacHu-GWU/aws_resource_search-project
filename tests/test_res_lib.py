@@ -98,8 +98,11 @@ class Test(BaseMockTest):
         assert preprocess_query("abc~2") == "abc~2"
         assert preprocess_query("abc xyz") == "abc~1 xyz~1"
         assert preprocess_query("abc~2 xyz") == "abc~2 xyz~1"
-        assert preprocess_query("a") == "a~1"
-        assert preprocess_query("a b c xyz") == "a~1 b~1 c~1 xyz~1"
+        assert preprocess_query("a") == "*"
+        assert preprocess_query("a b c xyz") == "xyz~1"
+        assert preprocess_query("s3.put_obj") == "s3~1 put~1 obj~1"
+        assert preprocess_query("s*") == "s*~1"
+        assert preprocess_query("s?") == "s?~1"
 
     def _test_extract_datetime(self):
         assert extract_datetime({}, "create_time") == "No datetime"

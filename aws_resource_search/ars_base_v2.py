@@ -11,19 +11,24 @@ import aws_console_url.api as aws_console_url
 
 from .compat import cached_property
 from .paths import dir_index, dir_cache
-from .searchers import lookup
+from .searchers import searchers_metadata
 from .res_lib import Searcher
 
 if T.TYPE_CHECKING:
     from boto_session_manager import BotoSesManager
 
 
+_searchers_cache = dict()
+
+
 def get_searcher_by_resource_type(resource_type: str) -> Searcher:
-    mod = lookup[resource_type]["mod"]
-    var = lookup[resource_type]["var"]
-    module = importlib.import_module(f"aws_resource_search.res.{mod}")
-    searcher = getattr(module, var)
-    return searcher
+    if resource_type not in _searchers_cache:
+        mod = searchers_metadata[resource_type]["mod"]
+        var = searchers_metadata[resource_type]["var"]
+        module = importlib.import_module(f"aws_resource_search.res.{mod}")
+        searcher = getattr(module, var)
+        _searchers_cache[resource_type] = searcher
+    return _searchers_cache[resource_type]
 
 
 @dataclasses.dataclass
