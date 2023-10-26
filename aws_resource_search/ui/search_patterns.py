@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+This module defines the search patterns for those resource types that requires
+special handling.
+"""
+
 from ..searchers import SearcherEnum
 
 from .boto_ses import ars

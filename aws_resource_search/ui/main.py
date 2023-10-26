@@ -34,17 +34,19 @@ def handler(
     ui: zf.UI,
 ) -> T.List[T.Union[AwsResourceTypeItem, AwsResourceItem]]:
     """
-    Main query handler. It parse the query and route the query to the corresponding
-    sub handler.
+    Main query handler. It parses the query and route the query to
+    the corresponding sub handler.
     """
+    zf.debugger.log(f"handler Query: {query!r}")
+
     # srv id is the service_id-resource_type compound identifier
     # req query is the query string for the resource search
     q = zf.QueryParser(delimiter=":").parse(query)
-    # print(f"q.trimmed_parts = {q.trimmed_parts}")
 
     # example: "  "
     if len(q.trimmed_parts) == 0:
         return select_resource_type_handler(ui=ui, query="*")
+
     # example:
     # - "ec2 inst"
     # - "s3-bucket"
@@ -52,16 +54,19 @@ def handler(
     # - "s3-bucket: "
     elif len(q.trimmed_parts) == 1:
         service_query = q.trimmed_parts[0]
+
         # example:
         # - "ec2 inst: "
         # - "s3-bucket: "
         if len(q.parts) == 1:
             return select_resource_type_handler(ui=ui, query=service_query)
+
         # example:
         # - "ec2 inst"
         # - "s3-bucket"
         else:
             resource_query = query.split(":")[1].strip()
+
             # example: "s3-bucket"
             if is_valid_resource_type(service_query):
                 return search_resource_handler(
@@ -69,9 +74,11 @@ def handler(
                     query=resource_query,
                     ui=ui,
                 )
+
             # example: "ec2 inst"
             else:
                 return select_resource_type_handler(ui=ui, query=service_query)
+
     # example: "ec2 inst: something", "s3-bucket: something"
     else:
         # example:
@@ -85,6 +92,7 @@ def handler(
                 query=resource_query,
                 ui=ui,
             )
+
         # example: # ec2 inst: something", "ec2 inst" is not a valid srv_id
         else:
             return select_resource_type_handler(ui=ui, query=service_query)

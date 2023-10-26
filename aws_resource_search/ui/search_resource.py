@@ -399,7 +399,7 @@ def search_resource_handler(
     ui: zf.UI,
 ) -> T.List[AwsResourceItem]:
     """
-    This handle filter resource by query.
+    **IMPORTANT** This handle filter resource by query.
 
     :param resource_type: for example, ``"s3-bucket"``
     :param query: for example, if the full user query is ``"s3-bucket: my bucket"``,

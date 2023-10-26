@@ -106,7 +106,7 @@ def select_resource_type_handler(
     query: str,
 ) -> T.List[AwsResourceTypeItem]:
     """
-    This handle filter resource types by query.
+    **IMPORTANT** This handle filter resource types by query.
 
     :param query: service id and resource type search query input. For example:
         "s3 bucket", "ec2 inst"
