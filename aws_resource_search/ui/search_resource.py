@@ -212,7 +212,7 @@ def search_resource(
     """
     zf.debugger.log(f"search_resource Query: {query}")
     final_query = preprocess_query(query)
-    searcher = ars._get_searcher(resource_type)
+    searcher = ars.get_searcher(resource_type)
     ds = searcher._get_ds(bsm=bsm, final_boto_kwargs={})
 
     # display "creating index ..." message

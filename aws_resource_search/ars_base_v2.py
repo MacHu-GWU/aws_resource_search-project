@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Todo: doc string here
+"""
+
 import typing as T
 import shutil
 import importlib
@@ -18,10 +22,14 @@ if T.TYPE_CHECKING:
     from boto_session_manager import BotoSesManager
 
 
-_searchers_cache = dict()
+_searchers_cache = dict()  # resource type searcher object cache
 
 
-def get_searcher_by_resource_type(resource_type: str) -> Searcher:
+def load_searcher(resource_type: str) -> Searcher:
+    """
+    Lazy load corresponding :class:`aws_resource_search.res_lib.Searcher`
+    object by resource type, with cache.
+    """
     if resource_type not in _searchers_cache:
         mod = searchers_metadata[resource_type]["mod"]
         var = searchers_metadata[resource_type]["var"]
@@ -55,11 +63,30 @@ class ARSBase:
             bsm=self.bsm,
         )
 
-    def _get_searcher(self, resource_type: str) -> Searcher:
-        sr = get_searcher_by_resource_type(resource_type)
+    def get_searcher(self, resource_type: str) -> Searcher:
+        """
+        Get corresponding :class:`aws_resource_search.res_lib.Searcher`
+        object by resource type.
+        """
+        sr = load_searcher(resource_type)
         sr.bsm = self.bsm
         return sr
 
     def clear_all_cache(self):
+        """
+        Clear all cache.
+        """
         shutil.rmtree(self.dir_index, ignore_errors=True)
         shutil.rmtree(self.dir_cache, ignore_errors=True)
+
+    def all_resource_types(self) -> T.List[str]:
+        """
+        Return all resource types.
+        """
+        return list(searchers_metadata.keys())
+
+    def is_valid_resource_type(self, resource_type: str) -> bool:
+        """
+        Check if the resource type is supported.
+        """
+        return resource_type in searchers_metadata
