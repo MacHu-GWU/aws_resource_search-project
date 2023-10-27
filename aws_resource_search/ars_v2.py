@@ -14,6 +14,18 @@ class ARS(ARSBase):  # pragma: no cover
         return self._get_searcher("codecommit-repository")
     
     @cached_property
+    def ec2_instance(self) -> Searcher:
+        return self._get_searcher("ec2-instance")
+    
+    @cached_property
+    def ec2_subnet(self) -> Searcher:
+        return self._get_searcher("ec2-subnet")
+    
+    @cached_property
+    def ec2_vpc(self) -> Searcher:
+        return self._get_searcher("ec2-vpc")
+    
+    @cached_property
     def glue_database(self) -> Searcher:
         return self._get_searcher("glue-database")
     
@@ -34,8 +46,16 @@ class ARS(ARSBase):  # pragma: no cover
         return self._get_searcher("iam-group")
     
     @cached_property
+    def iam_policy(self) -> Searcher:
+        return self._get_searcher("iam-policy")
+    
+    @cached_property
     def iam_role(self) -> Searcher:
         return self._get_searcher("iam-role")
+    
+    @cached_property
+    def iam_user(self) -> Searcher:
+        return self._get_searcher("iam-user")
     
     @cached_property
     def lambda_function(self) -> Searcher:

@@ -7,6 +7,9 @@ import zelfred.ui as zf
 
 from .. import res_lib
 
+if T.TYPE_CHECKING:
+    from ..ars_v2 import ARS
+
 
 @dataclasses.dataclass
 class LambdaFunction(res_lib.BaseDocument):
@@ -43,6 +46,56 @@ class LambdaFunction(res_lib.BaseDocument):
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.awslambda.get_function(name_or_arn=self.arn)
+
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        res = ars.bsm.lambda_client.get_function(FunctionName=self.name)
+        arn = res["Configuration"]["FunctionArn"]
+        description = res["Configuration"].get("Description", "NA")
+        role_arn = res["Configuration"]["Role"]
+        runtime = res["Configuration"]["Runtime"]
+        timeout = res["Configuration"]["Timeout"]
+        memory_size = res["Configuration"]["MemorySize"]
+        handler = res["Configuration"]["Handler"]
+        state = res["Configuration"].get("State", "NA")
+        last_modified = res["Configuration"]["LastModified"]
+
+        detail_items = [
+            res_lib.DetailItem(
+                title=f"<{detail_name}>: {detail_value}",
+                subtitle="📋 Tap 'Ctrl + A' to copy",
+                uid=detail_name,
+                variables={"copy": detail_value, "url": None},
+            )
+            for detail_name, detail_value in [
+                ("arn", arn),
+                ("description", description),
+                ("runtime", runtime),
+                ("timeout", timeout),
+                ("memory_size", memory_size),
+                ("handler", handler),
+                ("state", state),
+                ("last_modified", last_modified),
+            ]
+        ]
+        detail_items.insert(
+            2,
+            res_lib.DetailItem(
+                title=f"🧢 <role_arn>: {role_arn}",
+                subtitle="🌐 Tap 'Enter' to open url, 📋 tap 'Ctrl + A' to copy",
+                uid="role_arn",
+                variables={
+                    "copy": role_arn,
+                    "url": ars.aws_console.iam.get_role(name_or_arn=role_arn),
+                },
+            ),
+        )
+
+        tags: dict = res.get("Tags", {})
+        tag_items = res_lib.DetailItem.from_tags(tags)
+        return [
+            *detail_items,
+            *tag_items,
+        ]
 
 
 lambda_function_searcher = res_lib.Searcher(

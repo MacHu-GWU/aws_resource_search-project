@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
 import dataclasses
 from datetime import datetime
 
 from .. import res_lib
+
+if T.TYPE_CHECKING:
+    from ..ars_v2 import ARS
 
 
 @dataclasses.dataclass
@@ -190,6 +194,57 @@ class GlueJob(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.glue.get_job(name_or_arn=self.arn)
 
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        res = ars.bsm.glue_client.get_job(JobName=self.name)
+        job_dct = res["Job"]
+
+        description = job_dct.get("Description", "NA")
+        role_arn = job_dct["Role"]
+        glue_version = job_dct.get("GlueVersion", "NA")
+        worker_type = job_dct.get("WorkerType", "NA")
+        number_of_workers = job_dct.get("NumberOfWorkers", "NA")
+        max_concurrent_runs = job_dct.get("ExecutionProperty", {}).get("MaxConcurrentRuns", "unknown")
+        max_retries = job_dct.get("MaxRetries", "NA")
+        execution_class = job_dct.get("ExecutionClass", "NA")
+
+        detail_items = [
+            res_lib.DetailItem(
+                title=f"<{detail_name}>: {detail_value}",
+                subtitle="📋 Tap 'Ctrl + A' to copy",
+                uid=detail_name,
+                variables={"copy": detail_value, "url": None},
+            )
+            for detail_name, detail_value in [
+                ("description", description),
+                ("glue_version", glue_version),
+                ("worker_type", worker_type),
+                ("number_of_workers", number_of_workers),
+                ("max_concurrent_runs", max_concurrent_runs),
+                ("max_retries", max_retries),
+                ("execution_class", execution_class),
+            ]
+        ]
+        detail_items.insert(
+            1,
+            res_lib.DetailItem(
+                title=f"🧢 <role_arn>: {role_arn}",
+                subtitle="🌐 Tap 'Enter' to open url, 📋 tap 'Ctrl + A' to copy",
+                uid="role_arn",
+                variables={
+                    "copy": role_arn,
+                    "url": ars.aws_console.iam.get_role(name_or_arn=role_arn),
+                },
+            ),
+        )
+
+        res = ars.bsm.glue_client.get_tags(ResourceArn=self.arn)
+        tags: dict = res.get("Tags", {})
+        tag_items = res_lib.DetailItem.from_tags(tags)
+        return [
+            *detail_items,
+            *tag_items,
+        ]
+
 
 glue_job_searcher = res_lib.Searcher(
     # list resources
@@ -252,7 +307,9 @@ class GlueJobRun(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return f"{self.id}, <state>: {_glue_job_run_state_mapper[self.state]} {self.state}"
+        return (
+            f"{self.id}, <state>: {_glue_job_run_state_mapper[self.state]} {self.state}"
+        )
 
     @property
     def subtitle(self) -> str:

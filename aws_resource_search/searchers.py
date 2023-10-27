@@ -2,6 +2,10 @@
 
 searchers_metadata = {
     "codecommit-repository": {"mod": "codecommit", "var": "codecommit_repository_searcher"},
+    "ec2-instance": {"mod": "ec2", "var": "ec2_instance_searcher"},
+    "ec2-securitygroup": {"mod": "ec2", "var": "ec2_securitygroup_searcher"},
+    "ec2-subnet": {"mod": "ec2", "var": "ec2_subnet_searcher"},
+    "ec2-vpc": {"mod": "ec2", "var": "ec2_vpc_searcher"},
     "glue-database": {"mod": "glue", "var": "glue_database_searcher"},
     "glue-job": {"mod": "glue", "var": "glue_job_searcher"},
     "glue-jobrun": {"mod": "glue", "var": "glue_job_run_searcher"},
@@ -19,6 +23,10 @@ searchers_metadata = {
 
 class SearcherEnum:
     codecommit_repository = "codecommit-repository"
+    ec2_instance = "ec2-instance"
+    ec2_securitygroup = "ec2-securitygroup"
+    ec2_subnet = "ec2-subnet"
+    ec2_vpc = "ec2-vpc"
     glue_database = "glue-database"
     glue_job = "glue-job"
     glue_jobrun = "glue-jobrun"

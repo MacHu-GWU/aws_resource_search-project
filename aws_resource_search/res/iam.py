@@ -4,6 +4,8 @@ import typing as T
 import json
 import dataclasses
 
+import aws_arns.api as arns
+
 from .. import res_lib
 
 if T.TYPE_CHECKING:

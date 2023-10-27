@@ -507,3 +507,37 @@ class DetailItem(ArsBaseItem):
             )
             for k, v in tags.items()
         ]
+
+    @classmethod
+    def from_detail(
+        cls,
+        name,
+        value,
+        text: T.Optional[str] = None,
+        url: T.Optional[str] = None,
+        uid: T.Optional[str] = None,
+    ):
+        """
+        :param name: this is for title
+        :param value: this if for copy to clipboard
+        :param text: this is for title
+        :param url: this is for open url
+        :param uid: this is for uid
+        """
+        if text is None:
+            text = value
+        if url:
+            subtitle = (
+                "🌐 Tap 'Enter' to open url, "
+                "📋 tap 'Ctrl + A' to copy security group id"
+            )
+        else:
+            subtitle = "📋 Tap 'Ctrl + A' to copy"
+        if uid is None:
+            uid = name
+        return cls(
+            title=f"<{name}>: {text}",
+            subtitle=subtitle,
+            uid=uid,
+            variables={"copy": value, "url": url},
+        )

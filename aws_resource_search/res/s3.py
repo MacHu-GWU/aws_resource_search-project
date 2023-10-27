@@ -3,8 +3,6 @@
 import typing as T
 import dataclasses
 
-import zelfred.api as zf
-
 from .. import res_lib
 
 if T.TYPE_CHECKING:
@@ -56,7 +54,7 @@ class S3Bucket(res_lib.BaseDocument):
         return [
             res_lib.DetailItem(
                 title=f"<s3 uri>: s3://{self.name}",
-                subtitle="📋 Tap 'Ctrl + A' to copy to clipboard",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
                 uid="uri",
                 variables={
                     "copy": f"s3://{self.name}",
@@ -65,7 +63,7 @@ class S3Bucket(res_lib.BaseDocument):
             ),
             res_lib.DetailItem(
                 title=f"<s3 arn>: {self.arn}",
-                subtitle="📋 Tap 'Ctrl + A' to copy to clipboard",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
                 uid="arn",
                 variables={
                     "copy": self.arn,

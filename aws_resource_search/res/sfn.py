@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
 import dataclasses
 from datetime import datetime
 
 from .. import res_lib
+
+if T.TYPE_CHECKING:
+    from ..ars_v2 import ARS
 
 
 @dataclasses.dataclass
@@ -43,6 +47,67 @@ class SfnStateMachine(res_lib.BaseDocument):
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.step_function.get_state_machine_view_tab(name_or_arn=self.arn)
+
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        res = ars.bsm.sfn_client.describe_state_machine(stateMachineArn=self.arn)
+        status = res["status"]
+        role_arn = res["roleArn"]
+        definition = res["definition"]
+        type = res["type"]
+        creation_date = res["creationDate"]
+
+        res = ars.bsm.sfn_client.list_tags_for_resource(resourceArn=self.arn)
+        tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
+        tag_items = res_lib.DetailItem.from_tags(tags)
+
+        return [
+            res_lib.DetailItem(
+                title=f"<status>: {status}",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
+                uid="status",
+                variables={
+                    "copy": status,
+                    "url": None,
+                },
+            ),
+            res_lib.DetailItem(
+                title=f"🧢 <role_arn>: {role_arn}",
+                subtitle="🌐 Tap 'Enter' to open url, 📋 tap 'Ctrl + A' to copy",
+                uid="role_arn",
+                variables={
+                    "copy": role_arn,
+                    "url": ars.aws_console.iam.get_role(name_or_arn=role_arn),
+                },
+            ),
+            res_lib.DetailItem(
+                title=f"<definition>: {definition}",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
+                uid="definition",
+                variables={
+                    "copy": definition,
+                    "url": None,
+                },
+            ),
+            res_lib.DetailItem(
+                title=f"<type>: {type}",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
+                uid="type",
+                variables={
+                    "copy": type,
+                    "url": None,
+                },
+            ),
+            res_lib.DetailItem(
+                title=f"<creation_date>: {creation_date}",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
+                uid="creation_date",
+                variables={
+                    "copy": str(creation_date),
+                    "url": None,
+                },
+            ),
+            *tag_items,
+        ]
 
 
 sfn_state_machine_searcher = res_lib.Searcher(
