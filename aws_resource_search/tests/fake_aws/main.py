@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Setup a fake AWS account with a lot of resources using moto for testing.
+Set up a fake AWS account with a lot of resources using moto for testing.
 """
 
 import moto
@@ -10,8 +10,10 @@ from ...paths import dir_unit_test
 from ...ars_v2 import ARS
 from ..mock_test import BaseMockTest
 
+from .awslambda import LambdaMixin
 from .cloudformation import CloudFormationMixin
 from .dynamodb import DynamodbMixin
+from .glue import GlueMixin
 from .ec2 import Ec2Mixin
 from .vpc import VpcMixin
 from .s3 import S3Mixin
@@ -20,8 +22,10 @@ from .iam import IamMixin
 
 class FakeAws(
     BaseMockTest,
+    LambdaMixin,
     CloudFormationMixin,
     DynamodbMixin,
+    GlueMixin,
     Ec2Mixin,
     VpcMixin,
     S3Mixin,
@@ -76,6 +80,11 @@ class FakeAws(
         cls.create_security_group()
         cls.create_s3_bucket()
         cls.create_iam()
+        cls.create_glue_database_table()
+        cls.create_glue_job()
+        cls.create_glue_crawler()
+        cls.create_lambda_layers()
+        cls.create_lambda_functions()
 
     @classmethod
     def setup_ars(cls):
