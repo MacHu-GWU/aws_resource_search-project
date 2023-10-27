@@ -10,12 +10,20 @@ from .res_lib import Searcher
 @dataclasses.dataclass
 class ARS(ARSBase):  # pragma: no cover
     @cached_property
+    def cloudformation_stack(self) -> Searcher:
+        return self._get_searcher("cloudformation-stack")
+    
+    @cached_property
     def codecommit_repository(self) -> Searcher:
         return self._get_searcher("codecommit-repository")
     
     @cached_property
     def ec2_instance(self) -> Searcher:
         return self._get_searcher("ec2-instance")
+    
+    @cached_property
+    def ec2_securitygroup(self) -> Searcher:
+        return self._get_searcher("ec2-securitygroup")
     
     @cached_property
     def ec2_subnet(self) -> Searcher:
@@ -76,4 +84,12 @@ class ARS(ARSBase):  # pragma: no cover
     @cached_property
     def sfn_statemachine(self) -> Searcher:
         return self._get_searcher("sfn-statemachine")
+    
+    @cached_property
+    def sns_topic(self) -> Searcher:
+        return self._get_searcher("sns-topic")
+    
+    @cached_property
+    def sqs_queue(self) -> Searcher:
+        return self._get_searcher("sqs-queue")
     

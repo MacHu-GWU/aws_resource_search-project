@@ -130,7 +130,7 @@ class AwsResourceItem(ArsBaseItem):
             repaint_ui(ui)
             ui.run(_do_init=False)
         except NotImplementedError:
-            raise NotImplementedError(f"{doc.__class__.__name__} doesn't support ARN")
+            raise NotImplementedError(f"{doc.__class__.__name__} doesn't support view detail")
 
 
 def creating_index_items(resource_type: str) -> T.List[zf.Item]:

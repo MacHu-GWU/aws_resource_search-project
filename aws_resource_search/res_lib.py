@@ -184,7 +184,11 @@ class BaseDocument(BaseModel):
         """
         The subtitle in the zelfred UI.
         """
-        return "No Subtitle"
+        return (
+            "🌐 'Enter' to open url, "
+            "📋 'Ctrl A' to copy arn, "
+            "👀 'Ctrl P' to view details."
+        )
 
     @property
     def uid(self) -> str:
@@ -498,15 +502,24 @@ class DetailItem(ArsBaseItem):
 
     @classmethod
     def from_tags(cls, tags: T.Dict[str, str]):
-        return [
+        items = [
             cls(
-                title=f"🏷 <tag>: {k!r} = {v!r}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
+                title=f"🏷 tag: {k!r} = {v!r}",
+                subtitle="📋 'Ctrl A' to copy key and value.",
                 uid=f"Tag {k}",
                 variables={"copy": f"{k} = {v}", "url": None},
             )
             for k, v in tags.items()
         ]
+        if len(items):
+            return items
+        else:
+            return [
+                cls(
+                    title=f"🏷 tag: 🔴 No tag found",
+                    uid=f"no tag found",
+                )
+            ]
 
     @classmethod
     def from_detail(
@@ -527,16 +540,13 @@ class DetailItem(ArsBaseItem):
         if text is None:
             text = value
         if url:
-            subtitle = (
-                "🌐 Tap 'Enter' to open url, "
-                "📋 tap 'Ctrl + A' to copy security group id"
-            )
+            subtitle = "🌐 'Enter' to open url, " "📋 'Ctrl A' to copy."
         else:
-            subtitle = "📋 Tap 'Ctrl + A' to copy"
+            subtitle = "📋 'Ctrl A' to copy."
         if uid is None:
             uid = name
         return cls(
-            title=f"<{name}>: {text}",
+            title=f"{name} = {text}",
             subtitle=subtitle,
             uid=uid,
             variables={"copy": value, "url": url},
