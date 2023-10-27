@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
 import dataclasses
+
+import zelfred.api as zf
+
 from .. import res_lib
+
+if T.TYPE_CHECKING:
+    from ..ars_v2 import ARS
 
 
 @dataclasses.dataclass
@@ -25,7 +32,7 @@ class S3Bucket(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"Create at: {self.creation_date}"
+        return f"<create_at>: {self.creation_date}"
 
     @property
     def autocomplete(self) -> str:
@@ -37,6 +44,46 @@ class S3Bucket(res_lib.BaseDocument):
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.s3.get_console_url(bucket=self.name)
+
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        res = ars.bsm.s3_client.get_bucket_location(Bucket=self.name)
+        location = res["LocationConstraint"]
+
+        res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
+        tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagSet", [])}
+        tag_items = res_lib.DetailItem.from_tags(tags)
+
+        return [
+            res_lib.DetailItem(
+                title=f"<s3 uri>: s3://{self.name}",
+                subtitle="📋 Tap 'Ctrl + A' to copy to clipboard",
+                uid="uri",
+                variables={
+                    "copy": f"s3://{self.name}",
+                    "url": None,
+                },
+            ),
+            res_lib.DetailItem(
+                title=f"<s3 arn>: {self.arn}",
+                subtitle="📋 Tap 'Ctrl + A' to copy to clipboard",
+                uid="arn",
+                variables={
+                    "copy": self.arn,
+                    "url": None,
+                },
+                arg=self.arn,
+            ),
+            res_lib.DetailItem(
+                title=f"<location>: {location}",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
+                uid="location",
+                variables={
+                    "copy": location,
+                    "url": None,
+                },
+            ),
+            *tag_items,
+        ]
 
 
 s3_bucket_searcher = res_lib.Searcher(

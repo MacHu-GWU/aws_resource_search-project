@@ -19,24 +19,24 @@ from .search_patterns import (
     get_partitioner_resource_type,
     get_partitioner_boto_kwargs,
 )
-from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, Searcher
+from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, Searcher, ArsBaseItem
 from .common import repaint_ui
 from .boto_ses import bsm, ars
 
 
-class TVariables(T.TypedDict):
+class AwsResourceItemVariables(T.TypedDict):
     doc: T_DOCUMENT_OBJ
 
 
 @dataclasses.dataclass
-class AwsResourceItem(zf.Item):
+class AwsResourceItem(ArsBaseItem):
     """
     Represent an item in the resource search result.
 
     :param variables: it has the original document object.
     """
 
-    variables: TVariables = dataclasses.field(default_factory=dict)
+    variables: AwsResourceItemVariables = dataclasses.field(default_factory=dict)
 
     @classmethod
     def from_document(
@@ -110,7 +110,7 @@ class AwsResourceItem(zf.Item):
         """
         doc: T_DOCUMENT_OBJ = self.variables["doc"]
         try:
-            items = doc.details()
+            items = doc.get_details(ars=ars)
             ui.run_handler(items=items)
 
             # enter the main event loop of the sub query
@@ -126,6 +126,7 @@ class AwsResourceItem(zf.Item):
 
             # re-paint the UI
             ui.line_editor.clear_line()
+            ui.line_editor.enter_text(f"Detail of {self.title!r}, press F1 to go back.")
             repaint_ui(ui)
             ui.run(_do_init=False)
         except NotImplementedError:

@@ -101,5 +101,9 @@ def handler(
 def run_ui():
     zf.debugger.reset()
     zf.debugger.enable()
-    ui = zf.UI(handler=handler, capture_error=False)
+    ui = zf.UI(
+        handler=handler,
+        capture_error=False,
+        quit_on_action=False,
+    )
     ui.run()

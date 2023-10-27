@@ -17,9 +17,18 @@ import zelfred.api as zf
 from iterproxy import IterProxy
 from boto_session_manager import BotoSesManager
 
+try:
+    import pyperclip
+except ImportError:
+    pass
+
 from .model import BaseModel
 from .utils import get_md5_hash
 from .paths import dir_index, dir_cache
+
+
+if T.TYPE_CHECKING:
+    from .ars_v2 import ARS
 
 
 # ------------------------------------------------------------------------------
@@ -120,8 +129,6 @@ def list_resources(
 # ------------------------------------------------------------------------------
 # Document
 # ------------------------------------------------------------------------------
-
-
 @dataclasses.dataclass
 class BaseDocument(BaseModel):
     raw_data: T_RESULT_DATA = dataclasses.field()
@@ -206,8 +213,7 @@ class BaseDocument(BaseModel):
         """
         raise NotImplementedError
 
-    @property
-    def details(self) -> T.List[zf.T_ITEM]:
+    def get_details(self, ars: "ARS") -> T.List[zf.T_ITEM]:
         """
         Additional details for the resource, it will be rendered in the
         dropdown menu. User can tap tab 'Ctrl + P' to view the details,
@@ -393,7 +399,7 @@ class Searcher(BaseModel):
     def search(
         self,
         query: str = "*",
-        limit: int = 20,
+        limit: int = 50,
         boto_kwargs: T.Optional[dict] = None,
         refresh_data: bool = False,
         simple_response: bool = True,
@@ -435,3 +441,69 @@ class Searcher(BaseModel):
             return [self.doc_class.from_dict(dct["_source"]) for dct in result["hits"]]
         else:
             return result
+
+
+# ------------------------------------------------------------------------------
+# Custom Item
+# ------------------------------------------------------------------------------
+@dataclasses.dataclass
+class ArsBaseItem(zf.Item):
+    def post_enter_handler(self, ui: zf.UI):
+        """
+        :param ui: the :class:`~zelfred.ui.UI` object.
+        """
+        ui.render.clear_n_lines(1)
+        ui.need_run_handler = False
+
+    def post_ctrl_a_handler(self, ui: zf.UI):
+        """
+        :param ui: the :class:`~zelfred.ui.UI` object.
+        """
+        ui.need_run_handler = False
+
+    def post_ctrl_w_handler(self, ui: zf.UI):
+        """
+        :param ui: the :class:`~zelfred.ui.UI` object.
+        """
+        ui.need_run_handler = False
+
+    def post_ctrl_p_handler(self, ui: zf.UI):
+        """
+        :param ui: the :class:`~zelfred.ui.UI` object.
+        """
+        ui.need_run_handler = False
+
+
+class DetailItemVariables(T.TypedDict):
+    url: T.Optional[str]
+    copy: T.Optional[str]
+
+
+@dataclasses.dataclass
+class DetailItem(ArsBaseItem):
+    """
+    Represent a item to show the detail of a resource. User can tap
+    'Ctrl + P' to enter this view.
+    """
+
+    variables: DetailItemVariables = dataclasses.field(default_factory=dict)
+
+    def enter_handler(self, ui: "zf.UI"):
+        if self.variables.get("url"):
+            zf.open_url(url=self.variables["url"])
+
+    def ctrl_a_handler(self, ui: "zf.UI"):
+        if self.variables["copy"]:
+            pyperclip.copy(self.variables["copy"])
+
+    @classmethod
+    def from_tags(cls, tags: T.Dict[str, str]):
+        return [
+            cls(
+                title=f"🏷 <tag>: {k!r} = {v!r}",
+                subtitle="📋 Tap 'Ctrl + A' to copy.",
+                uid=f"Tag {k}",
+                variables={"copy": f"{k} = {v}", "url": None},
+            )
+            for k, v in tags.items()
+        ]

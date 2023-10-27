@@ -12,7 +12,7 @@ import zelfred.api as zf
 
 from ..paths import dir_index, dir_cache
 from ..searchers import searchers_metadata
-from ..res_lib import preprocess_query
+from ..res_lib import preprocess_query, ArsBaseItem
 from .common import repaint_ui
 
 
@@ -53,7 +53,7 @@ resource_type_dataset = sayt.DataSet(
 
 
 @dataclasses.dataclass
-class AwsResourceTypeItem(zf.Item):
+class AwsResourceTypeItem(ArsBaseItem):
     """
     Represent an item in the resource type search result.
     """

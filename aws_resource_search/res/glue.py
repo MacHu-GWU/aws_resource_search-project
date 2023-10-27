@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
 import dataclasses
+from datetime import datetime
+
 from .. import res_lib
 
 
