@@ -10,6 +10,7 @@ import dataclasses
 import sayt.api as sayt
 import zelfred.api as zf
 
+from ..terminal import ShortcutEnum, highlight_text
 from ..paths import dir_index, dir_cache
 from ..searchers import searchers_metadata
 from ..res_lib import preprocess_query, ArsBaseItem
@@ -75,9 +76,13 @@ class AwsResourceTypeItem(ArsBaseItem):
                 "autocomplete": "s3-bucket: ",
             }
         """
+        resource_type = doc["name"]
         return cls(
-            title=doc["name"],
-            subtitle="hit 'Tab' and enter your query to search.",
+            title=resource_type,
+            subtitle=(
+                f"hit {ShortcutEnum.TAB} and enter your query "
+                f"to search {highlight_text(resource_type)}."
+            ),
             uid=doc["id"],
             arg=doc["name"],
             autocomplete=doc["name"] + ": ",

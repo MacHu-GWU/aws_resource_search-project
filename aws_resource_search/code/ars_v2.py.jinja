@@ -12,5 +12,5 @@ class ARS(ARSBase):  # pragma: no cover
     {%- for resource_type_snake, resource_type in tuples %}
     @cached_property
     def {{ resource_type_snake }}(self) -> Searcher:
-        return self._get_searcher("{{ resource_type }}")
+        return self.get_searcher("{{ resource_type }}")
     {% endfor %}

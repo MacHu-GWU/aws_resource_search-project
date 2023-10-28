@@ -25,6 +25,7 @@ except ImportError:
 from .model import BaseModel
 from .utils import get_md5_hash
 from .paths import dir_index, dir_cache
+from .terminal import term, ShortcutEnum, format_key_value, highlight_text
 
 
 if T.TYPE_CHECKING:
@@ -94,7 +95,7 @@ def list_resources(
     .. code-block:: python
 
         >>> for iam_group_data in list_resources(
-        ...     bsm=self.bsm,
+        ...     bsm=bsm,
         ...     service="iam",
         ...     method="list_groups",
         ...     is_paginator=True,
@@ -131,6 +132,9 @@ def list_resources(
 # ------------------------------------------------------------------------------
 @dataclasses.dataclass
 class BaseDocument(BaseModel):
+    """
+    Base class for AWS resource document.
+    """
     raw_data: T_RESULT_DATA = dataclasses.field()
 
     @classmethod
@@ -183,11 +187,24 @@ class BaseDocument(BaseModel):
     def subtitle(self) -> str:
         """
         The subtitle in the zelfred UI.
+
+        The default subtitle is the help text to show the user how to interact with the UI.
         """
         return (
-            "🌐 'Enter' to open url, "
-            "📋 'Ctrl A' to copy arn, "
-            "👀 'Ctrl P' to view details."
+            f"🌐 {ShortcutEnum.ENTER} to open url, "
+            f"📋 {ShortcutEnum.CTRL_A} to copy arn, "
+            f"👀 {ShortcutEnum.CTRL_P} to view details."
+        )
+
+    @property
+    def short_subtitle(self) -> str:
+        """
+        A shorter version of subtitle.
+        """
+        return (
+            f"🌐 {ShortcutEnum.ENTER}, "
+            f"📋 {ShortcutEnum.CTRL_A}, "
+            f"👀 {ShortcutEnum.CTRL_P}."
         )
 
     @property
@@ -504,8 +521,8 @@ class DetailItem(ArsBaseItem):
     def from_tags(cls, tags: T.Dict[str, str]):
         items = [
             cls(
-                title=f"🏷 tag: {k!r} = {v!r}",
-                subtitle="📋 'Ctrl A' to copy key and value.",
+                title=f"🏷 tag: {format_key_value(k, v)}",
+                subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy key and value.",
                 uid=f"Tag {k}",
                 variables={"copy": f"{k} = {v}", "url": None},
             )
@@ -540,13 +557,13 @@ class DetailItem(ArsBaseItem):
         if text is None:
             text = value
         if url:
-            subtitle = "🌐 'Enter' to open url, " "📋 'Ctrl A' to copy."
+            subtitle = f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy."
         else:
-            subtitle = "📋 'Ctrl A' to copy."
+            subtitle = f"📋 {ShortcutEnum.CTRL_A} to copy."
         if uid is None:
             uid = name
         return cls(
-            title=f"{name} = {text}",
+            title=format_key_value(name, text),
             subtitle=subtitle,
             uid=uid,
             variables={"copy": value, "url": url},

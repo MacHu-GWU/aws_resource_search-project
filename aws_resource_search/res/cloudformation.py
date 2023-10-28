@@ -3,6 +3,8 @@
 import typing as T
 import dataclasses
 
+from colorama import Fore, Style
+
 from .. import res_lib
 
 if T.TYPE_CHECKING:
@@ -64,8 +66,8 @@ class CloudFormationStack(res_lib.BaseDocument):
         status_icon = cloudformation_stack_status_icon_mapper[self.status]
         return (
             f"{status_icon} {self.status}, "
-            "🌐 Tap 'Enter' to open url, "
-            "📋 tap 'Ctrl + A' to copy stack arn"
+            f"🌐 {Fore.MAGENTA}Enter{Style.RESET_ALL} to open url, "
+            f"📋 {Fore.MAGENTA}Ctrl A{Style.RESET_ALL} to copy."
         )
 
     @property
@@ -98,10 +100,14 @@ class CloudFormationStack(res_lib.BaseDocument):
         }
         output_items = [
             res_lib.DetailItem(
-                title="🎯 <output> {} = {} (export = {})".format(
-                    k, dct["OutputValue"], dct.get("ExportName", "NA")
+                title="🎯 output: {}{}{} = {} (export = {})".format(
+                    Fore.CYAN,
+                    k,
+                    Style.RESET_ALL,
+                    dct["OutputValue"],
+                    dct.get("ExportName", "NA"),
                 ),
-                subtitle="📋 Tap 'Ctrl + A' to copy the value.",
+                subtitle=f"📋 {Fore.MAGENTA}Ctrl + A{Style.RESET_ALL} to copy the value.",
                 uid=f"Output {k}",
                 variables={"copy": dct["OutputValue"], "url": None},
             )

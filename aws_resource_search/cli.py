@@ -2,15 +2,20 @@
 
 import fire
 
-# from .ui import run_ui
 from .ui.main import run_ui
 
 
 def main():
     """
-    Print the url you can one-click to open it in web browser.
+    Search AWS resource in terminal, just like you are using AWS Console in web browser.
 
-    :param path: the absolute path of the file or folder in your local git repo, if not give, use the current directory.
+    You can do things like:
+
+    - open aws console url
+    - copy information to clipboard
+    - view aws resource details in terminal
+
+    For full documentation, please view https://github.com/MacHu-GWU/aws_resource_search-project
     """
     run_ui()
 

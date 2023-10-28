@@ -4,6 +4,7 @@ import typing as T
 import dataclasses
 
 import aws_arns.api as arns
+from colorama import Fore, Style
 
 from .. import res_lib
 
@@ -58,7 +59,7 @@ class Ec2Instance(res_lib.BaseDocument):
     @property
     def subtitle(self) -> str:
         state_icon = ec2_instance_state_icon_mapper[self.state]
-        return f"{state_icon} {self.state} | {self.id} | {self.inst_type}"
+        return f"{state_icon} {self.state} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | {self.inst_type}"
 
     @property
     def autocomplete(self) -> str:
@@ -193,7 +194,7 @@ class Ec2Vpc(res_lib.BaseDocument):
     @property
     def subtitle(self) -> str:
         state_icon = ec2_vpc_state_icon_mapper[self.state]
-        return f"{state_icon} {self.state} | {self.id} | is_default = {self.is_default}"
+        return f"{state_icon} {self.state} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | is_default = {self.is_default}"
 
     @property
     def autocomplete(self) -> str:
@@ -291,7 +292,7 @@ class Ec2Subnet(res_lib.BaseDocument):
     @property
     def subtitle(self) -> str:
         state_icon = ec2_vpc_state_icon_mapper[self.state]
-        return f"{state_icon} {self.state} | {self.vpc_id} | {self.id} | {self.az}"
+        return f"{state_icon} {self.state} | {self.vpc_id} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | {self.az}"
 
     @property
     def autocomplete(self) -> str:
@@ -388,7 +389,7 @@ class Ec2SecurityGroup(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"{self.id} | {self.vpc_id} | {self.description}"
+        return f"{self.vpc_id} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | {self.description}"
 
     @property
     def autocomplete(self) -> str:

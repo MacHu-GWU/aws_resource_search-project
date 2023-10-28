@@ -5,6 +5,7 @@ import json
 import dataclasses
 
 import aws_arns.api as arns
+from colorama import Fore, Style
 
 from .. import res_lib
 
@@ -39,7 +40,7 @@ class IamGroup(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"<create_at>: {self.create_date}, <arn>: {self.arn}"
+        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
 
     @property
     def autocomplete(self) -> str:
@@ -99,7 +100,7 @@ class IamUser(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"<create_at>: {self.create_date}, <arn>: {self.arn}"
+        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
 
     @property
     def autocomplete(self) -> str:
@@ -165,7 +166,7 @@ class IamRole(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"<create_at>: {self.create_date}, <arn>: {self.arn}"
+        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
 
     @property
     def autocomplete(self) -> str:
@@ -179,40 +180,44 @@ class IamRole(res_lib.BaseDocument):
         return console.iam.get_role(name_or_arn=self.arn)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        arn = self.arn
         role_id = self.raw_data["RoleId"]
         assume_role_policy_document: dict = self.raw_data["AssumeRolePolicyDocument"]
+
+        Item = res_lib.DetailItem.from_detail
+        aws = ars.aws_console
+
+        detail_items = [
+            Item("arn", arn, url=aws.iam.get_role(name_or_arn=arn)),
+            Item("role_id", role_id),
+            Item("trust_entities", assume_role_policy_document),
+        ]
 
         res = ars.bsm.iam_client.list_attached_role_policies(
             RoleName=self.name, MaxItems=50
         )
         managed_policy_items = [
-            res_lib.DetailItem(
-                title="<managed policy>: {}".format(dct["PolicyName"]),
-                subtitle="🌐 Tap 'Enter' to open url, 📋 tap 'Ctrl + A' to copy",
-                uid="policy {}".format(dct["PolicyArn"]),
-                variables={
-                    "url": ars.aws_console.iam.get_policy(name_or_arn=dct["PolicyArn"]),
-                    "copy": dct["PolicyArn"],
-                },
+            Item(
+                "managed policy",
+                dct["PolicyArn"],
+                dct["PolicyName"],
+                ars.aws_console.iam.get_policy(name_or_arn=dct["PolicyArn"]),
             )
             for dct in res.get("AttachedPolicies", [])
         ]
 
         res = ars.bsm.iam_client.list_role_policies(RoleName=self.name, MaxItems=50)
         inline_policy_items = [
-            res_lib.DetailItem(
-                title="<inline policy>: {}".format(policy_name),
-                subtitle="🌐 Tap 'Enter' to open url (inline policy doesn't have ARN)",
-                uid=f"policy {policy_name}",
-                variables={
-                    "url": ars.aws_console.iam.get_role_inline_policy(
-                        role_name_or_arn=self.name,
-                        policy_name=policy_name,
-                    ),
-                    "copy": arns.res.IamPolicy.new(
-                        aws_account_id=ars.bsm.aws_account_id, name=policy_name
-                    ).to_arn(),
-                },
+            Item(
+                name="inline policy",
+                value=arns.res.IamPolicy.new(
+                    aws_account_id=ars.bsm.aws_account_id, name=policy_name
+                ).to_arn(),
+                text=policy_name,
+                url=ars.aws_console.iam.get_role_inline_policy(
+                    role_name_or_arn=self.name,
+                    policy_name=policy_name,
+                ),
             )
             for policy_name in res.get("PolicyNames", [])
         ]
@@ -222,37 +227,13 @@ class IamRole(res_lib.BaseDocument):
         tag_items = res_lib.DetailItem.from_tags(tags)
 
         return [
-            res_lib.DetailItem(
-                title=f"<arn>: {self.arn}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="Arn",
-                variables={"copy": self.arn, "url": None},
-            ),
-            res_lib.DetailItem(
-                title=f"<role_id>: {role_id}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="RoleId",
-                variables={"copy": str(self.raw_data), "url": None},
-            ),
-            res_lib.DetailItem(
-                title=f"<trust entities>: {assume_role_policy_document}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="AssumeRolePolicyDocument",
-                variables={
-                    "copy": json.dumps(assume_role_policy_document, indent=4),
-                    "url": None,
-                },
-            ),
+            *detail_items,
             *managed_policy_items,
             *inline_policy_items,
             *tag_items,
         ]
 
 
-"""
-https://us-east-1.console.aws.amazon.com/iamv2/home?region=eu-west-1#/roles/details/story-gesa-1045-athena-partitioner-role/editPolicy/story-gesa-1045-athena-partitioner-role-inline-policy?step=addPermissions
-https://us-east-1.console.aws.amazon.com/iam/home#/policies/arn:aws:iam::414570653400:policy/story-gesa-1045-athena-partitioner-role-inline-policy$jsonEditor
-"""
 iam_role_searcher = res_lib.Searcher(
     # list resources
     service="iam",
@@ -299,7 +280,7 @@ class IamPolicy(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"<create_at>: {self.create_date}, <arn>: {self.arn}"
+        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
 
     @property
     def autocomplete(self) -> str:

@@ -20,6 +20,7 @@ from .search_patterns import (
     get_partitioner_boto_kwargs,
 )
 from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, Searcher, ArsBaseItem
+from ..terminal import ShortcutEnum, highlight_text
 from .common import repaint_ui
 from .boto_ses import bsm, ars
 
@@ -130,7 +131,9 @@ class AwsResourceItem(ArsBaseItem):
             repaint_ui(ui)
             ui.run(_do_init=False)
         except NotImplementedError:
-            raise NotImplementedError(f"{doc.__class__.__name__} doesn't support view detail")
+            raise NotImplementedError(
+                f"{doc.__class__.__name__} doesn't support view detail"
+            )
 
 
 def creating_index_items(resource_type: str) -> T.List[zf.Item]:
@@ -272,7 +275,12 @@ def search_partitioner(
         return AwsResourceItem(
             uid=doc.uid,
             title=f"{partitioner_resource_type}: {doc.title}",
-            subtitle=f"Tap 'Tab' to search {resource_type} in this {partitioner_resource_type}",
+            subtitle=(
+                f"Tap {ShortcutEnum.TAB} "
+                f"to search {highlight_text(resource_type)} "
+                f"in this {highlight_text(partitioner_resource_type)}, "
+                f"Tap {ShortcutEnum.ENTER} to open {highlight_text(partitioner_resource_type)} url."
+            ),
             autocomplete=f"{resource_type}: {doc.autocomplete}@",
             variables={"doc": doc},
         )

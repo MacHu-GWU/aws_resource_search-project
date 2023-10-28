@@ -10,6 +10,7 @@ except ImportError:
     pass
 
 from ..searchers import searchers_metadata
+from ..terminal import terminal
 from .search_resource_type import (
     AwsResourceTypeItem,
     select_resource_type_handler,
@@ -106,4 +107,5 @@ def run_ui():
         capture_error=False,
         quit_on_action=False,
     )
+    ui.render.terminal = terminal
     ui.run()

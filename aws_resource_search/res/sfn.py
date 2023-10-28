@@ -5,9 +5,16 @@ import dataclasses
 from datetime import datetime
 
 from .. import res_lib
+from ..terminal import format_key_value, highlight_text
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
+
+
+sfn_statemachine_status_icon_mapper = {
+    "ACTIVE": "🟢",
+    "DELETING": "🔴",
+}
 
 
 @dataclasses.dataclass
@@ -35,7 +42,11 @@ class SfnStateMachine(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"<type>: {self.type}, <create_at>: {str(self.create_at)[:19]}"
+        return "{}, {}, {}".format(
+            format_key_value("type", self.type),
+            format_key_value("create_at", self.create_at),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -49,63 +60,34 @@ class SfnStateMachine(res_lib.BaseDocument):
         return console.step_function.get_state_machine_view_tab(name_or_arn=self.arn)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        # fmt: off
         res = ars.bsm.sfn_client.describe_state_machine(stateMachineArn=self.arn)
+        state_machine_arn = res["stateMachineArn"]
         status = res["status"]
         role_arn = res["roleArn"]
         definition = res["definition"]
         type = res["type"]
         creation_date = res["creationDate"]
 
+        status_icon = sfn_statemachine_status_icon_mapper[status]
+        Item = res_lib.DetailItem.from_detail
+        aws = ars.aws_console
+        detail_items = [
+            Item("state_machine_arn", state_machine_arn, url=aws.step_function.get_state_machine_view_tab(state_machine_arn)),
+            Item("status", status, text=f"{status_icon} {status}"),
+            Item("🧢 role_arn", role_arn, url=aws.iam.get_role(role_arn)),
+            Item("definition", definition),
+            Item("type", type),
+            Item("creation_date", creation_date),
+        ]
+
         res = ars.bsm.sfn_client.list_tags_for_resource(resourceArn=self.arn)
         tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
         tag_items = res_lib.DetailItem.from_tags(tags)
+        # fmt: on
 
         return [
-            res_lib.DetailItem(
-                title=f"<status>: {status}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="status",
-                variables={
-                    "copy": status,
-                    "url": None,
-                },
-            ),
-            res_lib.DetailItem(
-                title=f"🧢 <role_arn>: {role_arn}",
-                subtitle="🌐 Tap 'Enter' to open url, 📋 tap 'Ctrl + A' to copy",
-                uid="role_arn",
-                variables={
-                    "copy": role_arn,
-                    "url": ars.aws_console.iam.get_role(name_or_arn=role_arn),
-                },
-            ),
-            res_lib.DetailItem(
-                title=f"<definition>: {definition}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="definition",
-                variables={
-                    "copy": definition,
-                    "url": None,
-                },
-            ),
-            res_lib.DetailItem(
-                title=f"<type>: {type}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="type",
-                variables={
-                    "copy": type,
-                    "url": None,
-                },
-            ),
-            res_lib.DetailItem(
-                title=f"<creation_date>: {creation_date}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="creation_date",
-                variables={
-                    "copy": str(creation_date),
-                    "url": None,
-                },
-            ),
+            *detail_items,
             *tag_items,
         ]
 
@@ -134,7 +116,7 @@ sfn_state_machine_searcher = res_lib.Searcher(
 )
 
 
-_sfn_execution_status_mapper = {
+sfn_execution_status_icon_mapper = {
     "RUNNING": "🔵",
     "SUCCEEDED": "🟢",
     "FAILED": "🔴",
@@ -168,14 +150,18 @@ class SfnExecution(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return f"{self.name}, <state>: {_sfn_execution_status_mapper[self.status]} {self.status}"
+        return "{}, {}".format(
+            highlight_text(self.name),
+            format_key_value("status", f"{sfn_execution_status_icon_mapper[self.status]} {self.status}")
+        )
 
     @property
     def subtitle(self) -> str:
         return (
-            f"<sm>: {self.sm_name}, "
-            f"<start>: {str(self.start_at)[:19]}, "
-            f"<end>: {str(self.end_at)[:19]}"
+            "{}, {}".format(
+                format_key_value("start", self.start_at),
+                format_key_value("end", self.end_at),
+            )
         )
 
     @property
@@ -190,6 +176,40 @@ class SfnExecution(res_lib.BaseDocument):
         return console.step_function.get_state_machine_execution(
             exec_id_or_arn=self.arn
         )
+
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        # fmt: off
+        res = ars.bsm.sfn_client.describe_execution(executionArn=self.arn)
+        exec_arn = res["executionArn"]
+        status = res["status"]
+        state_machine_arn = res["stateMachineArn"]
+        state_machine_version_arn = res.get("stateMachineVersionArn")
+        state_machine_alias_arn = res.get("stateMachineAliasArn")
+        input = res["input"]
+        output = res["output"]
+        error = res.get("error")
+        cause = res.get("cause")
+
+        status_icon = sfn_execution_status_icon_mapper[status]
+        Item = res_lib.DetailItem.from_detail
+        aws = ars.aws_console
+        detail_items = [
+            Item("exec_arn", exec_arn, url=aws.step_function.get_state_machine_execution(exec_arn)),
+            Item("status", status, text=f"{status_icon} {status}"),
+            Item("state_machine_arn", state_machine_arn, url=aws.step_function.get_state_machine_view_tab(state_machine_arn)),
+            Item("state_machine_version_arn", state_machine_version_arn) if state_machine_version_arn else None,
+            Item("state_machine_alias_arn", state_machine_alias_arn) if state_machine_alias_arn else None,
+            Item("input", input),
+            Item("output", output) if output else None,
+            Item("error", error) if error else None,
+            Item("cause", cause) if cause else None,
+        ]
+        detail_items = [item for item in detail_items if item is not None]
+        # fmt: on
+
+        return [
+            *detail_items,
+        ]
 
 
 sfn_execution_searcher = res_lib.Searcher(
