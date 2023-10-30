@@ -3,7 +3,6 @@
 import typing as T
 import dataclasses
 
-import botocore.exceptions
 import aws_arns.api as arns
 
 from .. import res_lib
@@ -49,13 +48,12 @@ class SqsQueue(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
-        detail_items = [
-            Item("arn", self.arn, url=aws.sns.get_topic(self.arn)),
-            Item("queue_url", self.queue_url, url=aws.sns.get_topic(self.arn)),
-        ]
+        detail_items = self.get_initial_detail_items(ars)
+        detail_items.append(
+            Item("queue_url", self.queue_url, url=self.get_console_url(ars.aws_console)),
+        )
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.sqs_client.get_queue_attributes(
                 QueueUrl=self.queue_url,
                 AttributeNames=["All"],
@@ -65,27 +63,23 @@ class SqsQueue(res_lib.BaseDocument):
             n_msg = attrs.get("ApproximateNumberOfMessages", "NA")
             n_msg_delayed = attrs.get("ApproximateNumberOfMessagesDelayed", "NA")
             n_msg_invisible = attrs.get("ApproximateNumberOfMessagesNotVisible", "NA")
-            policy = attrs.get("Policy", "NA")
-            redrive_policy = attrs.get("RedrivePolicy", "NA")
-            redrive_allow_policy = attrs.get("RedriveAllowPolicy", "NA")
+            policy = attrs.get("Policy")
+            redrive_policy = attrs.get("RedrivePolicy")
+            redrive_allow_policy = attrs.get("RedriveAllowPolicy")
             detail_items.extend([
                 Item("is_fifo", is_fifo),
                 Item("n_msg", n_msg),
                 Item("n_msg_delayed", n_msg_delayed),
                 Item("n_msg_invisible", n_msg_invisible),
-                Item("policy", policy),
-                Item("redrive_policy", redrive_policy),
-                Item("redrive_allow_policy", redrive_allow_policy),
+                Item("policy", self.one_line_json(policy)),
+                Item("redrive_policy", self.one_line_json(redrive_policy)),
+                Item("redrive_allow_policy", self.one_line_json(redrive_allow_policy)),
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.sqs_client.list_queue_tags(QueueUrl=self.queue_url)
             tags: dict = res.get("Tags", {})
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         return detail_items
     # fmt: on

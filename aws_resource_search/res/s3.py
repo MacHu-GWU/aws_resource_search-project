@@ -3,8 +3,6 @@
 import typing as T
 import dataclasses
 
-import botocore.exceptions
-
 from .. import res_lib
 from ..terminal import format_key_value
 
@@ -58,23 +56,15 @@ class S3Bucket(res_lib.BaseDocument):
             Item("s3 arn", self.arn, url=url),
         ]
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_location(Bucket=self.name)
             location = res["LocationConstraint"]
             detail_items.append(Item("location", location))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(
-                res_lib.DetailItem.from_error("maybe permission denied", str(e))
-            )
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
             tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagSet", [])}
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(
-                res_lib.DetailItem.from_error("maybe permission denied", str(e))
-            )
 
         return detail_items
 

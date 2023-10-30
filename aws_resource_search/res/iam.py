@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
-import json
 import dataclasses
 
-import botocore.exceptions
 import aws_arns.api as arns
-from colorama import Fore, Style
 
 from .. import res_lib
 from ..terminal import format_key_value
@@ -42,7 +39,11 @@ class IamGroup(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
+        return "{}, {}, {}".format(
+            format_key_value("create_at", self.create_date),
+            format_key_value("arn", self.arn),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -102,7 +103,11 @@ class IamUser(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
+        return "{}, {}, {}".format(
+            format_key_value("create_at", self.create_date),
+            format_key_value("arn", self.arn),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -162,13 +167,17 @@ class IamRole(res_lib.BaseDocument):
     @property
     def title(self) -> str:
         if self.is_service_role():
-            return "🪖 {}".format(format_key_value("name", self.name))
+            return format_key_value("🪖 name", self.name)
         else:
-            return "🧢 {}".format(format_key_value("name", self.name))
+            return format_key_value("🧢 name", self.name)
 
     @property
     def subtitle(self) -> str:
-        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
+        return "{}, {}, {}".format(
+            format_key_value("create_at", self.create_date),
+            format_key_value("arn", self.arn),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -183,22 +192,16 @@ class IamRole(res_lib.BaseDocument):
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        arn = self.arn
-        role_id = self.raw_data["RoleId"]
-        assume_role_policy_document: dict = self.raw_data["AssumeRolePolicyDocument"]
-
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
+        detail_items = self.get_initial_detail_items(ars)
+        detail_items.extend([
+            Item("role_id", self.raw_data["RoleId"]),
+            Item("trust_entities", self.one_line_json(self.raw_data["AssumeRolePolicyDocument"])),
+        ])
 
-        detail_items = [
-            Item("arn", arn, url=aws.iam.get_role(name_or_arn=arn)),
-            Item("role_id", role_id),
-            Item("trust_entities", json.dumps(assume_role_policy_document)),
-        ]
-
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.iam_client.list_attached_role_policies(
-                RoleName=self.name, MaxItems=50
+                RoleName=self.name, MaxItems=50,
             )
             detail_items.extend([
                 Item(
@@ -209,10 +212,8 @@ class IamRole(res_lib.BaseDocument):
                 )
                 for dct in res.get("AttachedPolicies", [])
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.iam_client.list_role_policies(RoleName=self.name, MaxItems=50)
             detail_items.extend([
                 Item(
@@ -229,15 +230,11 @@ class IamRole(res_lib.BaseDocument):
                 )
                 for policy_name in res.get("PolicyNames", [])
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.iam_client.list_role_tags(RoleName=self.name)
             tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         return detail_items
     # fmt: on
@@ -289,7 +286,11 @@ class IamPolicy(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return f"{Fore.CYAN}create_at{Style.RESET_ALL}: {self.create_date}, {Fore.CYAN}arn{Style.RESET_ALL}: {self.arn}"
+        return "{}, {}, {}".format(
+            format_key_value("create_at", self.create_date),
+            format_key_value("arn", self.arn),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -305,43 +306,30 @@ class IamPolicy(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
+        detail_items = self.get_initial_detail_items(ars)
+        detail_items.append(Item("create_date", self.create_date))
 
-        arn = self.arn
-        create_date = self.create_date
-
-        detail_items = [
-            Item("arn", arn, url=self.get_console_url(aws)),
-            Item("create_date", create_date),
-        ]
-
-        try:
-            res = ars.bsm.iam_client.get_policy(PolicyArn=arn)
+        with self.enrich_details(detail_items):
+            res = ars.bsm.iam_client.get_policy(PolicyArn=self.arn)
             dct = res["Policy"]
             policy_id = dct["PolicyId"]
             default_version_id = dct["DefaultVersionId"]
             attachment_count = dct["AttachmentCount"]
             description = dct.get("Description", "No description")
-
-            res = ars.bsm.iam_client.get_policy_version(PolicyArn=arn, VersionId=default_version_id)
+            res = ars.bsm.iam_client.get_policy_version(PolicyArn=self.arn, VersionId=default_version_id)
             document: dict = res["PolicyVersion"]["Document"]
-
             detail_items.extend([
                 Item("policy_id", policy_id),
                 Item("default_version_id", default_version_id),
                 Item("attachment_count", attachment_count),
                 Item("description", description),
-                Item("document", json.dumps(document)),
+                Item("document", self.one_line_json(document)),
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.iam_client.list_policy_tags(PolicyArn=self.arn)
             tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         return detail_items
     # fmt: on

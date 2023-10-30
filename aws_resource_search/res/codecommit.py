@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
 import dataclasses
 
 import aws_arns.api as arns
 
 from .. import res_lib
+from ..terminal import format_key_value
+
+if T.TYPE_CHECKING:
+    from ..ars_v2 import ARS
 
 
 @dataclasses.dataclass
@@ -28,7 +33,7 @@ class CodeCommitRepository(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("repo_name", self.name)
 
     @property
     def subtitle(self) -> str:

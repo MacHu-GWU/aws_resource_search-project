@@ -3,9 +3,8 @@
 import typing as T
 import dataclasses
 
-from colorama import Fore, Style
-
 from .. import res_lib
+from ..terminal import format_key_value, ShortcutEnum
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
@@ -59,7 +58,7 @@ class CloudFormationStack(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("stack_name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -81,45 +80,36 @@ class CloudFormationStack(res_lib.BaseDocument):
         return console.cloudformation.get_stack(name_or_arn=self.arn)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        status = self.status
-        role_arn = self.role_arn
-        arn = self.arn
-
-        status_icon = cloudformation_stack_status_icon_mapper[status]
+        status_icon = cloudformation_stack_status_icon_mapper[self.status]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
-            Item("arn", arn, url=aws.cloudformation.get_stack(arn)),
-            Item("status", status, text=f"{status_icon} {status}"),
-            Item("role_arn", role_arn, url=aws.iam.get_role(role_arn)),
+            Item("arn", self.arn, url=aws.cloudformation.get_stack(self.arn)),
+            Item("status", self.status, text=f"{status_icon} {self.status}"),
+            Item("role_arn", self.role_arn, url=aws.iam.get_role(self.role_arn)),
         ]
 
         outputs: dict = {
             dct["OutputKey"]: dct for dct in self.raw_data.get("Outputs", [])
         }
-        output_items = [
-            res_lib.DetailItem(
-                title="🎯 output: {}{}{} = {} (export = {})".format(
-                    Fore.CYAN,
-                    k,
-                    Style.RESET_ALL,
-                    dct["OutputValue"],
-                    dct.get("ExportName", "NA"),
-                ),
-                subtitle=f"📋 {Fore.MAGENTA}Ctrl + A{Style.RESET_ALL} to copy the value.",
-                uid=f"Output {k}",
-                variables={"copy": dct["OutputValue"], "url": None},
-            )
-            for k, dct in outputs.items()
-        ]
+        detail_items.extend(
+            [
+                res_lib.DetailItem(
+                    title="🎯 output: {} (export = {})".format(
+                        format_key_value(k, dct["OutputValue"]),
+                        dct.get("ExportName", "NA"),
+                    ),
+                    subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy the value.",
+                    uid=f"Output {k}",
+                    variables={"copy": dct["OutputValue"], "url": None},
+                )
+                for k, dct in outputs.items()
+            ]
+        )
 
         tags: dict = {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
-        return [
-            *detail_items,
-            *output_items,
-            *tag_items,
-        ]
+        detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        return detail_items
 
 
 cloudformation_stack_searcher = res_lib.Searcher(

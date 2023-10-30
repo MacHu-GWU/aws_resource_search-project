@@ -4,7 +4,6 @@ import typing as T
 import dataclasses
 from datetime import datetime
 
-import botocore.exceptions
 import aws_arns.api as arns
 
 from .. import res_lib
@@ -210,12 +209,9 @@ class GlueJob(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
-        detail_items = [
-            Item("arn", self.arn, url=self.get_console_url(aws)),
-        ]
+        detail_items = self.get_initial_detail_items(ars)
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_job(JobName=self.name)
             job_dct = res["Job"]
 
@@ -231,24 +227,20 @@ class GlueJob(res_lib.BaseDocument):
 
             detail_items.extend([
                 Item("description", description),
-                Item("role_arn", role_arn, url=aws.iam.get_role(role_arn)),
+                Item("role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
                 Item("glue_version", glue_version),
                 Item("worker_type", worker_type),
                 Item("number_of_workers", number_of_workers),
                 Item("max_concurrent_runs", max_concurrent_runs),
                 Item("max_retries", max_retries),
                 Item("execution_class", execution_class),
-                Item("script_location", script_location, url=aws.s3.get_console_url(uri_liked=script_location)),
+                Item("script_location", script_location, url=ars.aws_console.s3.get_console_url(uri_liked=script_location)),
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_tags(ResourceArn=self.arn)
             tags: dict = res.get("Tags", {})
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         return detail_items
     # fmt: on
@@ -344,12 +336,11 @@ class GlueJobRun(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
         detail_items = [
-            Item("job_run_id", self.id, url=self.get_console_url(aws)),
+            Item("job_run_id", self.id, url=self.get_console_url(ars.aws_console)),
         ]
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_job_run(
                 JobName=self.job_name,
                 RunId=self.id,
@@ -360,7 +351,6 @@ class GlueJobRun(res_lib.BaseDocument):
             log_group_name = dct.get("LogGroupName", "NA")
 
             detail_items.extend([
-                Item("job_run_id", self.id, url=self.get_console_url(aws)),
                 Item("error_message", error_message),
                 Item("output_logs", log_group_name, url=aws.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/output")),
                 Item("error_logs", log_group_name, url=aws.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/error")),
@@ -383,8 +373,6 @@ class GlueJobRun(res_lib.BaseDocument):
                         uid=f"no arg found",
                     )
                 )
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         return detail_items
     # fmt: on
@@ -458,12 +446,9 @@ class GlueCrawler(res_lib.BaseDocument):
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
-        detail_items = [
-            Item("arn", self.arn, url=self.get_console_url(aws)),
-        ]
+        detail_items = self.get_initial_detail_items(ars)
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_crawler(Name=self.name)
             dct = res["Crawler"]
 
@@ -481,22 +466,16 @@ class GlueCrawler(res_lib.BaseDocument):
                 [
                     Item("description", description),
                     Item("state", state, text=f"{state_icon} {state}"),
-                    Item("role_arn", role_arn, url=aws.iam.get_role(role_arn)),
+                    Item(
+                        "role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)
+                    ),
                 ]
             )
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(
-                res_lib.DetailItem.from_error("maybe permission denied", str(e))
-            )
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_tags(ResourceArn=self.arn)
             tags: dict = res.get("Tags", {})
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(
-                res_lib.DetailItem.from_error("maybe permission denied", str(e))
-            )
 
         return detail_items
 

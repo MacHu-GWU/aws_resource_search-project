@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
-import json
 import dataclasses
 
-import botocore.exceptions
 import aws_arns.api as arns
 
 from .. import res_lib
@@ -48,40 +46,31 @@ class SnsTopic(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
-        detail_items = [
-            Item("arn", self.arn, url=self.get_console_url(aws)),
-        ]
+        detail_items = self.get_initial_detail_items(ars)
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.sns_client.get_topic_attributes(TopicArn=self.arn)
-
-            access_policy = res.get("Attributes", {}).get("Policy", "NA")
-            delivery_policy = res.get("Attributes", {}).get("DeliveryPolicy", "NA")
+            access_policy = res.get("Attributes", {}).get("Policy")
+            delivery_policy = res.get("Attributes", {}).get("DeliveryPolicy")
             subscriptions_confirmed = res.get("Attributes", {}).get("SubscriptionsConfirmed", "NA")
             subscriptions_deleted = res.get("Attributes", {}).get("SubscriptionsDeleted", "NA")
             subscriptions_pending = res.get("Attributes", {}).get("SubscriptionsPending", "NA")
             is_fifo_topic = res.get("Attributes", {}).get("FifoTopic", "NA")
             content_based_deduplication_enabled = res.get("Attributes", {}).get("ContentBasedDeduplication", "NA")
-
             detail_items.extend([
-                Item("access_policy", json.dumps(json.loads(access_policy))),
-                Item("delivery_policy", json.dumps(json.loads(delivery_policy))),
+                Item("access_policy", self.one_line_json(access_policy)),
+                Item("delivery_policy", self.one_line_json(delivery_policy)),
                 Item("subscriptions_confirmed", subscriptions_confirmed),
                 Item("subscriptions_deleted", subscriptions_deleted),
                 Item("subscriptions_pending", subscriptions_pending),
                 Item("is_fifo_topic", is_fifo_topic),
                 Item("content_based_deduplication_enabled", content_based_deduplication_enabled),
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.sns_client.list_tags_for_resource(ResourceArn=self.arn)
             tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         return detail_items
     # fmt: on

@@ -6,11 +6,14 @@ Utility class and function in this module will be used in
 """
 
 import typing as T
+import contextlib
+import json
 import copy
 import dataclasses
 from datetime import datetime
 
 import jmespath
+import botocore.exceptions
 import aws_console_url.api as acu
 import sayt.api as sayt
 import zelfred.api as zf
@@ -242,6 +245,55 @@ class BaseDocument(BaseModel):
         and tap 'F1' to go back to the previous view.
         """
         raise NotImplementedError
+
+    def get_initial_detail_items(
+        self,
+        ars: "ARS",
+        arn_field_name: str = "arn",
+    ) -> list:
+        """
+        Most AWS resource detail should have one ARN item that user can tap
+        "Ctrl A" to copy and tap "Enter" to open url. Only a few AWS resource
+        doesn't support ARN (for example glue job run).
+        """
+        try:
+            return [
+                DetailItem.from_detail(
+                    arn_field_name, self.arn, url=self.get_console_url(ars.aws_console)
+                ),
+            ]
+        except NotImplementedError:
+            return []
+
+    @staticmethod
+    @contextlib.contextmanager
+    def enrich_details(detail_items: list):
+        """
+        A context manager to add additional detail items. It automatically
+        captures boto3 exception and creates debug item.
+        """
+        try:
+            yield None
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(
+                DetailItem.from_error("maybe permission denied", str(e))
+            )
+
+    @staticmethod
+    def one_line_json(obj) -> str:
+        """
+        Convert a python object to one line json string.
+
+        This is usually used in the :meth:`BaseDocument.get_details`` method
+        to normalize multiline json object in the UI.
+        """
+        if obj:
+            if isinstance(obj, str):
+                json.dumps(json.loads(obj))
+            else:
+                json.dumps(obj)
+        else:
+            return "{}"
 
 
 T_DOCUMENT_OBJ = T.TypeVar("T_DOCUMENT_OBJ", bound=BaseDocument)
@@ -520,6 +572,8 @@ class DetailItem(ArsBaseItem):
         uid: T.Optional[str] = None,
     ):
         """
+        Create one :class:`DetailItem` from structured detail information.
+
         :param name: this is for title
         :param value: this if for copy to clipboard
         :param text: this is for title
@@ -545,6 +599,9 @@ class DetailItem(ArsBaseItem):
 
     @classmethod
     def from_tags(cls, tags: T.Dict[str, str]):
+        """
+        Create MANY :class:`DetailItem` from AWS resource tag key value pairs.
+        """
         items = [
             cls(
                 title=f"🏷 tag: {format_key_value(k, v)}",
@@ -566,6 +623,9 @@ class DetailItem(ArsBaseItem):
 
     @classmethod
     def from_error(cls, type: str, msg: str):
+        """
+        Create one :class:`DetailItem` from error message.
+        """
         return cls(
             title=f"❗ {type}",
             subtitle=f"💬 {msg}",

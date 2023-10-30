@@ -103,24 +103,22 @@ class Ec2Instance(res_lib.BaseDocument):
             Item("inst_profile", inst_profile),
         ]
 
-        security_group_items = [
-            Item(
-                name="sg",
-                value=dct["GroupId"],
-                text="{} | {}".format(dct["GroupId"], dct["GroupName"]),
-                url=aws.vpc.get_security_group(dct["GroupId"]),
-                uid=dct["GroupId"],
-            )
-            for dct in self.raw_data.get("SecurityGroups", [])
-        ]
+        detail_items.extend(
+            [
+                Item(
+                    name="sg",
+                    value=dct["GroupId"],
+                    text="{} | {}".format(dct["GroupId"], dct["GroupName"]),
+                    url=aws.vpc.get_security_group(dct["GroupId"]),
+                    uid=dct["GroupId"],
+                )
+                for dct in self.raw_data.get("SecurityGroups", [])
+            ]
+        )
 
         tags: dict = {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
-        return [
-            *detail_items,
-            *security_group_items,
-            *tag_items,
-        ]
+        detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        return detail_items
 
 
 ec2_instance_searcher = res_lib.Searcher(
@@ -218,26 +216,20 @@ class Ec2Vpc(res_lib.BaseDocument):
         return console.vpc.get_vpc(vpc_id=self.id)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        is_default = self.is_default
-        state = self.state
-
-        state_icon = ec2_vpc_state_icon_mapper[state]
+        state_icon = ec2_vpc_state_icon_mapper[self.state]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
             Item("vpc_id", self.id, url=aws.vpc.get_vpc(self.id)),
-            Item("is_default", is_default),
-            Item("state", state, text=f"{state_icon} {state}"),
+            Item("is_default", self.is_default),
+            Item("state", self.state, text=f"{state_icon} {self.state}"),
             Item("cidr_ipv4", self.cidr_ipv4),
             Item("cidr_ipv6", self.cidr_ipv6),
         ]
 
         tags: dict = {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
-        return [
-            *detail_items,
-            *tag_items,
-        ]
+        detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        return detail_items
 
 
 ec2_vpc_searcher = res_lib.Searcher(
@@ -322,30 +314,22 @@ class Ec2Subnet(res_lib.BaseDocument):
         return console.vpc.get_subnet(subnet_id=self.id)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        state = self.state
-        vpc_id = self.vpc_id
-        subnet_id = self.id
-        az = self.az
-
-        state_icon = ec2_vpc_state_icon_mapper[state]
+        state_icon = ec2_vpc_state_icon_mapper[self.state]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
-            Item("subnet_id", subnet_id, url=aws.vpc.get_subnet(subnet_id)),
-            Item("vpc_id", vpc_id, url=aws.vpc.get_vpc(vpc_id)),
-            Item("az", az),
-            Item("state", state, text=f"{state_icon} {state}"),
+            Item("subnet_id", self.id, url=aws.vpc.get_subnet(self.id)),
+            Item("vpc_id", self.vpc_id, url=aws.vpc.get_vpc(self.vpc_id)),
+            Item("az", self.az),
+            Item("state", self.state, text=f"{state_icon} {self.state}"),
             Item("available_ip", self.raw_data.get("AvailableIpAddressCount", "NA")),
             Item("enable_dns64", self.raw_data.get("EnableDns64", "NA")),
             Item("ipv6_native", self.raw_data.get("Ipv6Native", "NA")),
         ]
 
         tags: dict = {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
-        return [
-            *detail_items,
-            *tag_items,
-        ]
+        detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        return detail_items
 
 
 ec2_subnet_searcher = res_lib.Searcher(
@@ -424,24 +408,16 @@ class Ec2SecurityGroup(res_lib.BaseDocument):
         return console.vpc.get_security_group(sg_id=self.id)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        sg_id = self.id
-        description = self.description
-        vpc_id = self.vpc_id
-
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
-            Item("sg_id", sg_id, url=aws.vpc.get_security_group(sg_id)),
-            Item("description", description),
-            Item("vpc_id", vpc_id, url=aws.vpc.get_vpc(vpc_id)),
+            Item("sg_id", self.id, url=aws.vpc.get_security_group(self.id)),
+            Item("description", self.description),
+            Item("vpc_id", self.vpc_id, url=aws.vpc.get_vpc(self.vpc_id)),
         ]
-
         tags: dict = {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
-        return [
-            *detail_items,
-            *tag_items,
-        ]
+        detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        return detail_items
 
 
 ec2_securitygroup_searcher = res_lib.Searcher(

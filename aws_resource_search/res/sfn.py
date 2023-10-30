@@ -5,8 +5,6 @@ import json
 import dataclasses
 from datetime import datetime
 
-import botocore.exceptions
-
 from .. import res_lib
 from ..terminal import format_key_value
 
@@ -65,12 +63,9 @@ class SfnStateMachine(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
-        detail_items = [
-            Item("state_machine_arn", self.arn, url=self.get_console_url(aws)),
-        ]
+        detail_items = self.get_initial_detail_items(ars, arn_field_name="statemachine_arn")
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.sfn_client.describe_state_machine(stateMachineArn=self.arn)
             status = res["status"]
             role_arn = res["roleArn"]
@@ -81,20 +76,16 @@ class SfnStateMachine(res_lib.BaseDocument):
             status_icon = sfn_statemachine_status_icon_mapper[status]
             detail_items.extend([
                 Item("status", status, text=f"{status_icon} {status}"),
-                Item("🧢 role_arn", role_arn, url=aws.iam.get_role(role_arn)),
+                Item("🧢 role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
                 Item("definition", json.dumps(json.loads(definition))),
                 Item("type", type),
                 Item("creation_date", creation_date),
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.sfn_client.list_tags_for_resource(resourceArn=self.arn)
             tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         return detail_items
     # fmt: on
@@ -186,12 +177,9 @@ class SfnExecution(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
-        detail_items = [
-            Item("exec_arn", self.arn, url=self.get_console_url(aws)),
-        ]
+        detail_items = self.get_initial_detail_items(ars, arn_field_name="exec_arn")
 
-        try:
+        with self.enrich_details(detail_items):
             res = ars.bsm.sfn_client.describe_execution(executionArn=self.arn)
             status = res["status"]
             state_machine_arn = res["stateMachineArn"]
@@ -205,16 +193,14 @@ class SfnExecution(res_lib.BaseDocument):
             status_icon = sfn_execution_status_icon_mapper[status]
             detail_items.extend([
                 Item("status", status, text=f"{status_icon} {status}"),
-                Item("state_machine_arn", state_machine_arn, url=aws.step_function.get_state_machine_view_tab(state_machine_arn)),
+                Item("state_machine_arn", state_machine_arn, url=ars.aws_console.step_function.get_state_machine_view_tab(state_machine_arn)),
                 Item("state_machine_version_arn", state_machine_version_arn) if state_machine_version_arn else None,
                 Item("state_machine_alias_arn", state_machine_alias_arn) if state_machine_alias_arn else None,
-                Item("input", json.dumps(json.loads(input))),
-                Item("output", output) if output else None,
-                Item("error", error) if error else None,
-                Item("cause", cause) if cause else None,
+                Item("input", self.one_line_json(input)),
+                Item("output", self.one_line_json(output)),
+                Item("error", self.one_line_json(error)),
+                Item("cause", self.one_line_json(cause)),
             ])
-        except botocore.exceptions.ClientError as e:
-            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
         detail_items = [item for item in detail_items if item is not None]
         return detail_items
