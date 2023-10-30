@@ -3,6 +3,8 @@
 import typing as T
 import dataclasses
 
+import botocore.exceptions
+
 from .. import res_lib
 from ..terminal import format_key_value
 
@@ -48,26 +50,33 @@ class S3Bucket(res_lib.BaseDocument):
         return console.s3.get_console_url(bucket=self.name)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        res = ars.bsm.s3_client.get_bucket_location(Bucket=self.name)
-        location = res["LocationConstraint"]
-
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
-        url = aws.s3.get_console_url(uri_liked=self.arn)
+        url = self.get_console_url(aws)
         detail_items = [
             Item("s3 uri", f"s3://{self.name}", url=url),
             Item("s3 arn", self.arn, url=url),
-            Item("location", location),
         ]
 
-        res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
-        tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagSet", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
+        try:
+            res = ars.bsm.s3_client.get_bucket_location(Bucket=self.name)
+            location = res["LocationConstraint"]
+            detail_items.append(Item("location", location))
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(
+                res_lib.DetailItem.from_error("maybe permission denied", str(e))
+            )
 
-        return [
-            *detail_items,
-            *tag_items,
-        ]
+        try:
+            res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
+            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagSet", [])}
+            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(
+                res_lib.DetailItem.from_error("maybe permission denied", str(e))
+            )
+
+        return detail_items
 
 
 s3_bucket_searcher = res_lib.Searcher(

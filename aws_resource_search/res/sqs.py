@@ -3,9 +3,11 @@
 import typing as T
 import dataclasses
 
+import botocore.exceptions
 import aws_arns.api as arns
 
 from .. import res_lib
+from ..terminal import format_key_value
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
@@ -31,7 +33,7 @@ class SqsQueue(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name", self.name)
 
     @property
     def autocomplete(self) -> str:
@@ -44,43 +46,49 @@ class SqsQueue(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.sqs.get_queue(name_or_arn_or_url=self.arn)
 
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        # fmt: off
-        res = ars.bsm.sqs_client.get_queue_attributes(
-            QueueUrl=self.queue_url,
-            AttributeNames=["All"],
-        )
-        attrs = res.get("Attributes", {})
-        is_fifo = attrs.get("FifoQueue", "NA")
-        n_msg = attrs.get("ApproximateNumberOfMessages", "NA")
-        n_msg_delayed = attrs.get("ApproximateNumberOfMessagesDelayed", "NA")
-        n_msg_invisible = attrs.get("ApproximateNumberOfMessagesNotVisible", "NA")
-        policy = attrs.get("Policy", "NA")
-        redrive_policy = attrs.get("RedrivePolicy", "NA")
-        redrive_allow_policy = attrs.get("RedriveAllowPolicy", "NA")
-
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
             Item("arn", self.arn, url=aws.sns.get_topic(self.arn)),
             Item("queue_url", self.queue_url, url=aws.sns.get_topic(self.arn)),
-            Item("is_fifo", is_fifo),
-            Item("n_msg", n_msg),
-            Item("n_msg_delayed", n_msg_delayed),
-            Item("n_msg_invisible", n_msg_invisible),
-            Item("policy", policy),
-            Item("redrive_policy", redrive_policy),
-            Item("redrive_allow_policy", redrive_allow_policy),
         ]
-        # fmt: on
 
-        res = ars.bsm.sqs_client.list_queue_tags(QueueUrl=self.queue_url)
-        tags: dict = res.get("Tags", {})
-        tag_items = res_lib.DetailItem.from_tags(tags)
-        return [
-            *detail_items,
-            *tag_items,
-        ]
+        try:
+            res = ars.bsm.sqs_client.get_queue_attributes(
+                QueueUrl=self.queue_url,
+                AttributeNames=["All"],
+            )
+            attrs = res.get("Attributes", {})
+            is_fifo = attrs.get("FifoQueue", "NA")
+            n_msg = attrs.get("ApproximateNumberOfMessages", "NA")
+            n_msg_delayed = attrs.get("ApproximateNumberOfMessagesDelayed", "NA")
+            n_msg_invisible = attrs.get("ApproximateNumberOfMessagesNotVisible", "NA")
+            policy = attrs.get("Policy", "NA")
+            redrive_policy = attrs.get("RedrivePolicy", "NA")
+            redrive_allow_policy = attrs.get("RedriveAllowPolicy", "NA")
+            detail_items.extend([
+                Item("is_fifo", is_fifo),
+                Item("n_msg", n_msg),
+                Item("n_msg_delayed", n_msg_delayed),
+                Item("n_msg_invisible", n_msg_invisible),
+                Item("policy", policy),
+                Item("redrive_policy", redrive_policy),
+                Item("redrive_allow_policy", redrive_allow_policy),
+            ])
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
+
+        try:
+            res = ars.bsm.sqs_client.list_queue_tags(QueueUrl=self.queue_url)
+            tags: dict = res.get("Tags", {})
+            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
+
+        return detail_items
+    # fmt: on
 
 
 sqs_queue_searcher = res_lib.Searcher(
