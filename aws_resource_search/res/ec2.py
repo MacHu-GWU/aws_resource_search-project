@@ -4,9 +4,9 @@ import typing as T
 import dataclasses
 
 import aws_arns.api as arns
-from colorama import Fore, Style
 
 from .. import res_lib
+from ..terminal import format_key_value, highlight_text
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
@@ -54,12 +54,17 @@ class Ec2Instance(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
         state_icon = ec2_instance_state_icon_mapper[self.state]
-        return f"{state_icon} {self.state} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | {self.inst_type}"
+        return "{} | {} | {}, {}".format(
+            f"{state_icon} {self.state}",
+            highlight_text(self.id),
+            self.inst_type,
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -189,12 +194,17 @@ class Ec2Vpc(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
         state_icon = ec2_vpc_state_icon_mapper[self.state]
-        return f"{state_icon} {self.state} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | is_default = {self.is_default}"
+        return "{} | {} | {}, {}".format(
+            f"{state_icon} {self.state}",
+            highlight_text(self.id),
+            format_key_value("is_default", self.is_default),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -287,12 +297,18 @@ class Ec2Subnet(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
         state_icon = ec2_vpc_state_icon_mapper[self.state]
-        return f"{state_icon} {self.state} | {self.vpc_id} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | {self.az}"
+        return "{} | {} | {} | {}, {}".format(
+            f"{state_icon} {self.state}",
+            self.vpc_id,
+            highlight_text(self.id),
+            self.az,
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -385,11 +401,16 @@ class Ec2SecurityGroup(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
-        return f"{self.vpc_id} | {Fore.CYAN}{self.id}{Style.RESET_ALL} | {self.description}"
+        return "{} | {} | {}, {}".format(
+            self.vpc_id,
+            highlight_text(self.id),
+            self.description,
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:

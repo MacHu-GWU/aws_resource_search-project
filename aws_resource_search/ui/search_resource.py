@@ -20,9 +20,11 @@ from .search_patterns import (
     get_partitioner_boto_kwargs,
 )
 from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, Searcher, ArsBaseItem
-from ..terminal import ShortcutEnum, highlight_text
-from .common import repaint_ui
+from ..terminal import ShortcutEnum, format_resource_type
 from .boto_ses import bsm, ars
+
+if T.TYPE_CHECKING:
+    from .main import UI
 
 
 class AwsResourceItemVariables(T.TypedDict):
@@ -81,7 +83,7 @@ class AwsResourceItem(ArsBaseItem):
     ):
         return [cls.from_document(resource_type, doc) for doc in docs]
 
-    def enter_handler(self, ui: zf.UI):
+    def enter_handler(self, ui: "UI"):
         """
         open AWS console url in browser
         """
@@ -94,7 +96,7 @@ class AwsResourceItem(ArsBaseItem):
                 f"{doc.__class__.__name__} doesn't support console url"
             )
 
-    def ctrl_a_handler(self, ui: zf.UI):
+    def ctrl_a_handler(self, ui: "UI"):
         """
         Copy ARN to clipboard.
         """
@@ -105,7 +107,7 @@ class AwsResourceItem(ArsBaseItem):
         except NotImplementedError:
             raise NotImplementedError(f"{doc.__class__.__name__} doesn't support ARN")
 
-    def ctrl_p_handler(self, ui: zf.UI):
+    def ctrl_p_handler(self, ui: "UI"):
         """
         View details in a sub session. You can tap 'F1' to exit the sub session.
         """
@@ -117,7 +119,7 @@ class AwsResourceItem(ArsBaseItem):
             # enter the main event loop of the sub query
             # user can tap 'F1' to exit the sub query session,
             # and go back to the folder selection session.
-            def handler(query: str, ui: zf.UI):
+            def handler(query: str, ui: "UI"):
                 """
                 A partial function that using the given folder.
                 """
@@ -127,8 +129,8 @@ class AwsResourceItem(ArsBaseItem):
 
             # re-paint the UI
             ui.line_editor.clear_line()
-            ui.line_editor.enter_text(f"Detail of {self.title!r}, press F1 to go back.")
-            repaint_ui(ui)
+            ui.line_editor.enter_text(f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back.")
+            ui.repaint()
             ui.run(_do_init=False)
         except NotImplementedError:
             raise NotImplementedError(
@@ -197,7 +199,7 @@ def search_resource_and_return_items(
 
 
 def search_resource(
-    ui: zf.UI,
+    ui: "UI",
     resource_type: str,
     query: str,
     boto_kwargs: T.Optional[dict] = None,
@@ -222,7 +224,7 @@ def search_resource(
     # display "creating index ..." message
     if ds.cache_key not in ds.cache:
         ui.run_handler(items=creating_index_items(resource_type))
-        repaint_ui(ui)
+        ui.repaint()
         return search_resource_and_return_items(
             searcher=searcher,
             query=final_query,
@@ -233,7 +235,7 @@ def search_resource(
     # manually refresh data
     if final_query.endswith("!~"):
         ui.run_handler(items=creating_index_items(resource_type))
-        repaint_ui(ui)
+        ui.repaint()
         ui.line_editor.press_backspace(n=2)
         return search_resource_and_return_items(
             searcher=searcher,
@@ -252,7 +254,7 @@ def search_resource(
 
 
 def search_partitioner(
-    ui: zf.UI,
+    ui: "UI",
     resource_type: str,
     partitioner_resource_type: str,
     partitioner_query: str,
@@ -274,12 +276,13 @@ def search_partitioner(
     def doc_to_item_func(doc: T_DOCUMENT_OBJ) -> AwsResourceItem:
         return AwsResourceItem(
             uid=doc.uid,
-            title=f"{partitioner_resource_type}: {doc.title}",
+            # title=f"{format_resource_type(partitioner_resource_type)}: {format_value(doc.autocomplete)}",
+            title=f"{format_resource_type(partitioner_resource_type)}: {doc.title}",
             subtitle=(
                 f"Tap {ShortcutEnum.TAB} "
-                f"to search {highlight_text(resource_type)} "
-                f"in this {highlight_text(partitioner_resource_type)}, "
-                f"Tap {ShortcutEnum.ENTER} to open {highlight_text(partitioner_resource_type)} url."
+                f"to search {format_resource_type(resource_type)} "
+                f"in this {format_resource_type(partitioner_resource_type)}, "
+                f"Tap {ShortcutEnum.ENTER} to open {format_resource_type(partitioner_resource_type)} url."
             ),
             autocomplete=f"{resource_type}: {doc.autocomplete}@",
             variables={"doc": doc},
@@ -294,7 +297,7 @@ def search_partitioner(
 
 
 def search_child_resource(
-    ui: zf.UI,
+    ui: "UI",
     resource_type: str,
     resource_query: str,
     partitioner_query: str,
@@ -317,7 +320,7 @@ def search_child_resource(
     def doc_to_item_func(doc: T_DOCUMENT_OBJ) -> AwsResourceItem:
         return AwsResourceItem(
             uid=doc.uid,
-            title=f"{resource_type}: {doc.title}",
+            title=f"{format_resource_type(resource_type)}: {doc.title}",
             subtitle=doc.subtitle,
             autocomplete=f"{resource_type}: {doc.autocomplete}",
             variables={"doc": doc},
@@ -333,7 +336,7 @@ def search_child_resource(
 
 
 def search_resource_under_partitioner(
-    ui: zf.UI,
+    ui: "UI",
     resource_type: str,
     partitioner_resource_type: str,
     query: str,
@@ -405,7 +408,7 @@ def search_resource_under_partitioner(
 def search_resource_handler(
     resource_type: str,
     query: str,
-    ui: zf.UI,
+    ui: "UI",
 ) -> T.List[AwsResourceItem]:
     """
     **IMPORTANT** This handle filter resource by query.

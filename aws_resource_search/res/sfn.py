@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
+import json
 import dataclasses
 from datetime import datetime
 
+import botocore.exceptions
+
 from .. import res_lib
-from ..terminal import format_key_value, highlight_text
+from ..terminal import format_key_value
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
@@ -38,7 +41,7 @@ class SfnStateMachine(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -59,37 +62,42 @@ class SfnStateMachine(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.step_function.get_state_machine_view_tab(name_or_arn=self.arn)
 
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        # fmt: off
-        res = ars.bsm.sfn_client.describe_state_machine(stateMachineArn=self.arn)
-        state_machine_arn = res["stateMachineArn"]
-        status = res["status"]
-        role_arn = res["roleArn"]
-        definition = res["definition"]
-        type = res["type"]
-        creation_date = res["creationDate"]
-
-        status_icon = sfn_statemachine_status_icon_mapper[status]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
-            Item("state_machine_arn", state_machine_arn, url=aws.step_function.get_state_machine_view_tab(state_machine_arn)),
-            Item("status", status, text=f"{status_icon} {status}"),
-            Item("🧢 role_arn", role_arn, url=aws.iam.get_role(role_arn)),
-            Item("definition", definition),
-            Item("type", type),
-            Item("creation_date", creation_date),
+            Item("state_machine_arn", self.arn, url=self.get_console_url(aws)),
         ]
 
-        res = ars.bsm.sfn_client.list_tags_for_resource(resourceArn=self.arn)
-        tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
-        # fmt: on
+        try:
+            res = ars.bsm.sfn_client.describe_state_machine(stateMachineArn=self.arn)
+            status = res["status"]
+            role_arn = res["roleArn"]
+            definition = res["definition"]
+            type = res["type"]
+            creation_date = res["creationDate"]
 
-        return [
-            *detail_items,
-            *tag_items,
-        ]
+            status_icon = sfn_statemachine_status_icon_mapper[status]
+            detail_items.extend([
+                Item("status", status, text=f"{status_icon} {status}"),
+                Item("🧢 role_arn", role_arn, url=aws.iam.get_role(role_arn)),
+                Item("definition", json.dumps(json.loads(definition))),
+                Item("type", type),
+                Item("creation_date", creation_date),
+            ])
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
+
+        try:
+            res = ars.bsm.sfn_client.list_tags_for_resource(resourceArn=self.arn)
+            tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
+            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
+
+        return detail_items
+    # fmt: on
 
 
 sfn_state_machine_searcher = res_lib.Searcher(
@@ -150,18 +158,16 @@ class SfnExecution(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return "{}, {}".format(
-            highlight_text(self.name),
-            format_key_value("status", f"{sfn_execution_status_icon_mapper[self.status]} {self.status}")
-        )
+        return format_key_value("execution_name", self.name)
 
     @property
     def subtitle(self) -> str:
-        return (
-            "{}, {}".format(
-                format_key_value("start", self.start_at),
-                format_key_value("end", self.end_at),
-            )
+        status_icon = sfn_execution_status_icon_mapper[self.status]
+        return "{}, {}, {}, {}".format(
+            f"{status_icon} {self.status}",
+            format_key_value("start", self.start_at),
+            format_key_value("end", self.end_at),
+            self.short_subtitle,
         )
 
     @property
@@ -177,39 +183,42 @@ class SfnExecution(res_lib.BaseDocument):
             exec_id_or_arn=self.arn
         )
 
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        # fmt: off
-        res = ars.bsm.sfn_client.describe_execution(executionArn=self.arn)
-        exec_arn = res["executionArn"]
-        status = res["status"]
-        state_machine_arn = res["stateMachineArn"]
-        state_machine_version_arn = res.get("stateMachineVersionArn")
-        state_machine_alias_arn = res.get("stateMachineAliasArn")
-        input = res["input"]
-        output = res["output"]
-        error = res.get("error")
-        cause = res.get("cause")
-
-        status_icon = sfn_execution_status_icon_mapper[status]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
-            Item("exec_arn", exec_arn, url=aws.step_function.get_state_machine_execution(exec_arn)),
-            Item("status", status, text=f"{status_icon} {status}"),
-            Item("state_machine_arn", state_machine_arn, url=aws.step_function.get_state_machine_view_tab(state_machine_arn)),
-            Item("state_machine_version_arn", state_machine_version_arn) if state_machine_version_arn else None,
-            Item("state_machine_alias_arn", state_machine_alias_arn) if state_machine_alias_arn else None,
-            Item("input", input),
-            Item("output", output) if output else None,
-            Item("error", error) if error else None,
-            Item("cause", cause) if cause else None,
+            Item("exec_arn", self.arn, url=self.get_console_url(aws)),
         ]
-        detail_items = [item for item in detail_items if item is not None]
-        # fmt: on
 
-        return [
-            *detail_items,
-        ]
+        try:
+            res = ars.bsm.sfn_client.describe_execution(executionArn=self.arn)
+            status = res["status"]
+            state_machine_arn = res["stateMachineArn"]
+            state_machine_version_arn = res.get("stateMachineVersionArn")
+            state_machine_alias_arn = res.get("stateMachineAliasArn")
+            input = res["input"]
+            output = res.get("output")
+            error = res.get("error")
+            cause = res.get("cause")
+
+            status_icon = sfn_execution_status_icon_mapper[status]
+            detail_items.extend([
+                Item("status", status, text=f"{status_icon} {status}"),
+                Item("state_machine_arn", state_machine_arn, url=aws.step_function.get_state_machine_view_tab(state_machine_arn)),
+                Item("state_machine_version_arn", state_machine_version_arn) if state_machine_version_arn else None,
+                Item("state_machine_alias_arn", state_machine_alias_arn) if state_machine_alias_arn else None,
+                Item("input", json.dumps(json.loads(input))),
+                Item("output", output) if output else None,
+                Item("error", error) if error else None,
+                Item("cause", cause) if cause else None,
+            ])
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
+
+        detail_items = [item for item in detail_items if item is not None]
+        return detail_items
+    # fmt: on
 
 
 sfn_execution_searcher = res_lib.Searcher(

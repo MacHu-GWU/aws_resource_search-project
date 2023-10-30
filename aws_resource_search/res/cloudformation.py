@@ -64,10 +64,9 @@ class CloudFormationStack(res_lib.BaseDocument):
     @property
     def subtitle(self) -> str:
         status_icon = cloudformation_stack_status_icon_mapper[self.status]
-        return (
-            f"{status_icon} {self.status}, "
-            f"🌐 {Fore.MAGENTA}Enter{Style.RESET_ALL} to open url, "
-            f"📋 {Fore.MAGENTA}Ctrl A{Style.RESET_ALL} to copy."
+        return "{}, {}".format(
+            f"{status_icon} {self.status}",
+            self.short_subtitle,
         )
 
     @property

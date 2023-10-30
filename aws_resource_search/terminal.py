@@ -16,6 +16,20 @@ def highlight_text(text: str) -> str:
     return f"{term.cyan}{text}{term.normal}"
 
 
+def format_resource_type(resource_type: str) -> str:
+    return f"{term.blue}{resource_type}{term.normal}"
+
+
+def format_key(key: str) -> str:
+    return highlight_text(key)
+
+
+def format_value(value: str) -> str:
+    if isinstance(value, datetime):
+        value = str(value.astimezone(tz=timezone.utc).replace(microsecond=0))[:19]
+    return f"{term.yellow}{value}{term.normal}"
+
+
 def format_key_value(key: str, value: T.Any) -> str:
     """
     Format a key-value pair text with terminal color. In this project, key is
@@ -26,7 +40,7 @@ def format_key_value(key: str, value: T.Any) -> str:
     """
     if isinstance(value, datetime):
         value = str(value.astimezone(tz=timezone.utc).replace(microsecond=0))[:19]
-    return f"{term.cyan}{key}{term.normal} = {term.yellow}{value}{term.normal}"
+    return f"{format_key(key)} = {format_value(value)}"
 
 
 class ShortcutEnum:

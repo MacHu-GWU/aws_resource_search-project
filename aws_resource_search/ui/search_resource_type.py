@@ -8,13 +8,14 @@ import typing as T
 import dataclasses
 
 import sayt.api as sayt
-import zelfred.api as zf
 
 from ..terminal import ShortcutEnum, highlight_text
 from ..paths import dir_index, dir_cache
 from ..searchers import searchers_metadata
 from ..res_lib import preprocess_query, ArsBaseItem
-from .common import repaint_ui
+
+if T.TYPE_CHECKING:
+    from .main import UI
 
 
 class ResourceTypeDocument(T.TypedDict):
@@ -107,7 +108,7 @@ def search_resource_type_and_return_items(
 
 
 def select_resource_type_handler(
-    ui: zf.UI,
+    ui: "UI",
     query: str,
 ) -> T.List[AwsResourceTypeItem]:
     """
@@ -121,7 +122,7 @@ def select_resource_type_handler(
     # manually refresh data
     if query.strip().endswith("!~"):
         ui.run_handler(items=[])
-        repaint_ui(ui)
+        ui.repaint()
         ui.line_editor.press_backspace(n=2)
         return search_resource_type_and_return_items(
             query=preprocess_query(final_query[:-2]),

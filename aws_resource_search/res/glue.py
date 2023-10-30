@@ -7,6 +7,7 @@ from datetime import datetime
 import aws_arns.api as arns
 
 from .. import res_lib
+from ..terminal import format_key_value, ShortcutEnum
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
@@ -39,11 +40,14 @@ class GlueDatabase(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.database
+        return format_key_value("name", self.database)
 
     @property
     def subtitle(self) -> str:
-        return self.description
+        return "{}, {}".format(
+            self.description,
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -112,11 +116,14 @@ class GlueTable(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return f"{self.database}.{self.table}"
+        return format_key_value("fullname", f"{self.database}.{self.table}")
 
     @property
     def subtitle(self) -> str:
-        return self.description
+        return "{}, {}".format(
+            self.description,
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -179,11 +186,14 @@ class GlueJob(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
-        return self.description
+        return "{}, {}".format(
+            self.description,
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -258,7 +268,7 @@ glue_job_searcher = res_lib.Searcher(
 )
 
 
-_glue_job_run_state_mapper = {
+glue_job_run_state_icon_mapper = {
     "STARTING": "🟡",
     "RUNNING": "🔵",
     "STOPPING": "🟡",
@@ -296,17 +306,17 @@ class GlueJobRun(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return (
-            f"{self.id}, <state>: {_glue_job_run_state_mapper[self.state]} {self.state}"
-        )
+        return format_key_value("job_run_id", self.id)
 
     @property
     def subtitle(self) -> str:
-        return (
-            f"<job>: {self.job_name}, "
-            f"<start>: {str(self.started_on)[:19]}, "
-            f"<end>: {str(self.completed_on)[:19]}, "
-            f"<elapsed>: {self.execution_time} secs"
+        state_icon = glue_job_run_state_icon_mapper[self.state]
+        return "{} | {} | {} | {}, {}".format(
+            f"{state_icon} {self.state}",
+            format_key_value("start", str(self.started_on)[:19]),
+            format_key_value("end", str(self.completed_on)[:19]),
+            format_key_value("elapsed", f"{self.execution_time} secs"),
+            self.short_subtitle,
         )
 
     @property
@@ -336,6 +346,7 @@ class GlueJobRun(res_lib.BaseDocument):
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
+            Item("job_run_id", self.id, url=self.get_console_url(aws)),
             Item("error_message", error_message),
             Item("output_logs", log_group_name, url=aws.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/output")),
             Item("error_logs", log_group_name, url=aws.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/error")),
@@ -345,8 +356,8 @@ class GlueJobRun(res_lib.BaseDocument):
         args = dct.get("Arguments", {})
         arg_items = [
             res_lib.DetailItem(
-                title=f"📝 arg: {k!r} = {v!r}",
-                subtitle="📋 'Ctrl A' to copy argument name and value.",
+                title=f"📝 arg: {format_key_value(k, v)}",
+                subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy argument name and value.",
                 uid=f"arg {k}",
                 variables={"copy": f"{k} = {v}", "url": None},
             )
@@ -419,7 +430,7 @@ class GlueCrawler(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name", self.name)
 
     @property
     def autocomplete(self) -> str:

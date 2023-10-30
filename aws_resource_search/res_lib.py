@@ -25,7 +25,7 @@ except ImportError:
 from .model import BaseModel
 from .utils import get_md5_hash
 from .paths import dir_index, dir_cache
-from .terminal import term, ShortcutEnum, format_key_value, highlight_text
+from .terminal import ShortcutEnum, format_key_value
 
 
 if T.TYPE_CHECKING:
@@ -135,6 +135,7 @@ class BaseDocument(BaseModel):
     """
     Base class for AWS resource document.
     """
+
     raw_data: T_RESULT_DATA = dataclasses.field()
 
     @classmethod
@@ -467,32 +468,24 @@ class Searcher(BaseModel):
 # ------------------------------------------------------------------------------
 # Custom Item
 # ------------------------------------------------------------------------------
+
+
 @dataclasses.dataclass
 class ArsBaseItem(zf.Item):
     def post_enter_handler(self, ui: zf.UI):
-        """
-        :param ui: the :class:`~zelfred.ui.UI` object.
-        """
-        ui.render.clear_n_lines(1)
-        ui.need_run_handler = False
+        ui.wait_next_user_input()
 
     def post_ctrl_a_handler(self, ui: zf.UI):
-        """
-        :param ui: the :class:`~zelfred.ui.UI` object.
-        """
-        ui.need_run_handler = False
+        ui.wait_next_user_input()
 
     def post_ctrl_w_handler(self, ui: zf.UI):
-        """
-        :param ui: the :class:`~zelfred.ui.UI` object.
-        """
-        ui.need_run_handler = False
+        ui.wait_next_user_input()
+
+    def post_ctrl_u_handler(self, ui: zf.UI):
+        ui.wait_next_user_input()
 
     def post_ctrl_p_handler(self, ui: zf.UI):
-        """
-        :param ui: the :class:`~zelfred.ui.UI` object.
-        """
-        ui.need_run_handler = False
+        ui.wait_next_user_input()
 
 
 class DetailItemVariables(T.TypedDict):
@@ -518,6 +511,39 @@ class DetailItem(ArsBaseItem):
             pyperclip.copy(self.variables["copy"])
 
     @classmethod
+    def from_detail(
+        cls,
+        name,
+        value,
+        text: T.Optional[str] = None,
+        url: T.Optional[str] = None,
+        uid: T.Optional[str] = None,
+    ):
+        """
+        :param name: this is for title
+        :param value: this if for copy to clipboard
+        :param text: this is for title
+        :param url: this is for open url
+        :param uid: this is for uid
+        """
+        if text is None:
+            text = value
+        if url:
+            subtitle = (
+                f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy."
+            )
+        else:
+            subtitle = f"📋 {ShortcutEnum.CTRL_A} to copy."
+        if uid is None:
+            uid = name
+        return cls(
+            title=format_key_value(name, text),
+            subtitle=subtitle,
+            uid=uid,
+            variables={"copy": value, "url": url},
+        )
+
+    @classmethod
     def from_tags(cls, tags: T.Dict[str, str]):
         items = [
             cls(
@@ -539,32 +565,8 @@ class DetailItem(ArsBaseItem):
             ]
 
     @classmethod
-    def from_detail(
-        cls,
-        name,
-        value,
-        text: T.Optional[str] = None,
-        url: T.Optional[str] = None,
-        uid: T.Optional[str] = None,
-    ):
-        """
-        :param name: this is for title
-        :param value: this if for copy to clipboard
-        :param text: this is for title
-        :param url: this is for open url
-        :param uid: this is for uid
-        """
-        if text is None:
-            text = value
-        if url:
-            subtitle = f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy."
-        else:
-            subtitle = f"📋 {ShortcutEnum.CTRL_A} to copy."
-        if uid is None:
-            uid = name
+    def from_error(cls, type: str, msg: str):
         return cls(
-            title=format_key_value(name, text),
-            subtitle=subtitle,
-            uid=uid,
-            variables={"copy": value, "url": url},
+            title=f"❗ {type}",
+            subtitle=f"💬 {msg}",
         )

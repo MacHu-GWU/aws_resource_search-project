@@ -4,6 +4,7 @@ import typing as T
 import dataclasses
 
 from .. import res_lib
+from ..terminal import format_key_value
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
@@ -26,11 +27,14 @@ class S3Bucket(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("bucket_name", self.name)
 
     @property
     def subtitle(self) -> str:
-        return f"<create_at>: {self.creation_date}"
+        return "{}, {}".format(
+            format_key_value("create_at", self.creation_date),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -47,39 +51,21 @@ class S3Bucket(res_lib.BaseDocument):
         res = ars.bsm.s3_client.get_bucket_location(Bucket=self.name)
         location = res["LocationConstraint"]
 
+        Item = res_lib.DetailItem.from_detail
+        aws = ars.aws_console
+        url = aws.s3.get_console_url(uri_liked=self.arn)
+        detail_items = [
+            Item("s3 uri", f"s3://{self.name}", url=url),
+            Item("s3 arn", self.arn, url=url),
+            Item("location", location),
+        ]
+
         res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
         tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagSet", [])}
         tag_items = res_lib.DetailItem.from_tags(tags)
 
         return [
-            res_lib.DetailItem(
-                title=f"<s3 uri>: s3://{self.name}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="uri",
-                variables={
-                    "copy": f"s3://{self.name}",
-                    "url": None,
-                },
-            ),
-            res_lib.DetailItem(
-                title=f"<s3 arn>: {self.arn}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="arn",
-                variables={
-                    "copy": self.arn,
-                    "url": None,
-                },
-                arg=self.arn,
-            ),
-            res_lib.DetailItem(
-                title=f"<location>: {location}",
-                subtitle="📋 Tap 'Ctrl + A' to copy.",
-                uid="location",
-                variables={
-                    "copy": location,
-                    "url": None,
-                },
-            ),
+            *detail_items,
             *tag_items,
         ]
 

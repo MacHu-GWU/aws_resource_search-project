@@ -4,10 +4,12 @@ import typing as T
 import json
 import dataclasses
 
+import botocore.exceptions
 import aws_arns.api as arns
 from colorama import Fore, Style
 
 from .. import res_lib
+from ..terminal import format_key_value
 
 if T.TYPE_CHECKING:
     from ..ars_v2 import ARS
@@ -36,7 +38,7 @@ class IamGroup(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -96,7 +98,7 @@ class IamUser(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -160,9 +162,9 @@ class IamRole(res_lib.BaseDocument):
     @property
     def title(self) -> str:
         if self.is_service_role():
-            return f"🪖 {self.name}"
+            return "🪖 {}".format(format_key_value("name", self.name))
         else:
-            return f"🧢 {self.name}"
+            return "🧢 {}".format(format_key_value("name", self.name))
 
     @property
     def subtitle(self) -> str:
@@ -179,6 +181,7 @@ class IamRole(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.iam.get_role(name_or_arn=self.arn)
 
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         arn = self.arn
         role_id = self.raw_data["RoleId"]
@@ -190,48 +193,54 @@ class IamRole(res_lib.BaseDocument):
         detail_items = [
             Item("arn", arn, url=aws.iam.get_role(name_or_arn=arn)),
             Item("role_id", role_id),
-            Item("trust_entities", assume_role_policy_document),
+            Item("trust_entities", json.dumps(assume_role_policy_document)),
         ]
 
-        res = ars.bsm.iam_client.list_attached_role_policies(
-            RoleName=self.name, MaxItems=50
-        )
-        managed_policy_items = [
-            Item(
-                "managed policy",
-                dct["PolicyArn"],
-                dct["PolicyName"],
-                ars.aws_console.iam.get_policy(name_or_arn=dct["PolicyArn"]),
+        try:
+            res = ars.bsm.iam_client.list_attached_role_policies(
+                RoleName=self.name, MaxItems=50
             )
-            for dct in res.get("AttachedPolicies", [])
-        ]
+            detail_items.extend([
+                Item(
+                    "managed policy",
+                    dct["PolicyArn"],
+                    dct["PolicyName"],
+                    ars.aws_console.iam.get_policy(name_or_arn=dct["PolicyArn"]),
+                )
+                for dct in res.get("AttachedPolicies", [])
+            ])
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        res = ars.bsm.iam_client.list_role_policies(RoleName=self.name, MaxItems=50)
-        inline_policy_items = [
-            Item(
-                name="inline policy",
-                value=arns.res.IamPolicy.new(
-                    aws_account_id=ars.bsm.aws_account_id, name=policy_name
-                ).to_arn(),
-                text=policy_name,
-                url=ars.aws_console.iam.get_role_inline_policy(
-                    role_name_or_arn=self.name,
-                    policy_name=policy_name,
-                ),
-            )
-            for policy_name in res.get("PolicyNames", [])
-        ]
+        try:
+            res = ars.bsm.iam_client.list_role_policies(RoleName=self.name, MaxItems=50)
+            detail_items.extend([
+                Item(
+                    name="inline policy",
+                    value=arns.res.IamPolicy.new(
+                        aws_account_id=ars.bsm.aws_account_id,
+                        name=policy_name,
+                    ).to_arn(),
+                    text=policy_name,
+                    url=ars.aws_console.iam.get_role_inline_policy(
+                        role_name_or_arn=self.name,
+                        policy_name=policy_name,
+                    ),
+                )
+                for policy_name in res.get("PolicyNames", [])
+            ])
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        res = ars.bsm.iam_client.list_role_tags(RoleName=self.name)
-        tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
-        tag_items = res_lib.DetailItem.from_tags(tags)
+        try:
+            res = ars.bsm.iam_client.list_role_tags(RoleName=self.name)
+            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
+            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
 
-        return [
-            *detail_items,
-            *managed_policy_items,
-            *inline_policy_items,
-            *tag_items,
-        ]
+        return detail_items
+    # fmt: on
 
 
 iam_role_searcher = res_lib.Searcher(
@@ -276,7 +285,7 @@ class IamPolicy(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return self.name
+        return format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -292,6 +301,50 @@ class IamPolicy(res_lib.BaseDocument):
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.iam.get_policy(name_or_arn=self.arn)
+
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        Item = res_lib.DetailItem.from_detail
+        aws = ars.aws_console
+
+        arn = self.arn
+        create_date = self.create_date
+
+        detail_items = [
+            Item("arn", arn, url=self.get_console_url(aws)),
+            Item("create_date", create_date),
+        ]
+
+        try:
+            res = ars.bsm.iam_client.get_policy(PolicyArn=arn)
+            dct = res["Policy"]
+            policy_id = dct["PolicyId"]
+            default_version_id = dct["DefaultVersionId"]
+            attachment_count = dct["AttachmentCount"]
+            description = dct.get("Description", "No description")
+
+            res = ars.bsm.iam_client.get_policy_version(PolicyArn=arn, VersionId=default_version_id)
+            document: dict = res["PolicyVersion"]["Document"]
+
+            detail_items.extend([
+                Item("policy_id", policy_id),
+                Item("default_version_id", default_version_id),
+                Item("attachment_count", attachment_count),
+                Item("description", description),
+                Item("document", json.dumps(document)),
+            ])
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
+
+        try:
+            res = ars.bsm.iam_client.list_policy_tags(PolicyArn=self.arn)
+            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
+            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+        except botocore.exceptions.ClientError as e:
+            detail_items.append(res_lib.DetailItem.from_error("maybe permission denied", str(e)))
+
+        return detail_items
+    # fmt: on
 
 
 iam_policy_searcher = res_lib.Searcher(
