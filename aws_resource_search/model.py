@@ -19,11 +19,12 @@ class BaseModel:
         """
         Create a new instance from a dict.
         """
-        new_data = {}
-        for field in dataclasses.fields(cls):
-            if data.get(field.name) is not None:
-                new_data[field.name] = data[field.name]
-        return cls(**new_data)
+        return cls(**data)
+        # new_data = {}
+        # for field in dataclasses.fields(cls):
+        #     if data.get(field.name) is not None:
+        #         new_data[field.name] = data[field.name]
+        # return cls(**new_data)
 
     def to_dict(self) -> T.Dict[str, T.Any]:
         """
