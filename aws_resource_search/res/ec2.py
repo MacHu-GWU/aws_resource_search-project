@@ -59,10 +59,11 @@ class Ec2Instance(res_lib.BaseDocument):
     @property
     def subtitle(self) -> str:
         state_icon = ec2_instance_state_icon_mapper[self.state]
-        return "{} | {} | {}, {}".format(
+        return "{} | {} | {} | {}, {}".format(
             f"{state_icon} {self.state}",
             highlight_text(self.id),
             self.inst_type,
+            f"vpc = {self.vpc_id}",
             self.short_subtitle,
         )
 

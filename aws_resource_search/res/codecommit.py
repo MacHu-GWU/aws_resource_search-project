@@ -36,10 +36,6 @@ class CodeCommitRepository(res_lib.BaseDocument):
         return format_key_value("repo_name", self.name)
 
     @property
-    def subtitle(self) -> str:
-        return "Tap 'Enter' to open it in AWS Console"
-
-    @property
     def autocomplete(self) -> str:
         return self.name
 
@@ -49,6 +45,46 @@ class CodeCommitRepository(res_lib.BaseDocument):
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.codecommit.get_repo(repo_or_arn=self.arn)
+
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        Item = res_lib.DetailItem.from_detail
+        detail_items = self.get_initial_detail_items(ars)
+
+        with self.enrich_details(detail_items):
+            res = ars.bsm.codecommit_client.get_repository(repositoryName=self.name)
+            dct = res["repositoryMetadata"]
+            accountId = dct.get("accountId")
+            repositoryId = dct.get("repositoryId")
+            repositoryName = dct.get("repositoryName")
+            repositoryDescription = dct.get("repositoryDescription")
+            defaultBranch = dct.get("defaultBranch")
+            lastModifiedDate = dct.get("lastModifiedDate")
+            creationDate = dct.get("creationDate")
+            cloneUrlHttp = dct.get("cloneUrlHttp")
+            cloneUrlSsh = dct.get("cloneUrlSsh")
+            detail_items.extend([
+                Item("accountId", accountId),
+                Item("repositoryId", repositoryId),
+                Item("repositoryName", repositoryName),
+                Item("repositoryDescription", self.one_line(repositoryDescription)),
+                Item("defaultBranch", defaultBranch),
+                Item("lastModifiedDate", lastModifiedDate),
+                Item("creationDate", creationDate),
+                Item("cloneUrlHttp", cloneUrlHttp),
+                Item("cloneUrlSsh", cloneUrlSsh),
+            ])
+            detail_items.append(
+                Item("cloneUrlGitRemoteCodecommit", f"codecommit::{ars.bsm.aws_region}://{self.name}")
+            )
+
+        with self.enrich_details(detail_items):
+            res = ars.bsm.codecommit_client.list_tags_for_resource(resourceArn=self.arn)
+            tags: dict = res["tags"]
+            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+
+        return detail_items
+    # fmt: on
 
 
 codecommit_repository_searcher = res_lib.Searcher(

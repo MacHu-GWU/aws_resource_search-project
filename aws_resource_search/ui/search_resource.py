@@ -36,7 +36,8 @@ class AwsResourceItem(ArsBaseItem):
     """
     Represent an item in the resource search result.
 
-    :param variables: it has the original document object.
+    :param variables: in AwsResourceItem, the variable is a dictionary including
+        the original document object (not dict).
     """
 
     variables: AwsResourceItemVariables = dataclasses.field(default_factory=dict)
@@ -48,17 +49,24 @@ class AwsResourceItem(ArsBaseItem):
         doc: T_DOCUMENT_OBJ,
     ):
         """
+        A factory method that convert a dictionary view of a
+        :class:`~aws_resource_search.res_lib.BaseDocument` object to an
+        :class:`AwsResourceItem`.
+
         For example: if the doc is::
 
-            S3Bucket(
-                title="my-bucket",
-                subtitle="bucket creation date",
-                uid="my-bucket",
-                autocomplete="my-bucket",
-            )
+            >>> doc = dataclasses.asdict(
+            ...     S3Bucket(
+            ...         title="my-bucket",
+            ...         subtitle="bucket creation date",
+            ...         uid="my-bucket",
+            ...         autocomplete="my-bucket",
+            ...     )
+            ... )
 
         Then the item will be::
 
+            >>> dataclasses.asdict(AwsResourceItem.from_document(doc))
             {
                 "title": "my-bucket",
                 "subtitle": "bucket creation date",
@@ -66,6 +74,8 @@ class AwsResourceItem(ArsBaseItem):
                 "autocomplete": "s3-bucket: my-bucket",
                 "variables": {"doc": S3Bucket(...)},
             }
+
+        We also have an array version :meth:`from_many_document`.
         """
         return cls(
             title=doc.title,
@@ -81,61 +91,66 @@ class AwsResourceItem(ArsBaseItem):
         resource_type: str,
         docs: T.Iterable[T_DOCUMENT_OBJ],
     ):
+        """
+        An array version of :meth:`from_document`.
+        """
         return [cls.from_document(resource_type, doc) for doc in docs]
 
     def enter_handler(self, ui: "UI"):
         """
-        open AWS console url in browser
+        Default behavior:
+
+        Open AWS console url in browser.
         """
         doc: T_DOCUMENT_OBJ = self.variables["doc"]
-        try:
-            console_url = doc.get_console_url(ars.aws_console)
-            zf.open_url(console_url)
-        except NotImplementedError:
-            raise NotImplementedError(
-                f"{doc.__class__.__name__} doesn't support console url"
-            )
+        console_url = doc.get_console_url(ars.aws_console)
+        zf.open_url(console_url)
 
     def ctrl_a_handler(self, ui: "UI"):
         """
+        Default behavior:
+
         Copy ARN to clipboard.
         """
+        arn = self.variables["doc"].arn
+        pyperclip.copy(arn)
+
+    def ctrl_u_handler(self, ui: "UI"):
+        """
+        Default behavior:
+
+        Copy AWS console url to clipboard.
+        """
         doc: T_DOCUMENT_OBJ = self.variables["doc"]
-        try:
-            arn = self.variables["doc"].arn
-            pyperclip.copy(arn)
-        except NotImplementedError:
-            raise NotImplementedError(f"{doc.__class__.__name__} doesn't support ARN")
+        console_url = doc.get_console_url(ars.aws_console)
+        pyperclip.copy(console_url)
 
     def ctrl_p_handler(self, ui: "UI"):
         """
         View details in a sub session. You can tap 'F1' to exit the sub session.
         """
         doc: T_DOCUMENT_OBJ = self.variables["doc"]
-        try:
-            items = doc.get_details(ars=ars)
-            ui.run_handler(items=items)
+        items = doc.get_details(ars=ars)
+        ui.run_handler(items=items)
 
-            # enter the main event loop of the sub query
-            # user can tap 'F1' to exit the sub query session,
-            # and go back to the folder selection session.
-            def handler(query: str, ui: "UI"):
-                """
-                A partial function that using the given folder.
-                """
-                return items
+        # enter the main event loop of the sub query
+        # user can tap 'F1' to exit the sub query session,
+        # and go back to the folder selection session.
+        def handler(query: str, ui: "UI"):
+            """
+            A partial function that using the given folder.
+            """
+            return items
 
-            ui.replace_handler(handler)
+        ui.replace_handler(handler)
 
-            # re-paint the UI
-            ui.line_editor.clear_line()
-            ui.line_editor.enter_text(f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back.")
-            ui.repaint()
-            ui.run(_do_init=False)
-        except NotImplementedError:
-            raise NotImplementedError(
-                f"{doc.__class__.__name__} doesn't support view detail"
-            )
+        # re-paint the UI
+        ui.line_editor.clear_line()
+        ui.line_editor.enter_text(
+            f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back."
+        )
+        ui.repaint()
+        ui.run(_do_init=False)
 
 
 def creating_index_items(resource_type: str) -> T.List[zf.Item]:
@@ -195,7 +210,16 @@ def search_resource_and_return_items(
 
     items = [doc_to_item_func(doc=doc) for doc in docs]
     # pprint(items[:3]) # for DEBUG ONLY
-    return items
+    if len(items):
+        return items
+    else:
+        # display helper text to tell user that we can't find any resource
+        return [
+            AwsResourceItem(
+                title=f"🔴 No {searcher.resource_type!r} found",
+                subtitle="Please try another query.",
+            )
+        ]
 
 
 def search_resource(

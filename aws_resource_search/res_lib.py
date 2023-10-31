@@ -6,10 +6,11 @@ Utility class and function in this module will be used in
 """
 
 import typing as T
-import contextlib
+import uuid
 import json
 import copy
 import dataclasses
+import contextlib
 from datetime import datetime
 
 import jmespath
@@ -136,7 +137,16 @@ def list_resources(
 @dataclasses.dataclass
 class BaseDocument(BaseModel):
     """
-    Base class for AWS resource document.
+    This is the base class for AWS resource documents. A 'document' is a
+    searchable object stored in the index, representing the metadata of
+    an AWS resource. To create a per-AWS-resource document class, you need to
+    inherit from this class. In your subclass, you must implement the
+    following methods. Please read the docstrings to understand their functionality.
+
+    - :meth:`from_resource`
+    - :meth:`title`
+    - :meth:`arn`
+    - :meth:`get_console_url`
     """
 
     raw_data: T_RESULT_DATA = dataclasses.field()
@@ -150,8 +160,9 @@ class BaseDocument(BaseModel):
     ):
         """
         Create a document object from the boto3 API response data.
-        Since the API response data is based on the bsm object and boto_kwargs,
-        we also need those information to create the document object.
+        Since the API response data relies on both the 'bsm' object
+        and 'boto_kwargs,' we also require this information to
+        create the document object.
 
         For example, ``s3_client.list_buckets`` api returns::
 
@@ -184,6 +195,15 @@ class BaseDocument(BaseModel):
     def title(self) -> str:
         """
         The title in the zelfred UI.
+
+        For example, you want to use the S3 bucket name as the title::
+
+
+            >>> @dataclasses.dataclass
+            ... class S3BucketDocument(BaseDocument):
+            ...     @property
+            ...     def title(self) -> str:
+            ...         return f"bucket name = {self.name}"
         """
         raise NotImplementedError
 
@@ -197,6 +217,7 @@ class BaseDocument(BaseModel):
         return (
             f"🌐 {ShortcutEnum.ENTER} to open url, "
             f"📋 {ShortcutEnum.CTRL_A} to copy arn, "
+            f"🔗 {ShortcutEnum.CTRL_U} to copy url, "
             f"👀 {ShortcutEnum.CTRL_P} to view details."
         )
 
@@ -208,15 +229,16 @@ class BaseDocument(BaseModel):
         return (
             f"🌐 {ShortcutEnum.ENTER}, "
             f"📋 {ShortcutEnum.CTRL_A}, "
+            f"🔗 {ShortcutEnum.CTRL_U}, "
             f"👀 {ShortcutEnum.CTRL_P}."
         )
 
     @property
     def uid(self) -> str:
         """
-        The uid in the zelfred UI.
+        The internal uid used for sorting and deduplication in the zelfred UI.
         """
-        return self.title
+        return uuid.uuid4().hex
 
     @property
     def autocomplete(self) -> str:
@@ -230,13 +252,15 @@ class BaseDocument(BaseModel):
         """
         AWS Resource ARN, if applicable. User can tap 'Ctrl + A' to copy the ARN.
         """
-        raise NotImplementedError
+        msg = f"{self.__class__.__name__} doesn't support ARN"
+        raise NotImplementedError(msg)
 
     def get_console_url(self, console: acu.AWSConsole) -> str:
         """
         AWS Console URL, if applicable, User can tap 'Enter' to open in browser.
         """
-        raise NotImplementedError
+        msg = f"{self.__class__.__name__} doesn't support AWS Console url"
+        raise NotImplementedError(msg)
 
     def get_details(self, ars: "ARS") -> T.List[zf.T_ITEM]:
         """
@@ -244,7 +268,8 @@ class BaseDocument(BaseModel):
         dropdown menu. User can tap tab 'Ctrl + P' to view the details,
         and tap 'F1' to go back to the previous view.
         """
-        raise NotImplementedError
+        msg = f"{self.__class__.__name__} doesn't support get details"
+        raise NotImplementedError(msg)
 
     def get_initial_detail_items(
         self,
