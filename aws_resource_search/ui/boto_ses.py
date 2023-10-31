@@ -8,7 +8,7 @@ tool to set any given profile as default.
 
 from boto_session_manager import BotoSesManager
 
-from ..ars_v2 import ARS
+from ..ars import ARS
 
 bsm = BotoSesManager()
 ars = ARS(bsm=bsm)

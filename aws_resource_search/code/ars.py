@@ -7,11 +7,11 @@ from ..paths import dir_python_lib
 from ..searchers import searchers_metadata
 
 dir_here = Path(__file__).absolute().parent
-path_tpl = dir_here.joinpath("ars_v2.py.jinja")
-path_py = dir_python_lib.joinpath("ars_v2.py")
+path_tpl = dir_here.joinpath("ars.py.jinja")
+path_py = dir_python_lib.joinpath("ars.py")
 
 
-def generate_ars_v2_py_module():
+def generate_ars_py_module():
     """
     Generate ``aws_resource_search/ars_v2.py`` module.
     """

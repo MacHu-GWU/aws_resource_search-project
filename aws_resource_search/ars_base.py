@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
+"""
+Todo: doc string here
+"""
+
 import typing as T
-import json
 import shutil
+import importlib
 import dataclasses
 from pathlib import Path
 
@@ -10,16 +14,29 @@ from diskcache import Cache
 import aws_console_url.api as aws_console_url
 
 from .compat import cached_property
-from .paths import path_data_json, dir_index, dir_cache
-from .vendor.hierarchy_config import apply_shared_value
-from .resource_searcher import ResourceSearcher
-from aws_resource_search.data.request import parse_req_json_node
-from aws_resource_search.data.output import parse_out_json_node
-from aws_resource_search.data.document import parse_doc_json_node
-from aws_resource_search.data.url import parse_url_json_node
+from .paths import dir_index, dir_cache
+from .searchers import searchers_metadata
+from .res_lib import Searcher
 
 if T.TYPE_CHECKING:
     from boto_session_manager import BotoSesManager
+
+
+_searchers_cache = dict()  # resource type searcher object cache
+
+
+def load_searcher(resource_type: str) -> Searcher:
+    """
+    Lazy load corresponding :class:`aws_resource_search.res_lib.Searcher`
+    object by resource type, with cache.
+    """
+    if resource_type not in _searchers_cache:
+        mod = searchers_metadata[resource_type]["mod"]
+        var = searchers_metadata[resource_type]["var"]
+        module = importlib.import_module(f"aws_resource_search.res.{mod}")
+        searcher = getattr(module, var)
+        _searchers_cache[resource_type] = searcher
+    return _searchers_cache[resource_type]
 
 
 @dataclasses.dataclass
@@ -46,48 +63,30 @@ class ARSBase:
             bsm=self.bsm,
         )
 
-    @cached_property
-    def _data(self):
-        data = json.loads(path_data_json.read_text())
-        apply_shared_value(data)
-        return data
-
-    def _get_rs(self, service_id: str, resource_type: str):
+    def get_searcher(self, resource_type: str) -> Searcher:
         """
-        Get :class:`~aws_resource_search.resource_searcher.ResourceSearcher`
-        instance by ``service_id`` and ``resource_type``. It read the data
-        and construct the instance from the data.
+        Get corresponding :class:`aws_resource_search.res_lib.Searcher`
+        object by resource type.
         """
-        dct = self._data[service_id][f"{service_id}-{resource_type}"]
-        dct["req"]["client"] = service_id
-        rs = ResourceSearcher(
-            bsm=self.bsm,
-            aws_console=self.aws_console,
-            dir_index=self.dir_index,
-            dir_cache=self.dir_cache,
-            cache=self.cache,
-            service_id=service_id,
-            resource_type=resource_type,
-            request=parse_req_json_node(dct["req"]),
-            output=parse_out_json_node(dct["out"]),
-            document=parse_doc_json_node(dct["doc"]),
-            url=parse_url_json_node(dct["url"]),
-        )
-        return rs
-
-    def _service_id_and_resource_type_pairs(
-        self,
-    ) -> T.List[T.Tuple[str, str]]:  # pragma: no cover
-        pairs = list()
-        for service_id, dct in self._data.items():
-            if not service_id.startswith("_"):
-                for resource_type in dct:
-                    if not resource_type.startswith("_"):
-                        if resource_type.startswith(f"{service_id}-"):
-                            resource_type = resource_type[len(service_id) + 1 :]
-                        pairs.append((service_id, resource_type))
-        return pairs
+        sr = load_searcher(resource_type)
+        sr.bsm = self.bsm
+        return sr
 
     def clear_all_cache(self):
+        """
+        Clear all cache.
+        """
         shutil.rmtree(self.dir_index, ignore_errors=True)
         shutil.rmtree(self.dir_cache, ignore_errors=True)
+
+    def all_resource_types(self) -> T.List[str]:
+        """
+        Return all resource types.
+        """
+        return list(searchers_metadata.keys())
+
+    def is_valid_resource_type(self, resource_type: str) -> bool:
+        """
+        Check if the resource type is supported.
+        """
+        return resource_type in searchers_metadata

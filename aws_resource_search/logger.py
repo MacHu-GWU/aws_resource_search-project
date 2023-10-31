@@ -2,7 +2,7 @@
 
 from .vendor.nested_logger import NestedLogger
 
-# logger = NestedLogger(
-#     name="ars",
-#     log_format="%(message)s",
-# )
+logger = NestedLogger(
+    name="ars",
+    log_format="%(message)s",
+)

@@ -1,94 +1,99 @@
 # -*- coding: utf-8 -*-
 
-import typing as T
 import dataclasses
 
 from .ars_base import ARSBase
 from .compat import cached_property
-
-if T.TYPE_CHECKING:  # pragma: no cover
-    from .resource_searcher import ResourceSearcher
+from .res_lib import Searcher
 
 
 @dataclasses.dataclass
 class ARS(ARSBase):  # pragma: no cover
     @cached_property
-    def cloudformation_stack(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="cloudformation", resource_type="stack")
+    def cloudformation_stack(self) -> Searcher:
+        return self.get_searcher("cloudformation-stack")
     
     @cached_property
-    def codepipeline_pipeline(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="codepipeline", resource_type="pipeline")
+    def codecommit_repository(self) -> Searcher:
+        return self.get_searcher("codecommit-repository")
     
     @cached_property
-    def dynamodb_table(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="dynamodb", resource_type="table")
+    def ec2_instance(self) -> Searcher:
+        return self.get_searcher("ec2-instance")
     
     @cached_property
-    def ec2_instance(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="ec2", resource_type="instance")
+    def ec2_securitygroup(self) -> Searcher:
+        return self.get_searcher("ec2-securitygroup")
     
     @cached_property
-    def ec2_securitygroup(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="ec2", resource_type="securitygroup")
+    def ec2_subnet(self) -> Searcher:
+        return self.get_searcher("ec2-subnet")
     
     @cached_property
-    def ec2_subnet(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="ec2", resource_type="subnet")
+    def ec2_vpc(self) -> Searcher:
+        return self.get_searcher("ec2-vpc")
     
     @cached_property
-    def ec2_vpc(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="ec2", resource_type="vpc")
+    def glue_crawler(self) -> Searcher:
+        return self.get_searcher("glue-crawler")
     
     @cached_property
-    def glue_crawler(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="glue", resource_type="crawler")
+    def glue_database(self) -> Searcher:
+        return self.get_searcher("glue-database")
     
     @cached_property
-    def glue_database(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="glue", resource_type="database")
+    def glue_job(self) -> Searcher:
+        return self.get_searcher("glue-job")
     
     @cached_property
-    def glue_job(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="glue", resource_type="job")
+    def glue_jobrun(self) -> Searcher:
+        return self.get_searcher("glue-jobrun")
     
     @cached_property
-    def glue_table(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="glue", resource_type="table")
+    def glue_table(self) -> Searcher:
+        return self.get_searcher("glue-table")
     
     @cached_property
-    def iam_group(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="group")
+    def iam_group(self) -> Searcher:
+        return self.get_searcher("iam-group")
     
     @cached_property
-    def iam_policy(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="policy")
+    def iam_policy(self) -> Searcher:
+        return self.get_searcher("iam-policy")
     
     @cached_property
-    def iam_role(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="role")
+    def iam_role(self) -> Searcher:
+        return self.get_searcher("iam-role")
     
     @cached_property
-    def iam_user(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="iam", resource_type="user")
+    def iam_user(self) -> Searcher:
+        return self.get_searcher("iam-user")
     
     @cached_property
-    def lambda_function(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="lambda", resource_type="function")
+    def lambda_function(self) -> Searcher:
+        return self.get_searcher("lambda-function")
     
     @cached_property
-    def lambda_layer(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="lambda", resource_type="layer")
+    def lambda_layer(self) -> Searcher:
+        return self.get_searcher("lambda-layer")
     
     @cached_property
-    def s3_bucket(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="s3", resource_type="bucket")
+    def s3_bucket(self) -> Searcher:
+        return self.get_searcher("s3-bucket")
     
     @cached_property
-    def sns_topic(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="sns", resource_type="topic")
+    def sfn_execution(self) -> Searcher:
+        return self.get_searcher("sfn-execution")
     
     @cached_property
-    def sqs_queue(self) -> "ResourceSearcher":
-        return self._get_rs(service_id="sqs", resource_type="queue")
+    def sfn_statemachine(self) -> Searcher:
+        return self.get_searcher("sfn-statemachine")
+    
+    @cached_property
+    def sns_topic(self) -> Searcher:
+        return self.get_searcher("sns-topic")
+    
+    @cached_property
+    def sqs_queue(self) -> Searcher:
+        return self.get_searcher("sqs-queue")
     
