@@ -8,6 +8,8 @@ I want to change ...
 
 Change the Title, Subtitle, auto complete, URL of AWS Resource Item in the UI
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:mod:`~aws_resource_search.res.s3`
+
 For example, you want to change the title, subtitle, auto complete text or the URL for AWS S3 Bucket.
 
 1. Locate the corresponding ``aws_resource_search/res/s3.py`` file.

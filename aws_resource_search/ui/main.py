@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+todo: doc string here
+"""
+
 import typing as T
 
 import zelfred.api as zf
@@ -25,7 +29,7 @@ def is_valid_resource_type(resource_type: str) -> bool:
     """
     Check if the given resource_type is a valid value that we support.
 
-    :param resource_type: for example, ec2-instance, s3-bucket
+    :param resource_type: for example, ec2-instance, s3-bucket.
     """
     return resource_type in searchers_metadata
 
@@ -100,17 +104,20 @@ def handler(
 
 
 class UI(zf.UI):
+    """
+    todo: doc string here
+    """
     def process_ctrl_b(self: "UI"):
         """
         If you are searching an AWS resource, it will remove the query but keep
         the resource type, so you can enter a new query. For example, if you are
-        searching S3 buckets, and you enter "s3-bucket: my-bucket", then Ctrl + B
-        will remove ``my-bucket`` and keep ``s3-bucket: ``.
+        searching S3 buckets, and you enter ``"s3-bucket: my-bucket"``,
+        then Ctrl + B will remove ``"my-bucket"`` and keep ``"s3-bucket: "``.
 
         If you are searching a sub resource, it will remove the query of the
         sub resource, so you can enter a new query. For example, if you are searching
-        Step Function execution, and you enter ``sfn-execution: my-statemachine@a1b2c3``,
-        then Ctrl + B will remove ``a1b2c3`` and keep ``sfn-execution: my-statemachine@``.
+        Step Function execution, and you enter ``"sfn-execution: my-statemachine@a1b2c3"``,
+        then Ctrl + B will remove ``"a1b2c3"`` and keep ``"sfn-execution: my-statemachine@"``.
         """
         line = self.line_editor.line
         parts = line.split(":", 1)

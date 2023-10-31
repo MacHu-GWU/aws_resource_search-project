@@ -1,8 +1,8 @@
-
-
-
+Cache-and-index
+==============================================================================
 - ``${aws_account_id}_${aws_region}_${service_id}_${resource_type}``
 - ``(${aws_account_id}_${aws_region}_${service_id}_${resource_type}, ${query}, ${limit})``
+
 
 Cache Strategy
 ------------------------------------------------------------------------------

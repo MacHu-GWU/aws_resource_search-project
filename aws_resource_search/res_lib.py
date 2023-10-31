@@ -43,6 +43,9 @@ T_RESULT_DATA = T.Union[sayt.T_DOCUMENT, str]
 
 
 class ResourceIterproxy(IterProxy[T_RESULT_DATA]):
+    """
+    todo: docstring
+    """
     pass
 
 
@@ -79,6 +82,7 @@ class ResultPath(BaseModel):
                 },
                 ...
             ]
+
         """
         return self._compiled.search(response)
 
@@ -112,6 +116,7 @@ def list_resources(
         ...     result_path=ResultPath(path="Groups"),
         ... ):
         ...     print(iam_group_data)
+
     """
 
     def func():
