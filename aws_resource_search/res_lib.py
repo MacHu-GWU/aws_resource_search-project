@@ -280,7 +280,7 @@ class BaseDocument(BaseModel):
             )
 
     @staticmethod
-    def one_line_json(obj) -> str:
+    def one_line(obj, na: str = "NA") -> str:
         """
         Convert a python object to one line json string.
 
@@ -289,11 +289,18 @@ class BaseDocument(BaseModel):
         """
         if obj:
             if isinstance(obj, str):
-                json.dumps(json.loads(obj))
+                if obj.startswith("[") or obj.startswith("{"):
+                    return json.dumps(json.loads(obj))
+                else:
+                    lines = obj.splitlines()
+                    if len(lines) > 1:
+                        return f"{lines[0]} ..."
+                    else:
+                        return lines[0]
             else:
-                json.dumps(obj)
+                return json.dumps(obj)
         else:
-            return "{}"
+            return na
 
 
 T_DOCUMENT_OBJ = T.TypeVar("T_DOCUMENT_OBJ", bound=BaseDocument)
@@ -305,6 +312,8 @@ def extract_datetime(
     default: str = "No datetime",
 ) -> str:
     """
+    Extract isoformat datetime string from a dictionary using Jmespath.
+
     Example:
 
         >>> extract_datetime({"CreateDate": datetime(2021, 1, 1)}, path="CreateDate")
@@ -419,6 +428,15 @@ class Searcher(BaseModel):
             region = bsm.aws_region
         return account_or_profile, region
 
+    def _get_final_boto_kwargs(self, boto_kwargs: T.Optional[dict] = None) -> dict:
+        if self.default_boto_kwargs:
+            final_boto_kwargs = copy.deepcopy(self.default_boto_kwargs)
+        else:
+            final_boto_kwargs = {}
+        if boto_kwargs is not None:
+            final_boto_kwargs.update(boto_kwargs)
+        return final_boto_kwargs
+
     def _get_ds(
         self,
         bsm: BotoSesManager,
@@ -493,12 +511,7 @@ class Searcher(BaseModel):
         :param bsm: you can explicitly use a ``BotoSesManager`` object to override
             the default one you defined when creating the :class:`Searcher`` object.
         """
-        if self.default_boto_kwargs:
-            final_boto_kwargs = copy.deepcopy(self.default_boto_kwargs)
-        else:
-            final_boto_kwargs = {}
-        if boto_kwargs is not None:
-            final_boto_kwargs.update(boto_kwargs)
+        final_boto_kwargs = self._get_final_boto_kwargs(boto_kwargs=boto_kwargs)
         ds = self._get_ds(
             bsm=self._get_bsm(bsm),
             final_boto_kwargs=final_boto_kwargs,

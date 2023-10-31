@@ -71,9 +71,9 @@ class SqsQueue(res_lib.BaseDocument):
                 Item("n_msg", n_msg),
                 Item("n_msg_delayed", n_msg_delayed),
                 Item("n_msg_invisible", n_msg_invisible),
-                Item("policy", self.one_line_json(policy)),
-                Item("redrive_policy", self.one_line_json(redrive_policy)),
-                Item("redrive_allow_policy", self.one_line_json(redrive_allow_policy)),
+                Item("policy", self.one_line(policy)),
+                Item("redrive_policy", self.one_line(redrive_policy)),
+                Item("redrive_allow_policy", self.one_line(redrive_allow_policy)),
             ])
 
         with self.enrich_details(detail_items):

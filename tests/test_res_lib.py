@@ -3,18 +3,50 @@
 import moto
 import pytest
 
+import json
 from datetime import datetime
 
+import botocore.exceptions
 from aws_resource_search.res_lib import (
     ResultPath,
     list_resources,
     extract_datetime,
     preprocess_query,
+    BaseDocument,
 )
 from aws_resource_search.res.s3 import s3_bucket_searcher
 from aws_resource_search.res.iam import iam_group_searcher
 from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
+
+
+class TestDocument:
+    def _test_enrich_details(self):
+        detail_items = []
+        with BaseDocument.enrich_details(detail_items):
+            detail_items.append("hello")
+            raise botocore.exceptions.ClientError(
+                error_response={}, operation_name="test"
+            )
+            detail_items.append("word")
+        assert len(detail_items) == 2
+        assert detail_items[0] == "hello"
+        assert "❗" in detail_items[1].title
+
+    def _test_one_line(self):
+        assert BaseDocument.one_line("hello") == "hello"
+        assert BaseDocument.one_line("hello\nword") == "hello ..."
+        assert (
+            BaseDocument.one_line(json.dumps(dict(a=1, b=2), indent=4))
+            == '{"a": 1, "b": 2}'
+        )
+        assert BaseDocument.one_line("") == "NA"
+        assert BaseDocument.one_line(None, "Not available") == "Not available"
+        assert BaseDocument.one_line(dict(a=1, b=2)) == '{"a": 1, "b": 2}'
+
+    def test(self):
+        self._test_enrich_details()
+        self._test_one_line()
 
 
 class Test(BaseMockTest):

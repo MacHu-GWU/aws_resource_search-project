@@ -196,7 +196,7 @@ class IamRole(res_lib.BaseDocument):
         detail_items = self.get_initial_detail_items(ars)
         detail_items.extend([
             Item("role_id", self.raw_data["RoleId"]),
-            Item("trust_entities", self.one_line_json(self.raw_data["AssumeRolePolicyDocument"])),
+            Item("trust_entities", self.one_line(self.raw_data["AssumeRolePolicyDocument"])),
         ])
 
         with self.enrich_details(detail_items):
@@ -323,7 +323,7 @@ class IamPolicy(res_lib.BaseDocument):
                 Item("default_version_id", default_version_id),
                 Item("attachment_count", attachment_count),
                 Item("description", description),
-                Item("document", self.one_line_json(document)),
+                Item("document", self.one_line(document)),
             ])
 
         with self.enrich_details(detail_items):

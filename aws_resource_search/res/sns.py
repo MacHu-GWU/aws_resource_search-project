@@ -58,8 +58,8 @@ class SnsTopic(res_lib.BaseDocument):
             is_fifo_topic = res.get("Attributes", {}).get("FifoTopic", "NA")
             content_based_deduplication_enabled = res.get("Attributes", {}).get("ContentBasedDeduplication", "NA")
             detail_items.extend([
-                Item("access_policy", self.one_line_json(access_policy)),
-                Item("delivery_policy", self.one_line_json(delivery_policy)),
+                Item("access_policy", self.one_line(access_policy)),
+                Item("delivery_policy", self.one_line(delivery_policy)),
                 Item("subscriptions_confirmed", subscriptions_confirmed),
                 Item("subscriptions_deleted", subscriptions_deleted),
                 Item("subscriptions_pending", subscriptions_pending),
