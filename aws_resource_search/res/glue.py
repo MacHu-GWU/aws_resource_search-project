@@ -10,7 +10,7 @@ from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
 
 if T.TYPE_CHECKING:
-    from ..ars_v2 import ARS
+    from ..ars import ARS
 
 
 @dataclasses.dataclass
@@ -265,7 +265,7 @@ glue_job_searcher = res_lib.Searcher(
         res_lib.sayt.StoredField(name="job_arn"),
     ],
     cache_expire=24 * 60 * 60,
-    more_cache_key=lambda boto_kwargs: [boto_kwargs["JobName"]],
+    more_cache_key=None,
 )
 
 
@@ -400,7 +400,7 @@ glue_job_run_searcher = res_lib.Searcher(
         res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
     ],
     cache_expire=24 * 60 * 60,
-    more_cache_key=None,
+    more_cache_key=lambda boto_kwargs: [boto_kwargs["JobName"]],
 )
 
 glue_crawler_state_icon_mapper = {

@@ -7,7 +7,7 @@ from .. import res_lib
 from ..terminal import format_key_value
 
 if T.TYPE_CHECKING:
-    from ..ars_v2 import ARS
+    from ..ars import ARS
 
 
 @dataclasses.dataclass

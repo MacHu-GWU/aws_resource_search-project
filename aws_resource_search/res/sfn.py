@@ -9,7 +9,7 @@ from .. import res_lib
 from ..terminal import format_key_value
 
 if T.TYPE_CHECKING:
-    from ..ars_v2 import ARS
+    from ..ars import ARS
 
 
 sfn_statemachine_status_icon_mapper = {
@@ -206,9 +206,6 @@ class SfnExecution(res_lib.BaseDocument):
         return detail_items
     # fmt: on
 
-def func(boto_kwargs):
-    # print("boto_kwargs", boto_kwargs)
-    return [boto_kwargs["stateMachineArn"]]
 sfn_execution_searcher = res_lib.Searcher(
     # list resources
     service="stepfunctions",
@@ -231,7 +228,6 @@ sfn_execution_searcher = res_lib.Searcher(
         res_lib.sayt.StoredField(name="exec_arn"),
     ],
     cache_expire=24 * 60 * 60,
-    # more_cache_key=lambda boto_kwargs: [boto_kwargs["stateMachineArn"]],
-    more_cache_key=func,
+    more_cache_key=lambda boto_kwargs: [boto_kwargs["stateMachineArn"]],
 )
 
