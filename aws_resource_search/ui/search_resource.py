@@ -219,7 +219,8 @@ def search_resource(
     zf.debugger.log(f"search_resource Query: {query}")
     final_query = preprocess_query(query)
     searcher = ars.get_searcher(resource_type)
-    ds = searcher._get_ds(bsm=bsm, final_boto_kwargs={})
+    final_boto_kwargs = searcher._get_final_boto_kwargs(boto_kwargs=boto_kwargs)
+    ds = searcher._get_ds(bsm=bsm, final_boto_kwargs=final_boto_kwargs)
 
     # display "creating index ..." message
     if ds.cache_key not in ds.cache:
@@ -249,6 +250,7 @@ def search_resource(
     return search_resource_and_return_items(
         searcher=searcher,
         query=final_query,
+        boto_kwargs=boto_kwargs,
         doc_to_item_func=doc_to_item_func,
     )
 

@@ -196,17 +196,19 @@ class SfnExecution(res_lib.BaseDocument):
                 Item("state_machine_arn", state_machine_arn, url=ars.aws_console.step_function.get_state_machine_view_tab(state_machine_arn)),
                 Item("state_machine_version_arn", state_machine_version_arn) if state_machine_version_arn else None,
                 Item("state_machine_alias_arn", state_machine_alias_arn) if state_machine_alias_arn else None,
-                Item("input", self.one_line_json(input)),
-                Item("output", self.one_line_json(output)),
-                Item("error", self.one_line_json(error)),
-                Item("cause", self.one_line_json(cause)),
+                Item("input", self.one_line(input)),
+                Item("output", self.one_line(output)),
+                Item("error", self.one_line(error)),
+                Item("cause", self.one_line(cause)),
             ])
 
         detail_items = [item for item in detail_items if item is not None]
         return detail_items
     # fmt: on
 
-
+def func(boto_kwargs):
+    # print("boto_kwargs", boto_kwargs)
+    return [boto_kwargs["stateMachineArn"]]
 sfn_execution_searcher = res_lib.Searcher(
     # list resources
     service="stepfunctions",
@@ -229,5 +231,7 @@ sfn_execution_searcher = res_lib.Searcher(
         res_lib.sayt.StoredField(name="exec_arn"),
     ],
     cache_expire=24 * 60 * 60,
-    more_cache_key=None,
+    # more_cache_key=lambda boto_kwargs: [boto_kwargs["stateMachineArn"]],
+    more_cache_key=func,
 )
+

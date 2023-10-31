@@ -159,7 +159,7 @@ glue_table_searcher = res_lib.Searcher(
         res_lib.sayt.StoredField(name="table_arn"),
     ],
     cache_expire=24 * 60 * 60,
-    more_cache_key=None,
+    more_cache_key=lambda boto_kwargs: [boto_kwargs["DatabaseName"]],
 )
 
 
@@ -265,7 +265,7 @@ glue_job_searcher = res_lib.Searcher(
         res_lib.sayt.StoredField(name="job_arn"),
     ],
     cache_expire=24 * 60 * 60,
-    more_cache_key=None,
+    more_cache_key=lambda boto_kwargs: [boto_kwargs["JobName"]],
 )
 
 
@@ -352,8 +352,8 @@ class GlueJobRun(res_lib.BaseDocument):
 
             detail_items.extend([
                 Item("error_message", error_message),
-                Item("output_logs", log_group_name, url=aws.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/output")),
-                Item("error_logs", log_group_name, url=aws.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/error")),
+                Item("output_logs", log_group_name, url=ars.aws_console.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/output")),
+                Item("error_logs", log_group_name, url=ars.aws_console.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/error")),
             ])
 
             args = dct.get("Arguments", {})
