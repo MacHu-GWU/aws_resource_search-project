@@ -50,7 +50,7 @@
 
 Welcome to ``aws_resource_search`` Documentation
 ==============================================================================
-.. image:: https://ars.readthedocs.io/en/latest/_static/aws_resource_search-logo.png
+.. image:: https://ars.readthedocs.io/en/latest/_static/aws_resource_search-logo.png1
 
 **AWS Resource Search (ARS)** is a terminal application that enables interactive searches for AWS resources.
 
