@@ -20,6 +20,7 @@ searchers_metadata = {
     "lambda-function": {"mod": "awslambda", "var": "lambda_function_searcher"},
     "lambda-layer": {"mod": "awslambda", "var": "lambda_layer_searcher"},
     "s3-bucket": {"mod": "s3", "var": "s3_bucket_searcher"},
+    "secretsmanager-secret": {"mod": "secretmanager", "var": "secretsmanager_secret_searcher"},
     "sfn-execution": {"mod": "sfn", "var": "sfn_execution_searcher"},
     "sfn-statemachine": {"mod": "sfn", "var": "sfn_state_machine_searcher"},
     "sns-topic": {"mod": "sns", "var": "sns_topic_searcher"},
@@ -47,6 +48,7 @@ class SearcherEnum:
     lambda_function = "lambda-function"
     lambda_layer = "lambda-layer"
     s3_bucket = "s3-bucket"
+    secretsmanager_secret = "secretsmanager-secret"
     sfn_execution = "sfn-execution"
     sfn_statemachine = "sfn-statemachine"
     sns_topic = "sns-topic"

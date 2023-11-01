@@ -86,6 +86,10 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("s3-bucket")
     
     @cached_property
+    def secretsmanager_secret(self) -> Searcher:
+        return self.get_searcher("secretsmanager-secret")
+    
+    @cached_property
     def sfn_execution(self) -> Searcher:
         return self.get_searcher("sfn-execution")
     

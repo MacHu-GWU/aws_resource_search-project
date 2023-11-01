@@ -66,7 +66,7 @@ class SsmParameter(res_lib.BaseDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         Item = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars, arn_field_name="statemachine_arn")
+        detail_items = self.get_initial_detail_items(ars)
 
         with self.enrich_details(detail_items):
             detail_items.extend([
