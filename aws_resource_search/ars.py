@@ -18,6 +18,10 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("codecommit-repository")
     
     @cached_property
+    def dynamodb_table(self) -> Searcher:
+        return self.get_searcher("dynamodb-table")
+    
+    @cached_property
     def ec2_instance(self) -> Searcher:
         return self.get_searcher("ec2-instance")
     
@@ -96,4 +100,8 @@ class ARS(ARSBase):  # pragma: no cover
     @cached_property
     def sqs_queue(self) -> Searcher:
         return self.get_searcher("sqs-queue")
+    
+    @cached_property
+    def ssm_parameter(self) -> Searcher:
+        return self.get_searcher("ssm-parameter")
     

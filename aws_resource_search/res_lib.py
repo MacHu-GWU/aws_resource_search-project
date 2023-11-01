@@ -46,6 +46,7 @@ class ResourceIterproxy(IterProxy[T_RESULT_DATA]):
     """
     todo: docstring
     """
+
     pass
 
 
@@ -69,11 +70,13 @@ class ResultPath(BaseModel):
 
     def extract(self, response: dict) -> T.Iterator[T_RESULT_DATA]:
         """
-        Ext
+        Extract list of AWS resource data from boto3 API call response.
 
         :param response: boto3 API response
 
-        :return: for example, for s3_client.list_buckets, it will return::
+        :return: for example, for s3_client.list_buckets, it will return.
+
+        .. code-block:: python
 
             [
                 {
@@ -82,7 +85,6 @@ class ResultPath(BaseModel):
                 },
                 ...
             ]
-
         """
         return self._compiled.search(response)
 

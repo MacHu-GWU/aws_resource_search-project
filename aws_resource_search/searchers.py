@@ -24,6 +24,7 @@ searchers_metadata = {
     "sfn-statemachine": {"mod": "sfn", "var": "sfn_state_machine_searcher"},
     "sns-topic": {"mod": "sns", "var": "sns_topic_searcher"},
     "sqs-queue": {"mod": "sqs", "var": "sqs_queue_searcher"},
+    "ssm-parameter": {"mod": "ssm", "var": "ssm_parameter_searcher"},
 }
 
 class SearcherEnum:
@@ -50,3 +51,4 @@ class SearcherEnum:
     sfn_statemachine = "sfn-statemachine"
     sns_topic = "sns-topic"
     sqs_queue = "sqs-queue"
+    ssm_parameter = "ssm-parameter"
