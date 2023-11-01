@@ -1,4 +1,4 @@
-AWS Resource Search Terminal UI Keyboard Shortcut
+Terminal UI Keyboard Shortcut
 ==============================================================================
 **Search and Query Editing**
 

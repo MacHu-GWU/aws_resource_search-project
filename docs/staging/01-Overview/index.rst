@@ -1,4 +1,4 @@
-AWS Resource Search
+AWS Resource Search Overview
 ==============================================================================
 
 
@@ -17,5 +17,3 @@ Why this Project
 **Background**
 
 早期这个项目是我个人构建的 Alfred AWS Tool Workflow 的子模块, 用于给 UI 界面提供搜索功能. 但是后来经过评估认为, 这个模块可以单独拿出来成为一个开源项目, 更好的对其进行充分测试, 以保证底层功能的正确性以及可维护性. 并提供一套底层 API 供其他项目使用, 而不仅限于 Alfred AWS Tool Workflow 这个以 UI 界面为主的使用.
-
-
