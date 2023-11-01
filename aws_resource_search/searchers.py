@@ -17,6 +17,7 @@ searchers_metadata = {
     "iam-policy": {"mod": "iam", "var": "iam_policy_searcher"},
     "iam-role": {"mod": "iam", "var": "iam_role_searcher"},
     "iam-user": {"mod": "iam", "var": "iam_user_searcher"},
+    "kms-alias": {"mod": "kms", "var": "kms_key_alias_searcher"},
     "lambda-function": {"mod": "awslambda", "var": "lambda_function_searcher"},
     "lambda-layer": {"mod": "awslambda", "var": "lambda_layer_searcher"},
     "s3-bucket": {"mod": "s3", "var": "s3_bucket_searcher"},
@@ -45,6 +46,7 @@ class SearcherEnum:
     iam_policy = "iam-policy"
     iam_role = "iam-role"
     iam_user = "iam-user"
+    kms_alias = "kms-alias"
     lambda_function = "lambda-function"
     lambda_layer = "lambda-layer"
     s3_bucket = "s3-bucket"
