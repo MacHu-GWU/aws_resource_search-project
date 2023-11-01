@@ -26,7 +26,14 @@ Release and Version History
 **Miscellaneous**
 
 
-0.0.1 (2023-04-02)
+0.1.1 (2023-04-02)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
 
-- First release
+- First release.
+
+**Minor Improvements**
+
+**Bugfixes**
+
+**Miscellaneous**

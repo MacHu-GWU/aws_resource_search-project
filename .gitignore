@@ -6,6 +6,8 @@ tmp/
 .index/
 .cache/
 drawio.bkp
+*.cast
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
