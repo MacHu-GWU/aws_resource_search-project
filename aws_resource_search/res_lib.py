@@ -30,10 +30,11 @@ from .model import BaseModel
 from .utils import get_md5_hash
 from .paths import dir_index, dir_cache
 from .terminal import ShortcutEnum, format_key_value
+from .compat import TypedDict
 
 
 if T.TYPE_CHECKING:
-    from .ars_v2 import ARS
+    from .ars import ARS
 
 
 # ------------------------------------------------------------------------------
@@ -585,7 +586,7 @@ class ArsBaseItem(zf.Item):
         ui.wait_next_user_input()
 
 
-class DetailItemVariables(T.TypedDict):
+class DetailItemVariables(TypedDict):
     url: T.Optional[str]
     copy: T.Optional[str]
 

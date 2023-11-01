@@ -9,5 +9,7 @@ if sys.version_info.major == 2 or (
 
 if sys.version_info.minor < 8:  # pragma: no cover
     from cached_property import cached_property
-else:
+    from typing_extensions import TypedDict
+else:  # pragma: no cover
     from functools import cached_property
+    from typing import TypedDict
