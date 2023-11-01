@@ -111,7 +111,7 @@ You can use the ``ars`` (AWS Resource Search) command to enter the main interact
 
 The landing page shows a :ref:`list of implemented AWS resource types <user-guide-implemented-aws-resource-types>`. You can use your keyboard to select or filter the resource type and then tap ``Tab`` to start searching. Please refer the :ref:`user-guide-keyboard-shortcut` for full list of keyboard shortcuts.
 
-.. code-block:: bash
+.. code-block::
 
     (Query):
     [x] cloudformation-stack
@@ -129,7 +129,7 @@ The landing page shows a :ref:`list of implemented AWS resource types <user-guid
 
 If you have recently installed a new version of ``aws_resource_search``, you need to refresh it in order to obtain the most up-to-date list of implemented resource types. You can simply type ``!~`` to refresh the list.
 
-.. code-block:: bash
+.. code-block::
 
     (Query): !~
 
@@ -137,7 +137,7 @@ If you have recently installed a new version of ``aws_resource_search``, you nee
 
 After you have selected the resource type, you will see a list of AWS resources. For the first time use, it may takes a few seconds to pull the data and create the index.
 
-.. code-block:: bash
+.. code-block::
 
     (Query): s3-bucket:
     [x] Pulling data for 's3-bucket', it may takes 1-60 seconds ...
@@ -145,7 +145,7 @@ After you have selected the resource type, you will see a list of AWS resources.
 
 Then you can enter your query to search the AWS resources.
 
-.. code-block:: bash
+.. code-block::
 
     (Query): s3-bucket: infra
     [x] bucket_name = i-1-sbx-a1b2c3-infrastructure-s3-bucket
@@ -175,7 +175,7 @@ Please refer the :ref:`user-guide-keyboard-shortcut` for full list of keyboard s
 
 You can tap ``Ctrl + P`` to view detailed information about the selected bucket. You can also tap ``Ctrl + A`` to copy the value of the detail. This is particularly useful when you need to copy a JSON object.
 
-.. code-block:: bash
+.. code-block::
 
     (Query): Detail of bucket_name = i-1-sbx-a1b2c3-infrastructure-s3-bucket, press F1 to go back.
     [x] s3 uri = s3://i-1-sbx-a1b2c3-infrastructure-s3-bucket
@@ -195,7 +195,7 @@ At the end, you can press ``F1`` to return to the previous view and select anoth
 
 ``aws_resource_search`` uses cache to speed up the search. The dataset will be automatcially refreshed every 24 hours. If your query doesn't return any result, you can try to type ``!~`` to refresh the data.
 
-.. code-block:: bash
+.. code-block::
 
     (Query): s3-bucket: my-fresh-bucket!~
     [x] Pulling data for 's3-bucket', it may takes 1-60 seconds ...
@@ -211,7 +211,7 @@ Sometimes, you may need to specify a parent AWS resource to search for its child
 
 In this example, you can select the ``sfn-execution`` resource type, which will display a list of state machines. From there, you can choose or filter the desired state machine and press the ``Tab`` key to initiate the execution search.
 
-.. code-block:: bash
+.. code-block::
 
     (Query): sfn-execution:
     [ ] sfn-statemachine: name = i-1-prd-a1b2c3-infrastructure-sfn-state-machine
@@ -227,7 +227,7 @@ In this example, you can select the ``sfn-execution`` resource type, which will 
 
 When querying child resources, the query syntax is ``${resource_type}: ${parent_resource_identifier}@${child_resource_query}``. After pressing ``Tab``, you will see a list of child resources that you can select or further refine."
 
-.. code-block:: bash
+.. code-block::
 
     (Query): sfn-execution: i-3-tst-a1b2c3-infrastructure-sfn-state-machine@
     [x] sfn-execution: execution_name = a86232aa-87da-4929-954f-4f61ba7adaba

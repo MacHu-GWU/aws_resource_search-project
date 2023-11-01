@@ -11,6 +11,7 @@ import sayt.api as sayt
 
 from ..terminal import ShortcutEnum, highlight_text
 from ..paths import dir_index, dir_cache
+from ..compat import TypedDict
 from ..searchers import searchers_metadata
 from ..res_lib import preprocess_query, ArsBaseItem
 
@@ -18,7 +19,7 @@ if T.TYPE_CHECKING:
     from .main import UI
 
 
-class ResourceTypeDocument(T.TypedDict):
+class ResourceTypeDocument(TypedDict):
     id: str
     name: str
 

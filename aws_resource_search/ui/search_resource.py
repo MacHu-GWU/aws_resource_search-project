@@ -21,13 +21,14 @@ from .search_patterns import (
 )
 from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, Searcher, ArsBaseItem
 from ..terminal import ShortcutEnum, format_resource_type
+from ..compat import TypedDict
 from .boto_ses import bsm, ars
 
 if T.TYPE_CHECKING:
     from .main import UI
 
 
-class AwsResourceItemVariables(T.TypedDict):
+class AwsResourceItemVariables(TypedDict):
     doc: T_DOCUMENT_OBJ
 
 
