@@ -4,7 +4,7 @@ Release and Version History
 ==============================================================================
 
 
-0.0.3 (TODO)
+Backlog (TODO)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
@@ -15,18 +15,7 @@ Release and Version History
 **Miscellaneous**
 
 
-0.0.2 (TODO)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-**Features and Improvements**
-
-**Minor Improvements**
-
-**Bugfixes**
-
-**Miscellaneous**
-
-
-0.1.1 (2023-04-02)
+0.1.1 (2023-11-01)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
