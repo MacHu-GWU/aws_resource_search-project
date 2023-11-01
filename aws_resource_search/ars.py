@@ -74,6 +74,10 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("iam-user")
     
     @cached_property
+    def kms_alias(self) -> Searcher:
+        return self.get_searcher("kms-alias")
+    
+    @cached_property
     def lambda_function(self) -> Searcher:
         return self.get_searcher("lambda-function")
     

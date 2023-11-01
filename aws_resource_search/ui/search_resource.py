@@ -217,7 +217,7 @@ def search_resource_and_return_items(
         return [
             AwsResourceItem(
                 title=f"🔴 No {searcher.resource_type!r} found",
-                subtitle="Please try another query.",
+                subtitle="Please try another query, or type '!~' to refresh data.",
             )
         ]
 

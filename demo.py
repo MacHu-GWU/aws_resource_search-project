@@ -43,6 +43,29 @@ for ith in range(1, 1 + n):
     project = rand_proj()
     bucket = f"i-{ith}-{env}-{guid}-{project}-s3-bucket"
     bsm.s3_client.create_bucket(Bucket=bucket)
+    bsm.s3_client.put_bucket_policy(
+        Bucket=bucket,
+        Policy=json.dumps(
+            {
+                "Version": "2012-10-17",
+                "Id": "PutObjPolicy",
+                "Statement": [
+                    {
+                        "Sid": "DenyObjectsThatAreNotSSEKMS",
+                        "Principal": "*",
+                        "Effect": "Deny",
+                        "Action": "s3:PutObject",
+                        "Resource": "arn:aws:s3:::DOC-EXAMPLE-BUCKET/*",
+                        "Condition": {
+                            "Null": {
+                                "s3:x-amz-server-side-encryption-aws-kms-key-id": "true"
+                            }
+                        },
+                    }
+                ],
+            }
+        ),
+    )
     bsm.s3_client.put_bucket_tagging(
         Bucket=bucket,
         Tagging={

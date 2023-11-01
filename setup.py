@@ -123,6 +123,7 @@ if __name__ == "__main__":
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3 :: Only",
     ]
     """
@@ -185,6 +186,7 @@ if __name__ == "__main__":
         entry_points={
             "console_scripts": [
                 "ars=aws_resource_search.cli:run",
+                "ars-set-profile=awscli_mate.ui:main",
             ],
         },
     )
