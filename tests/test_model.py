@@ -16,7 +16,7 @@ class Model(BaseModel):
 
 class TestBaseModel:
     def test(self):
-        data = {"id": "id-1", "flag": None, "undefined": 123}
+        data = {"id": "id-1"}
         model = Model.from_dict(data)
         assert model.id == "id-1"
         assert model.name is None

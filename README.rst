@@ -1,6 +1,6 @@
 
 .. image:: https://readthedocs.org/projects/ars/badge/?version=latest
-    :target: https://ars.readthedocs.io/index.html
+    :target: https://ars.readthedocs.io/en/latest/index.html
     :alt: Documentation Status
 
 .. image:: https://github.com/MacHu-GWU/aws_resource_search-project/workflows/CI/badge.svg
@@ -24,13 +24,13 @@
 ------
 
 .. image:: https://img.shields.io/badge/Link-Document-blue.svg
-    :target: https://ars.readthedocs.io/index.html
+    :target: https://ars.readthedocs.io/en/latest/index.html
 
 .. image:: https://img.shields.io/badge/Link-API-blue.svg
-    :target: https://aws_resource_search.readthedocs.io/py-modindex.html
+    :target: https://ars.readthedocs.io/en/latest/py-modindex.html
 
 .. image:: https://img.shields.io/badge/Link-Source_Code-blue.svg
-    :target: https://aws_resource_search.readthedocs.io/py-modindex.html
+    :target: https://ars.readthedocs.io/en/latest/py-modindex.html
 
 .. image:: https://img.shields.io/badge/Link-Install-blue.svg
     :target: `install`_
@@ -68,12 +68,12 @@ Demo
 Search S3 Bucket.
 
 .. image:: https://asciinema.org/a/618423.svg
-    https://asciinema.org/a/618423
+    :target: https://asciinema.org/a/618423
 
 Search StepFunction execution, which is a child resource of StepFunction state machine.
 
 .. image:: https://asciinema.org/a/618428.svg
-    https://asciinema.org/a/618428
+    :target: https://asciinema.org/a/618428
 
 
 .. _install:

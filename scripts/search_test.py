@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+This script is used to debug all resource type searcher.
+"""
+
 from aws_resource_search.ars import ARS
 from boto_session_manager import BotoSesManager
 from rich import print as rprint

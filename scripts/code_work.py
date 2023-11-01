@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from aws_resource_search.code.data import reformat_path_data_json
+"""
+This script automatically generate the source code based on the update-to-date
+resource type list.
+"""
+
+from aws_resource_search.code.searchers import generate_searchers_py_module
 from aws_resource_search.code.ars import generate_ars_py_module
 
-reformat_path_data_json()
+generate_searchers_py_module()
 generate_ars_py_module()

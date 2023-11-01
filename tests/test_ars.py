@@ -82,10 +82,10 @@ class TestARS(FakeAws):
     def test(self):
         print("")
         with logger.disabled(
-            # disable=True,  # no log,
-            disable=False,  # show log
+            disable=True,  # no log,
+            # disable=False,  # show log
         ):
-            # self._test_ars()
+            self._test_ars()
             self._test_all()
 
 
