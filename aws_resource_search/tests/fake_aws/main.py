@@ -7,7 +7,7 @@ Set up a fake AWS account with a lot of resources using moto for testing.
 import moto
 
 from ...paths import dir_unit_test
-from ...ars_v2 import ARS
+from ...ars import ARS
 from ..mock_test import BaseMockTest
 
 from .awslambda import LambdaMixin
@@ -17,6 +17,7 @@ from .glue import GlueMixin
 from .ec2 import Ec2Mixin
 from .vpc import VpcMixin
 from .s3 import S3Mixin
+from .stepfunction import StepFunctionMixin
 from .iam import IamMixin
 
 
@@ -29,6 +30,7 @@ class FakeAws(
     Ec2Mixin,
     VpcMixin,
     S3Mixin,
+    StepFunctionMixin,
     IamMixin,
 ):
     """
@@ -85,6 +87,7 @@ class FakeAws(
         cls.create_glue_crawler()
         cls.create_lambda_layers()
         cls.create_lambda_functions()
+        cls.create_state_machines()
 
     @classmethod
     def setup_ars(cls):

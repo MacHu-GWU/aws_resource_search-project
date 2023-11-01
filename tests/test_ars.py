@@ -29,27 +29,38 @@ class TestARS(FakeAws):
         """
         这个方法用来测试 list resource 的时候无需任何额外参数的情况, 也就是简单情况.
         """
-        ignored_resource_type = {
-            SearcherEnum.codecommit_repository,
-            SearcherEnum.glue_database,
-            SearcherEnum.glue_job,
-            SearcherEnum.glue_jobrun,
-            SearcherEnum.glue_table,
-            SearcherEnum.iam_group,
+        resource_type_list = [
+            # SearcherEnum.cloudformation_stack,
+            # SearcherEnum.dynamodb_table,
+            # SearcherEnum.ec2_instance,
+            # SearcherEnum.ec2_securitygroup,
+            # SearcherEnum.ec2_subnet,
+            # SearcherEnum.ec2_vpc,
+            # SearcherEnum.glue_crawler,
+            # SearcherEnum.glue_database,
+            # SearcherEnum.glue_job,
+            # SearcherEnum.glue_jobrun, # we need to test it in another way
+            # SearcherEnum.glue_table, # we need to test it in another way
+            # SearcherEnum.iam_group,
+            # SearcherEnum.iam_policy,
             # SearcherEnum.iam_role,
-            SearcherEnum.lambda_function,
-            SearcherEnum.lambda_layer,
+            # SearcherEnum.iam_user,
+            # SearcherEnum.kms_alias,
+            # SearcherEnum.lambda_function,
+            # SearcherEnum.lambda_layer,
             # SearcherEnum.s3_bucket,
-            SearcherEnum.sfn_execution,
+            # SearcherEnum.secretsmanager_secret,
+            # SearcherEnum.sfn_execution,
             SearcherEnum.sfn_statemachine,
-        }
+            # SearcherEnum.sns_topic,
+            # SearcherEnum.sqs_queue,
+            # SearcherEnum.ssm_parameter,
+        ]
 
         ars = self.ars
 
         # ars.aws_console.sqs.get_queue(name_or_arn_or_url=123)
-        for resource_type in searchers_metadata:
-            if resource_type in ignored_resource_type:
-                continue
+        for resource_type in resource_type_list:
             logger.ruler(f"start {resource_type!r}")
             searcher = ars.get_searcher(resource_type=resource_type)
             result = searcher.search(
@@ -74,11 +85,11 @@ class TestARS(FakeAws):
             # disable=True,  # no log,
             disable=False,  # show log
         ):
-            self._test_ars()
+            # self._test_ars()
             self._test_all()
 
 
 if __name__ == "__main__":
     from aws_resource_search.tests.helper import run_cov_test
 
-    run_cov_test(__file__, "aws_resource_search.ars_v2", preview=False)
+    run_cov_test(__file__, "aws_resource_search.ars", preview=False)

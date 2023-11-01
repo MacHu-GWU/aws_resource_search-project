@@ -171,16 +171,25 @@ class Ec2Vpc(res_lib.BaseDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         tags = {dct["Key"]: dct["Value"] for dct in resource.get("Tags", [])}
+
+        CidrBlockAssociationSet = resource.get("CidrBlockAssociationSet", [])
+        if CidrBlockAssociationSet:
+            cidr_ipv4 = CidrBlockAssociationSet[0].get("CidrBlock", "NA")
+        else:
+            cidr_ipv4 = "NA"
+
+        Ipv6CidrBlockAssociationSet = resource.get("Ipv6CidrBlockAssociationSet", [])
+        if Ipv6CidrBlockAssociationSet:
+            cidr_ipv6 = Ipv6CidrBlockAssociationSet[0].get("Ipv6CidrBlock", "NA")
+        else:
+            cidr_ipv6 = "NA"
+
         return cls(
             raw_data=resource,
             is_default=resource["IsDefault"],
             state=resource["State"],
-            cidr_ipv4=resource.get("CidrBlockAssociationSet", [{}])[0].get(
-                "CidrBlock", "NA"
-            ),
-            cidr_ipv6=resource.get("Ipv6CidrBlockAssociationSet", [{}])[0].get(
-                "Ipv6CidrBlock", "NA"
-            ),
+            cidr_ipv4=cidr_ipv4,
+            cidr_ipv6=cidr_ipv6,
             id=resource["VpcId"],
             id_ng=resource["VpcId"],
             name=tags.get("Name", "No vpc name"),

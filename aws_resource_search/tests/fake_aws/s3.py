@@ -13,7 +13,6 @@ class S3Mixin:
 
     @classmethod
     def create_s3_bucket(cls: T.Type["FakeAws"]):
-        s3_bucket_list = list()
         for ith in range(1, 1 + 10):
             env = rand_env()
             bucket = f"{env}-{guid}-{ith}-s3-bucket"

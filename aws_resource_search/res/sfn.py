@@ -30,7 +30,7 @@ class SfnStateMachine(res_lib.BaseDocument):
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            type=resource["type"],
+            type=resource.get("type", "Unknown"),
             create_at=resource["creationDate"],
             id=resource["name"],
             name=resource["name"],
@@ -70,7 +70,7 @@ class SfnStateMachine(res_lib.BaseDocument):
             status = res["status"]
             role_arn = res["roleArn"]
             definition = res["definition"]
-            type = res["type"]
+            type = res.get("type", "Unknown")
             creation_date = res["creationDate"]
 
             status_icon = sfn_statemachine_status_icon_mapper[status]
@@ -139,8 +139,8 @@ class SfnExecution(res_lib.BaseDocument):
         return cls(
             raw_data=resource,
             sm_name=resource["stateMachineArn"].split(":")[-1],
-            start_at=resource.get("startDate"),
-            end_at=resource.get("stopDate"),
+            start_at=resource.get("startDate", "NA"),
+            end_at=resource.get("stopDate", "NA"),
             status=resource["status"],
             id=resource["executionArn"].split(":")[-1],
             name=resource["executionArn"].split(":")[-1],

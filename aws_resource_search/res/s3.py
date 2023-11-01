@@ -83,7 +83,13 @@ class S3Bucket(res_lib.BaseDocument):
         with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_location(Bucket=self.name)
             location = res["LocationConstraint"]
+            if not location:
+                location = "us-east-1"
             detail_items.append(Item("location", location))
+
+        with self.enrich_details(detail_items):
+            res = ars.bsm.s3_client.get_bucket_policy(Bucket=self.name)
+            detail_items.append(Item("bucket_policy", self.one_line(res.get("Policy", "{}"))))
 
         with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
