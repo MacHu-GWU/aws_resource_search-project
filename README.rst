@@ -59,15 +59,15 @@ Welcome to ``aws_resource_search`` Documentation
 
 **AWS Resource Search (ARS)** is a terminal application that enables interactive searches for AWS resources. It is a mini AWS console in your terminal or shell environment.
 
-It utilizes advanced indexing techniques that support :red:`full-text search` (any word, no longer restricted to prefix or suffix matching), :red:`fuzzy search` (tolerating spelling mistakes), and :red:`n-gram` search (allowing matching of series of n adjacent characters).
+It utilizes advanced indexing techniques that support ``full-text search`` (any word, no longer restricted to prefix or suffix matching), ``fuzzy search`` (tolerating spelling mistakes), and ``n-gram`` search (allowing matching of series of n adjacent characters).
 
-ARS comes with built-in query caching, ensuring :red:`blazing-fast performance` even when dealing with a large number of AWS resources such as IAM roles, Lambda Functions, CloudFormation stacks, and more.
+ARS comes with built-in query caching, ensuring ``blazing-fast performance`` even when dealing with a large number of AWS resources such as IAM roles, Lambda Functions, CloudFormation stacks, and more.
 
 As a Python library, installation is as simple as running ``pip install aws_resource_search``. There's no need to set up databases, additional search tools, or install any other software.
 
 The data stays on your laptop, there's no remote server involved.
 
-The :red:`open-source community version` of ARS allows searching within a single AWS Account and one AWS region at a time. You can switch between different AWS accounts before conducting your searches. On the other hand, the :red:`enterprise version` of ARS offers the capability to search across multiple AWS accounts and AWS regions, providing an aggregated view. Currently, the enterprise version is in beta and is expected to become generally available in early 2024."
+The **open-source Community Edition** of ARS allows searching within a single AWS Account and one AWS region at a time. You can switch between different AWS accounts before conducting your searches. On the other hand, the **Enterprise Edition** of ARS offers the capability to search across multiple AWS accounts and AWS regions, providing an aggregated view. Currently, the enterprise version is in beta and is expected to become generally available in early 2024."
 
 
 Demo
