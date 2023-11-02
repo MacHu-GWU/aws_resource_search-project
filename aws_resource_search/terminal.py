@@ -87,3 +87,4 @@ class ShortcutEnum:
     CTRL_W = format_shortcut("Ctrl W")
     CTRL_U = format_shortcut("Ctrl U")
     CTRL_P = format_shortcut("Ctrl P")
+    F1 = format_shortcut("F1")

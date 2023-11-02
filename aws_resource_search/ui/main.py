@@ -75,9 +75,9 @@ def handler(
             # example: "s3-bucket"
             if is_valid_resource_type(service_query):
                 return search_resource_handler(
+                    ui=ui,
                     resource_type=service_query,
                     query=resource_query,
-                    ui=ui,
                 )
 
             # example: "ec2 inst"
@@ -93,9 +93,9 @@ def handler(
         resource_query = query.split(":")[1].strip()
         if is_valid_resource_type(service_query):
             return search_resource_handler(
+                ui=ui,
                 resource_type=service_query,
                 query=resource_query,
-                ui=ui,
             )
 
         # example: # ec2 inst: something", "ec2 inst" is not a valid srv_id

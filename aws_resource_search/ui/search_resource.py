@@ -149,11 +149,15 @@ class AwsResourceItem(ArsBaseItem):
             """
             A partial function that using the given folder.
             """
+            ui.render.prompt = "(Detail)"
             return items
 
         ui.run_sub_session(
             handler=handler,
-            initial_query=f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back.",
+            initial_query=(
+                f"{ui.remove_text_format(self.title)}, "
+                f"press F1 to go back."
+            ),
         )
 
 
@@ -460,9 +464,9 @@ def search_resource_under_partitioner(
 
 
 def search_resource_handler(
+    ui: "UI",
     resource_type: str,
     query: str,
-    ui: "UI",
 ) -> T.List[AwsResourceItem]:
     """
     **IMPORTANT** This handle filter resource by query.
@@ -471,6 +475,7 @@ def search_resource_handler(
     :param query: for example, if the full user query is ``"s3-bucket: my bucket"``,
         then this argument is ``"my bucket"``.
     """
+    ui.render.prompt = f"(Enter query)"
     if has_partitioner(resource_type):
         return search_resource_under_partitioner(
             ui=ui,

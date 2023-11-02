@@ -82,7 +82,7 @@ class AwsResourceTypeItem(ArsBaseItem):
         return cls(
             title=resource_type,
             subtitle=(
-                f"hit {ShortcutEnum.TAB} and enter your query "
+                f"hit {ShortcutEnum.TAB} or {ShortcutEnum.ENTER} and enter your query "
                 f"to search {highlight_text(resource_type)}."
             ),
             uid=doc["id"],
@@ -93,6 +93,14 @@ class AwsResourceTypeItem(ArsBaseItem):
     @classmethod
     def from_many_document(cls, docs: T.Iterable[ResourceTypeDocument]):
         return [cls.from_document(doc) for doc in docs]
+
+    def enter_handler(self, ui: "UI"):
+        ui.line_editor.clear_line()
+        if self.autocomplete:
+            ui.line_editor.enter_text(self.autocomplete)
+
+    def post_enter_handler(self, ui: "UI"):
+        pass
 
 
 def search_resource_type_and_return_items(
@@ -118,6 +126,7 @@ def select_resource_type_handler(
     :param query: service id and resource type search query input. For example:
         "s3 bucket", "ec2 inst"
     """
+    ui.render.prompt = "(Select resource type)"
     final_query = preprocess_query(query)
 
     # manually refresh data
