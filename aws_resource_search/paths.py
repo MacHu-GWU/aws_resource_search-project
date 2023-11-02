@@ -32,6 +32,7 @@ dir_cache = dir_aws_resource_search.joinpath(".cache")
 path_config_json = dir_aws_resource_search.joinpath("config.json")
 
 # ------------------------------------------------------------------------------
-# Project
+# ${HOME}/.aws/ dir
 # ------------------------------------------------------------------------------
-path_data_json = dir_python_lib.joinpath("data.json")
+path_aws_config = dir_home.joinpath(".aws", "config")
+path_aws_credentials = dir_home.joinpath(".aws", "credentials")

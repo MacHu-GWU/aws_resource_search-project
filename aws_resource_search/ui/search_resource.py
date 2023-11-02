@@ -7,6 +7,7 @@ This module implements the resource search feature.
 import typing as T
 import dataclasses
 
+import botocore.exceptions
 import zelfred.api as zf
 
 try:
@@ -19,9 +20,16 @@ from .search_patterns import (
     get_partitioner_resource_type,
     get_partitioner_boto_kwargs,
 )
-from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, Searcher, ArsBaseItem
-from ..terminal import ShortcutEnum, format_resource_type
+from ..res_lib import (
+    T_DOCUMENT_OBJ,
+    preprocess_query,
+    Searcher,
+    ArsBaseItem,
+    Boto3ClientErrorItem,
+)
+from ..terminal import ShortcutEnum, format_resource_type, highlight_text
 from ..compat import TypedDict
+from ..paths import path_aws_config, path_aws_credentials
 from .boto_ses import bsm, ars
 
 if T.TYPE_CHECKING:
@@ -114,7 +122,7 @@ class AwsResourceItem(ArsBaseItem):
         Copy ARN to clipboard.
         """
         arn = self.variables["doc"].arn
-        pyperclip.copy(arn)
+        self.copy_or_print(ui, arn)
 
     def ctrl_u_handler(self, ui: "UI"):
         """
@@ -124,7 +132,7 @@ class AwsResourceItem(ArsBaseItem):
         """
         doc: T_DOCUMENT_OBJ = self.variables["doc"]
         console_url = doc.get_console_url(ars.aws_console)
-        pyperclip.copy(console_url)
+        self.copy_or_print(ui, console_url)
 
     def ctrl_p_handler(self, ui: "UI"):
         """
@@ -143,15 +151,20 @@ class AwsResourceItem(ArsBaseItem):
             """
             return items
 
-        ui.replace_handler(handler)
+        # ui.replace_handler(handler)
+        #
+        # # re-paint the UI
+        # ui.line_editor.clear_line()
+        # ui.line_editor.enter_text(
+        #     f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back."
+        # )
+        # ui.repaint()
+        # ui.run(_do_init=False)
 
-        # re-paint the UI
-        ui.line_editor.clear_line()
-        ui.line_editor.enter_text(
-            f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back."
+        ui.run_sub_session(
+            handler=handler,
+            initial_query=f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back.",
         )
-        ui.repaint()
-        ui.run(_do_init=False)
 
 
 def creating_index_items(resource_type: str) -> T.List[zf.Item]:
@@ -194,11 +207,33 @@ def search_resource_and_return_items(
         we need special handling to convert the original doc to item.
         That's the purpose of this argument.
     """
-    docs: T.List[T_DOCUMENT_OBJ] = searcher.search(
-        query=query,
-        boto_kwargs=boto_kwargs,
-        refresh_data=refresh_data,
-    )
+    try:
+        docs: T.List[T_DOCUMENT_OBJ] = searcher.search(
+            query=query,
+            boto_kwargs=boto_kwargs,
+            refresh_data=refresh_data,
+        )
+    except botocore.exceptions.ClientError as e: # pragma: no cover
+        return [
+            AwsResourceItem(
+                title=(
+                    f"🔴 boto3 client error! "
+                    f"check your default profile in ~/.aws/config and ~/.aws/credentials file."
+                ),
+                subtitle=repr(e),
+            ),
+            Boto3ClientErrorItem(
+                title=f"Check ~/.aws/config",
+                subtitle=f"{ShortcutEnum.ENTER} to open file",
+                arg=str(path_aws_config),
+            ),
+            Boto3ClientErrorItem(
+                title=f"Check ~/.aws/credentials",
+                subtitle=f"{ShortcutEnum.ENTER} to open file",
+                arg=str(path_aws_config),
+            ),
+        ]
+
     # pprint(docs[:3]) # for DEBUG ONLY
 
     if doc_to_item_func is None:
@@ -218,7 +253,9 @@ def search_resource_and_return_items(
         return [
             AwsResourceItem(
                 title=f"🔴 No {searcher.resource_type!r} found",
-                subtitle="Please try another query, or type '!~' to refresh data.",
+                subtitle="Please try another query, or type {} to refresh data.".format(
+                    highlight_text("!~")
+                ),
             )
         ]
 

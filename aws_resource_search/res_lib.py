@@ -11,6 +11,7 @@ import json
 import copy
 import dataclasses
 import contextlib
+from pathlib import Path
 from datetime import datetime
 
 import jmespath
@@ -28,7 +29,7 @@ except ImportError:
 
 from .model import BaseModel
 from .utils import get_md5_hash
-from .paths import dir_index, dir_cache
+from .paths import dir_index, dir_cache, path_aws_config, path_aws_credentials
 from .terminal import ShortcutEnum, format_key_value
 from .compat import TypedDict
 
@@ -570,6 +571,22 @@ class Searcher(BaseModel):
 
 @dataclasses.dataclass
 class ArsBaseItem(zf.Item):
+    def copy_or_print(self, ui: zf.UI, text: str):
+        """
+        Sometime user are in a remote shell and cannot use the clipboard and the URL
+        """
+        try:
+            # raise pyperclip.PyperclipException
+            pyperclip.copy(text)
+        except pyperclip.PyperclipException:
+            print(
+                f"{ui.terminal.cyan}Your system doesn't support copy to clipboard, "
+                f"we print it here so you can copy manually.{ui.terminal.normal}"
+            )
+            print(text)
+            ui.need_run_handler = False
+            raise zf.exc.EndOfInputError(selection=self)
+
     def post_enter_handler(self, ui: zf.UI):
         ui.wait_next_user_input()
 
@@ -606,7 +623,7 @@ class DetailItem(ArsBaseItem):
 
     def ctrl_a_handler(self, ui: "zf.UI"):
         if self.variables["copy"]:
-            pyperclip.copy(self.variables["copy"])
+            self.copy_or_print(ui, self.variables["copy"])
 
     @classmethod
     def from_detail(
@@ -676,3 +693,11 @@ class DetailItem(ArsBaseItem):
             title=f"❗ {type}",
             subtitle=f"💬 {msg}",
         )
+
+@dataclasses.dataclass
+class Boto3ClientErrorItem(ArsBaseItem):
+    """
+    Represent an item to show the debug information of a boto3 client error
+    """
+    def enter_handler(self, ui: zf.UI):
+        zf.open_file(Path(self.arg))
