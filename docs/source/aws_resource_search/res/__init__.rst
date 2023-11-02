@@ -12,7 +12,9 @@ sub packages and modules
 
     awslambda <awslambda>
     cloudformation <cloudformation>
+    codebuild <codebuild>
     codecommit <codecommit>
+    codepipeline <codepipeline>
     dynamodb <dynamodb>
     ec2 <ec2>
     glue <glue>

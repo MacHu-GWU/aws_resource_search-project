@@ -12,6 +12,19 @@ To verify the installation, run::
 
     ars --version
 
+If you just want to quickly explore the feature, you can use `AWS Cloud Shell <https://aws.amazon.com/cloudshell/>`_, an AWS managed shell environment without need setting the AWS CLI credentials. You can enter the cloud shell by clicking the icon on the top right corner of the AWS Console.
+
+.. image:: ./aws-cloud-shell.png
+
+Then you can just do:
+
+.. code-block:: bash
+
+    pip install aws-resource-search
+    ars --version
+
+Congrats, you are all set! You can jump to :ref:`search-aws-resource` section to continue.
+
 
 Setup Your AWS CLI
 ------------------------------------------------------------------------------
@@ -99,6 +112,8 @@ You can use the ``ars-set-profile`` command to enter an interactive session to s
 
     ars-set-profile
 
+
+.. _search-aws-resource:
 
 Search AWS Resource
 ------------------------------------------------------------------------------
