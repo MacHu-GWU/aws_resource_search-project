@@ -5,6 +5,7 @@ searchers_metadata = {
     "codebuild-jobrun": {"mod": "codebuild", "var": "codebuild_job_run_searcher"},
     "codebuild-project": {"mod": "codebuild", "var": "codebuild_project_searcher"},
     "codecommit-repository": {"mod": "codecommit", "var": "codecommit_repository_searcher"},
+    "codepipeline-pipeline": {"mod": "codepipeline", "var": "codepipeline_pipeline_searcher"},
     "dynamodb-table": {"mod": "dynamodb", "var": "dynamodb_table_searcher"},
     "ec2-instance": {"mod": "ec2", "var": "ec2_instance_searcher"},
     "ec2-securitygroup": {"mod": "ec2", "var": "ec2_securitygroup_searcher"},
@@ -36,6 +37,7 @@ class SearcherEnum:
     codebuild_jobrun = "codebuild-jobrun"
     codebuild_project = "codebuild-project"
     codecommit_repository = "codecommit-repository"
+    codepipeline_pipeline = "codepipeline-pipeline"
     dynamodb_table = "dynamodb-table"
     ec2_instance = "ec2-instance"
     ec2_securitygroup = "ec2-securitygroup"

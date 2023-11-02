@@ -15,8 +15,15 @@ Backlog (TODO)
 **Miscellaneous**
 
 
-0.1.4 (2023-11-01)
+0.2.1 (2023-11-01)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Add support for:
+    - codebuild-project
+    - codebuild-jobrun
+    - codepipeline-pipeline
+
 **Minor Improvements**
 
 - Sort execution-liked aws resource by start time in descending order by default.

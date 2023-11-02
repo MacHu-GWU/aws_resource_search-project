@@ -7,6 +7,7 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``codebuild-jobrun``
 - ``codebuild-project``
 - ``codecommit-repository``
+- ``codepipeline-pipeline``
 - ``dynamodb-table``
 - ``ec2-instance``
 - ``ec2-securitygroup``
