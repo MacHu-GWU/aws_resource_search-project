@@ -220,7 +220,7 @@ sfn_execution_searcher = res_lib.Searcher(
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="sm_name"),
-        res_lib.sayt.StoredField(name="start_at"),
+        res_lib.sayt.DatetimeField(name="start_at", sortable=True, ascending=False, stored=True),
         res_lib.sayt.StoredField(name="end_at"),
         res_lib.sayt.StoredField(name="status"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),

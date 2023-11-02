@@ -393,7 +393,7 @@ glue_job_run_searcher = res_lib.Searcher(
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="job_name"),
         res_lib.sayt.StoredField(name="state"),
-        res_lib.sayt.StoredField(name="started_on"),
+        res_lib.sayt.DatetimeField(name="started_on", sortable=True, ascending=False, stored=True),
         res_lib.sayt.StoredField(name="completed_on"),
         res_lib.sayt.StoredField(name="execution_time"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
