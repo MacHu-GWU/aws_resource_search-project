@@ -581,6 +581,8 @@ class ArsBaseItem(zf.Item):
                     f"we print it here so you can copy manually.{ui.terminal.normal}"
                 )
                 print(url)
+                ui.need_run_handler = False
+                raise zf.exc.EndOfInputError(selection=self)
             else:
                 raise e
 
