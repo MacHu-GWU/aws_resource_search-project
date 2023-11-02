@@ -113,7 +113,7 @@ class AwsResourceItem(ArsBaseItem):
         """
         doc: T_DOCUMENT_OBJ = self.variables["doc"]
         console_url = doc.get_console_url(ars.aws_console)
-        zf.open_url(console_url)
+        self.open_url_or_print(ui, console_url)
 
     def ctrl_a_handler(self, ui: "UI"):
         """
@@ -150,16 +150,6 @@ class AwsResourceItem(ArsBaseItem):
             A partial function that using the given folder.
             """
             return items
-
-        # ui.replace_handler(handler)
-        #
-        # # re-paint the UI
-        # ui.line_editor.clear_line()
-        # ui.line_editor.enter_text(
-        #     f"Detail of {ui.remove_text_format(self.title)}, press F1 to go back."
-        # )
-        # ui.repaint()
-        # ui.run(_do_init=False)
 
         ui.run_sub_session(
             handler=handler,
@@ -213,7 +203,7 @@ def search_resource_and_return_items(
             boto_kwargs=boto_kwargs,
             refresh_data=refresh_data,
         )
-    except botocore.exceptions.ClientError as e: # pragma: no cover
+    except botocore.exceptions.ClientError as e:  # pragma: no cover
         return [
             AwsResourceItem(
                 title=(

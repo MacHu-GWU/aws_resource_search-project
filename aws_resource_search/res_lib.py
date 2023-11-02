@@ -571,12 +571,24 @@ class Searcher(BaseModel):
 
 @dataclasses.dataclass
 class ArsBaseItem(zf.Item):
+    def open_url_or_print(self, ui: zf.UI, url: str):
+        try:
+            zf.open_url(url)
+        except FileNotFoundError as e:
+            if "open" in str(e):
+                print(
+                    f"{ui.terminal.cyan}Your system doesn't support open url in browser to clipboard, "
+                    f"we print it here so you can copy manually.{ui.terminal.normal}"
+                )
+                print(url)
+            else:
+                raise e
+
     def copy_or_print(self, ui: zf.UI, text: str):
         """
         Sometime user are in a remote shell and cannot use the clipboard and the URL
         """
         try:
-            # raise pyperclip.PyperclipException
             pyperclip.copy(text)
         except pyperclip.PyperclipException:
             print(
@@ -619,7 +631,7 @@ class DetailItem(ArsBaseItem):
 
     def enter_handler(self, ui: "zf.UI"):
         if self.variables.get("url"):
-            zf.open_url(url=self.variables["url"])
+            self.open_url_or_print(ui, self.variables["url"])
 
     def ctrl_a_handler(self, ui: "zf.UI"):
         if self.variables["copy"]:
@@ -694,10 +706,12 @@ class DetailItem(ArsBaseItem):
             subtitle=f"💬 {msg}",
         )
 
+
 @dataclasses.dataclass
 class Boto3ClientErrorItem(ArsBaseItem):
     """
     Represent an item to show the debug information of a boto3 client error
     """
+
     def enter_handler(self, ui: zf.UI):
         zf.open_file(Path(self.arg))
