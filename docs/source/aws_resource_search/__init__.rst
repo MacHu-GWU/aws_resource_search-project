@@ -11,6 +11,7 @@ sub packages and modules
     :maxdepth: 1
 
     code <code/__init__>
+    conf <conf/__init__>
     res <res/__init__>
     ui <ui/__init__>
     api <api>
@@ -19,6 +20,7 @@ sub packages and modules
     cli <cli>
     compat <compat>
     constants <constants>
+    exc <exc>
     logger <logger>
     model <model>
     res_lib <res_lib>

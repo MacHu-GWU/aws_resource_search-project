@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
 
 """
-The interactive UI implementation.
+The module implements the interactive UI.
 """

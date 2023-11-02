@@ -37,6 +37,9 @@ if T.TYPE_CHECKING:
 
 
 class AwsResourceItemVariables(TypedDict):
+    """
+    Type hint for the variables field in :class:`AwsResourceItem`.
+    """
     doc: T_DOCUMENT_OBJ
 
 
@@ -475,7 +478,7 @@ def search_resource_handler(
     :param query: for example, if the full user query is ``"s3-bucket: my bucket"``,
         then this argument is ``"my bucket"``.
     """
-    ui.render.prompt = f"(Enter query)"
+    ui.render.prompt = f"(Query)"
     if has_partitioner(resource_type):
         return search_resource_under_partitioner(
             ui=ui,

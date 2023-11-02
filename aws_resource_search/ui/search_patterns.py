@@ -41,10 +41,16 @@ has_partitioner_search_patterns = {
 
 
 def has_partitioner(resource_type: str) -> bool:
+    """
+    Check if a resource type need a partitioner resource.
+    """
     return resource_type in has_partitioner_search_patterns
 
 
 def get_partitioner_resource_type(resource_type: str) -> str:
+    """
+    Get the partitioner "resource type" of a resource type.
+    """
     dct = has_partitioner_search_patterns[resource_type]
     return dct[K_PARTITIONER_RESOURCE_TYPE]
 
@@ -53,5 +59,8 @@ def get_partitioner_boto_kwargs(
     resource_type: str,
     partitioner_query: str,
 ) -> dict:
+    """
+    Get the boto3 kwargs for the partitioner resource.
+    """
     dct = has_partitioner_search_patterns[resource_type]
     return dct[K_GET_BOTO_KWARGS](partitioner_query)

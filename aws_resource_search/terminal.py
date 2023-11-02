@@ -9,16 +9,21 @@ import blessed
 from datetime import datetime, timezone
 
 terminal = blessed.Terminal()
+"""
+The terminal object is a singleton instance of :class:`blessed.Terminal`.
+We only create this object once and use it in the 
+:func:`~aws_resource_search.ui.main.run_ui`.
+"""
+
 term = terminal
 
 
 def format_shortcut(key: str) -> str:
     """
-    Format a keyboard shortcut key. In this project, the color is magenta
+    Format a keyboard shortcut key. In this project, the color is magenta.
+    Example:
 
-    Example::
-
-        <magenta>Enter</magenta> to open url
+        :magenta:`Enter` to open url
     """
     return f"{term.magenta}{key}{term.normal}"
 
@@ -26,21 +31,19 @@ def format_shortcut(key: str) -> str:
 def highlight_text(text: str) -> str:
     """
     Highlight a text with terminal color. In this project, the color is cyan.
+    Example:
 
-    Example::
-
-        <magenta>Important message</magenta>
+        this is a very :cyan:`Important message`!
     """
     return f"{term.cyan}{text}{term.normal}"
 
 
 def format_resource_type(resource_type: str) -> str:
     """
-    Format a resource type text with terminal color. In this project, the color is blue.
+    Format a resource type text with terminal color. In this project,
+    the color is blue. Example:
 
-    Example::
-
-        <blue>ec2-instance</blue>
+        :blue:`sfn-statemachine`: name = CognitoUserManagement
     """
     return f"{term.blue}{resource_type}{term.normal}"
 
@@ -48,7 +51,9 @@ def format_resource_type(resource_type: str) -> str:
 def format_key(key: str) -> str:
     """
     Format a key of key-value-pair text with terminal color. In this project,
-    the color is cyan.
+    the color is cyan. Example:
+
+        tag :cyan:`environment` = :yellow:`production`
     """
     return highlight_text(key)
 
@@ -56,7 +61,9 @@ def format_key(key: str) -> str:
 def format_value(value: str) -> str:
     """
     Format a value of key-value-pair text with terminal color. In this project,
-    the color is yellow.
+    the color is yellow. Example:
+
+        tag :cyan:`environment` = :yellow:`production`
     """
     if isinstance(value, datetime):
         value = str(value.astimezone(tz=timezone.utc).replace(microsecond=0))[:19]
@@ -66,10 +73,9 @@ def format_value(value: str) -> str:
 def format_key_value(key: str, value: T.Any) -> str:
     """
     Format a key-value pair text with terminal color. In this project, key is
-    in cyan and value is in yellow.
+    in cyan and value is in yellow. Example:
 
-    For example, if key is "name", value is "alice", then the output will be
-    "<cyan>name</cyan> = <yellow>alice</yellow>" (<color> is just for demonstration).
+        tag :cyan:`environment` = :yellow:`production`
     """
     if isinstance(value, datetime):
         value = str(value.astimezone(tz=timezone.utc).replace(microsecond=0))[:19]
@@ -78,7 +84,13 @@ def format_key_value(key: str, value: T.Any) -> str:
 
 class ShortcutEnum:
     """
-    Formatted keyboard shortcuts.
+    Formatted keyboard shortcuts::
+    
+        print("Tap {ShortcutEnum.ENTER} to open url")
+
+    For example, the above code will print:
+
+        Tap :magenta:`Enter` to open url
     """
 
     TAB = format_shortcut("Tab")

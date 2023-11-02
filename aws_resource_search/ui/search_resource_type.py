@@ -126,7 +126,7 @@ def select_resource_type_handler(
     :param query: service id and resource type search query input. For example:
         "s3 bucket", "ec2 inst"
     """
-    ui.render.prompt = "(Select resource type)"
+    ui.render.prompt = "(Resource Type)"
     final_query = preprocess_query(query)
 
     # manually refresh data

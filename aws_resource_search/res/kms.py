@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Key Management Service (KMS) related resources.
+"""
+
 import typing as T
 import json
 import dataclasses

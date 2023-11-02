@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: doc string here
+Main UI module. It collects classes, functions from all sub-modules
+and provides the main entry point for the UI.
 """
 
 import typing as T
@@ -41,6 +42,9 @@ def handler(
     """
     Main query handler. It parses the query and route the query to
     the corresponding sub handler.
+
+    - :func:`~aws_resource_search.ui.search_resource_type.select_resource_type_handler`
+    - :func:`~aws_resource_search.ui.search_resource.search_resource_handler`
     """
     zf.debugger.log(f"handler Query: {query!r}")
 
@@ -110,14 +114,27 @@ class UI(zf.UI):
     def process_ctrl_b(self: "UI"):
         """
         If you are searching an AWS resource, it will remove the query but keep
-        the resource type, so you can enter a new query. For example, if you are
-        searching S3 buckets, and you enter ``"s3-bucket: my-bucket"``,
-        then Ctrl + B will remove ``"my-bucket"`` and keep ``"s3-bucket: "``.
+        the resource type, so you can enter a new query. For example
+        (``|`` is the cursor):
+
+        Now::
+
+            (Query) s3-bucket: my-bucket|
+
+        After Ctrl + B::
+
+            (Query) s3-bucket: |
 
         If you are searching a sub resource, it will remove the query of the
-        sub resource, so you can enter a new query. For example, if you are searching
-        Step Function execution, and you enter ``"sfn-execution: my-statemachine@a1b2c3"``,
-        then Ctrl + B will remove ``"a1b2c3"`` and keep ``"sfn-execution: my-statemachine@"``.
+        sub resource, so you can enter a new query. For example:
+
+        Now::
+
+            (Query) sfn-execution: my-statemachine@a1b2c3|
+
+        After Ctrl + B::
+
+            (Query) sfn-execution: my-statemachine@|
         """
         line = self.line_editor.line
         parts = line.split(":", 1)
@@ -148,6 +165,9 @@ class UI(zf.UI):
                 return
 
     def remove_text_format(self, text: str) -> str:
+        """
+        Remove the terminal format from the given text.
+        """
         formats = [
             terminal.cyan,
             terminal.yellow,
@@ -161,11 +181,14 @@ class UI(zf.UI):
 
 
 def run_ui():
+    """
+    Run the AWS resource search UI. This is the entry point of the CLI command.
+    """
     zf.debugger.reset()
     zf.debugger.enable()
     ui = UI(
         handler=handler,
         capture_error=False,
+        terminal=terminal,
     )
-    ui.render.terminal = terminal
     ui.run()
