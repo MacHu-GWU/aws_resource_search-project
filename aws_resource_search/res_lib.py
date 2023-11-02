@@ -582,7 +582,8 @@ class ArsBaseItem(zf.Item):
                 )
                 print(url)
                 ui.need_run_handler = False
-                raise zf.exc.EndOfInputError(selection=self)
+                raise KeyboardInterrupt
+                # raise zf.exc.EndOfInputError(selection=self)
             else:
                 raise e
 
@@ -599,7 +600,8 @@ class ArsBaseItem(zf.Item):
             )
             print(text)
             ui.need_run_handler = False
-            raise zf.exc.EndOfInputError(selection=self)
+            raise KeyboardInterrupt
+            # raise zf.exc.EndOfInputError(selection=self)
 
     def post_enter_handler(self, ui: zf.UI):
         ui.wait_next_user_input()
