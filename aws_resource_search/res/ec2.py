@@ -53,14 +53,17 @@ class Ec2Instance(res_lib.BaseDocument):
         )
 
     @property
+    def state_icon(self) -> str:
+        return ec2_instance_state_icon_mapper[self.state]
+
+    @property
     def title(self) -> str:
         return format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
-        state_icon = ec2_instance_state_icon_mapper[self.state]
         return "{} | {} | {} | {}, {}".format(
-            f"{state_icon} {self.state}",
+            f"{self.state_icon} {self.state}",
             highlight_text(self.id),
             self.inst_type,
             f"vpc = {self.vpc_id}",
@@ -89,13 +92,12 @@ class Ec2Instance(res_lib.BaseDocument):
         platform = self.raw_data.get("Platform", "NA")
         inst_profile = self.raw_data.get("IamInstanceProfile", {}).get("Arn", "NA")
 
-        state_icon = ec2_instance_state_icon_mapper[state]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
             Item("inst_id", inst_id, url=aws.ec2.get_instance(inst_id)),
             Item("inst_type", inst_type),
-            Item("state", state, text=f"{state_icon} {state}"),
+            Item("state", state, text=f"{self.state_icon} {state}"),
             Item("vpc_id", vpc_id, url=aws.vpc.get_vpc(vpc_id)),
             Item("subnet_id", subnet_id, url=aws.vpc.get_subnet(subnet_id)),
             Item("public_ip", public_ip),
@@ -201,14 +203,17 @@ class Ec2Vpc(res_lib.BaseDocument):
         )
 
     @property
+    def state_icon(self) -> str:
+        return ec2_vpc_state_icon_mapper[self.state]
+
+    @property
     def title(self) -> str:
         return format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
-        state_icon = ec2_vpc_state_icon_mapper[self.state]
         return "{} | {} | {}, {}".format(
-            f"{state_icon} {self.state}",
+            f"{self.state_icon} {self.state}",
             highlight_text(self.id),
             format_key_value("is_default", self.is_default),
             self.short_subtitle,
@@ -226,13 +231,12 @@ class Ec2Vpc(res_lib.BaseDocument):
         return console.vpc.get_vpc(vpc_id=self.id)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        state_icon = ec2_vpc_state_icon_mapper[self.state]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         detail_items = [
             Item("vpc_id", self.id, url=aws.vpc.get_vpc(self.id)),
             Item("is_default", self.is_default),
-            Item("state", self.state, text=f"{state_icon} {self.state}"),
+            Item("state", self.state, text=f"{self.state_icon} {self.state}"),
             Item("cidr_ipv4", self.cidr_ipv4),
             Item("cidr_ipv6", self.cidr_ipv6),
         ]

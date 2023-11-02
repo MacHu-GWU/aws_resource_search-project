@@ -49,8 +49,6 @@ class ResourceIterproxy(IterProxy[T_RESULT_DATA]):
     todo: docstring
     """
 
-    pass
-
 
 @dataclasses.dataclass
 class ResultPath(BaseModel):
@@ -199,6 +197,20 @@ class BaseDocument(BaseModel):
             ...         )
         """
         raise NotImplementedError
+
+    @classmethod
+    def from_many_resources(
+        cls,
+        resources: ResourceIterproxy,
+        bsm: BotoSesManager,
+        boto_kwargs: dict,
+    ):
+        for resource in resources:
+            yield cls.from_resource(
+                resource=resource,
+                bsm=bsm,
+                boto_kwargs=boto_kwargs,
+            )
 
     @property
     def title(self) -> str:
@@ -495,19 +507,20 @@ class Searcher(BaseModel):
         cache_tag = index_name
 
         def downloader():
-            for resource in list_resources(
+            resource_data_iter_proxy = list_resources(
                 bsm=bsm,
                 service=self.service,
                 method=self.method,
                 is_paginator=self.is_paginator,
                 boto_kwargs=final_boto_kwargs,
                 result_path=self.result_path,
+            )
+            for document in self.doc_class.from_many_resources(
+                resources=resource_data_iter_proxy,
+                bsm=bsm,
+                boto_kwargs=final_boto_kwargs,
             ):
-                doc_dict = self.doc_class.from_resource(
-                    resource=resource,
-                    bsm=bsm,
-                    boto_kwargs=final_boto_kwargs,
-                ).to_dict()
+                doc_dict = document.to_dict()
                 # print(doc_dict) # for DEBUG ONLY
                 yield doc_dict
 

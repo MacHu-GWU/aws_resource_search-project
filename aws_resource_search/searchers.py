@@ -2,6 +2,8 @@
 
 searchers_metadata = {
     "cloudformation-stack": {"mod": "cloudformation", "var": "cloudformation_stack_searcher"},
+    "codebuild-jobrun": {"mod": "codebuild", "var": "codebuild_job_run_searcher"},
+    "codebuild-project": {"mod": "codebuild", "var": "codebuild_project_searcher"},
     "codecommit-repository": {"mod": "codecommit", "var": "codecommit_repository_searcher"},
     "dynamodb-table": {"mod": "dynamodb", "var": "dynamodb_table_searcher"},
     "ec2-instance": {"mod": "ec2", "var": "ec2_instance_searcher"},
@@ -31,6 +33,8 @@ searchers_metadata = {
 
 class SearcherEnum:
     cloudformation_stack = "cloudformation-stack"
+    codebuild_jobrun = "codebuild-jobrun"
+    codebuild_project = "codebuild-project"
     codecommit_repository = "codecommit-repository"
     dynamodb_table = "dynamodb-table"
     ec2_instance = "ec2-instance"

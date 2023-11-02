@@ -14,6 +14,14 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("cloudformation-stack")
     
     @cached_property
+    def codebuild_jobrun(self) -> Searcher:
+        return self.get_searcher("codebuild-jobrun")
+    
+    @cached_property
+    def codebuild_project(self) -> Searcher:
+        return self.get_searcher("codebuild-project")
+    
+    @cached_property
     def codecommit_repository(self) -> Searcher:
         return self.get_searcher("codecommit-repository")
     

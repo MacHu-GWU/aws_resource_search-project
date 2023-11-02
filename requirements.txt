@@ -3,7 +3,7 @@ cached-property>=1.5.2; python_version < '3.8'
 typing-extensions>=4.6.0,<4.7.0; python_version < '3.8'
 # objective oriented interface for local path
 pathlib_mate>=1.2.1,<2.0.0
-iterproxy>=0.2.1,<1.0.0
+iterproxy>=0.3.1,<1.0.0
 # full text search engine
 sayt>=0.6.5,<1.0.0
 # boto session manager
