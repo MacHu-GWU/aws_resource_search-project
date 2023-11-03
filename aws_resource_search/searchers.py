@@ -24,6 +24,8 @@ searchers_metadata = {
     "lambda-alias": {"mod": "awslambda", "var": "lambda_function_alias_searcher"},
     "lambda-function": {"mod": "awslambda", "var": "lambda_function_searcher"},
     "lambda-layer": {"mod": "awslambda", "var": "lambda_layer_searcher"},
+    "rds-dbcluster": {"mod": "rds", "var": "rds_db_cluster_searcher"},
+    "rds-dbinstance": {"mod": "rds", "var": "rds_db_instance_searcher"},
     "s3-bucket": {"mod": "s3", "var": "s3_bucket_searcher"},
     "secretsmanager-secret": {"mod": "secretmanager", "var": "secretsmanager_secret_searcher"},
     "sfn-execution": {"mod": "sfn", "var": "sfn_execution_searcher"},
@@ -57,6 +59,8 @@ class SearcherEnum:
     lambda_alias = "lambda-alias"
     lambda_function = "lambda-function"
     lambda_layer = "lambda-layer"
+    rds_dbcluster = "rds-dbcluster"
+    rds_dbinstance = "rds-dbinstance"
     s3_bucket = "s3-bucket"
     secretsmanager_secret = "secretsmanager-secret"
     sfn_execution = "sfn-execution"

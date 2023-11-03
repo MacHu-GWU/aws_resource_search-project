@@ -98,6 +98,14 @@ class LambdaFunction(res_lib.BaseDocument):
                     Item("architectures", architectures),
                 ]
             )
+            detail_items.extend([
+                Item(
+                    "layer",
+                    dct["Arn"],
+                    url=ars.aws_console.awslambda.get_layer(name_or_arn=dct["Arn"]),
+                )
+                for dct in func_config.get("Layers", [])
+            ])
 
             env_vars = func_config.get("Environment", {}).get("Variables", {})
             detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars))

@@ -102,6 +102,14 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("lambda-layer")
     
     @cached_property
+    def rds_db_cluster(self) -> Searcher:
+        return self.get_searcher("rds-db-cluster")
+    
+    @cached_property
+    def rds_dbinstance(self) -> Searcher:
+        return self.get_searcher("rds-dbinstance")
+    
+    @cached_property
     def s3_bucket(self) -> Searcher:
         return self.get_searcher("s3-bucket")
     

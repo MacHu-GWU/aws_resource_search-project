@@ -11,11 +11,34 @@ Backlog (TODO)
 - add a JSON config system for this app.
 - add ``ars config`` command to view and edit the json file.
 
+-
 **Minor Improvements**
 
 **Bugfixes**
 
 **Miscellaneous**
+
+
+0.4.1 (TODO)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- add a JSON config system for this app.
+- add ``ars config`` command to view and edit the json file.
+
+- Add support for:
+    - lambda-alias
+    - rds-dbinstance
+    - rds-dbcluster
+
+**Minor Improvements**
+
+- Add lambda layer information in lambda function details
+- Allow tap 'Enter' to open url in detail view for most of detail items.
+
+**Bugfixes**
+
+- fix a bug that we should call api to get latest data for mutable resources.
 
 
 0.3.1 (2023-11-02)

@@ -26,6 +26,8 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``lambda-alias``
 - ``lambda-function``
 - ``lambda-layer``
+- ``rds-dbcluster``
+- ``rds-dbinstance``
 - ``s3-bucket``
 - ``secretsmanager-secret``
 - ``sfn-execution``
