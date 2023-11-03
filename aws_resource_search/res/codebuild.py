@@ -190,6 +190,8 @@ class CodeBuildJobRun(res_lib.BaseDocument):
         We only pull the last 100 builds for each project.
         """
         ids = resources.all()[:100]
+        if len(ids) == 0:
+            return
         res = bsm.codebuild_client.batch_get_builds(ids=ids)
         for dct in res.get("builds", []):
             short_id = dct["id"].split(":", 1)[1]
