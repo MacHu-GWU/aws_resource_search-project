@@ -26,6 +26,10 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("codecommit-repository")
     
     @cached_property
+    def codepipeline_pipeline(self) -> Searcher:
+        return self.get_searcher("codepipeline-pipeline")
+    
+    @cached_property
     def dynamodb_table(self) -> Searcher:
         return self.get_searcher("dynamodb-table")
     
@@ -84,6 +88,10 @@ class ARS(ARSBase):  # pragma: no cover
     @cached_property
     def kms_alias(self) -> Searcher:
         return self.get_searcher("kms-alias")
+    
+    @cached_property
+    def lambda_alias(self) -> Searcher:
+        return self.get_searcher("lambda-alias")
     
     @cached_property
     def lambda_function(self) -> Searcher:
