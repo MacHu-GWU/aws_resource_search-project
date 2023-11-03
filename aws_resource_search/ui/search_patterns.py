@@ -41,6 +41,10 @@ has_partitioner_search_patterns = {
         K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.codebuild_project,
         K_GET_BOTO_KWARGS: lambda partitioner_query: {"projectName": partitioner_query},
     },
+    SearcherEnum.lambda_alias: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.lambda_function,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {"FunctionName": partitioner_query},
+    },
 }
 
 

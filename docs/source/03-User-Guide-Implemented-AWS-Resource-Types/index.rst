@@ -23,6 +23,7 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``iam-role``
 - ``iam-user``
 - ``kms-alias``
+- ``lambda-alias``
 - ``lambda-function``
 - ``lambda-layer``
 - ``s3-bucket``

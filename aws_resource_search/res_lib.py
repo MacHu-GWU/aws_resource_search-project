@@ -658,6 +658,33 @@ class DetailItem(ArsBaseItem):
             self.copy_or_print(ui, self.variables["copy"])
 
     @classmethod
+    def new(
+        cls,
+        title: str,
+        subtitle: str,
+        copy: T.Optional[str] = None,
+        url: T.Optional[str] = None,
+        uid: T.Optional[str] = None,
+    ):
+        """
+        Create one :class:`DetailItem` that may be can copy text or open url.
+
+        :param name: this is for title
+        :param value: this if for copy to clipboard
+        :param text: this is for title
+        :param url: this is for open url
+        :param uid: this is for uid
+        """
+        kwargs = dict(
+            title=title,
+            subtitle=subtitle,
+            variables={"copy": copy, "url": url},
+        )
+        if uid:
+            kwargs["uid"] = uid
+        return cls(**kwargs)
+
+    @classmethod
     def from_detail(
         cls,
         name,
@@ -683,26 +710,50 @@ class DetailItem(ArsBaseItem):
             )
         else:
             subtitle = f"📋 {ShortcutEnum.CTRL_A} to copy."
-        if uid is None:
-            uid = name
-        return cls(
+        return cls.new(
             title=format_key_value(name, text),
             subtitle=subtitle,
             uid=uid,
-            variables={"copy": value, "url": url},
+            copy=value,
+            url=url,
         )
 
     @classmethod
-    def from_tags(cls, tags: T.Dict[str, str]):
+    def from_env_vars(cls, env_vars: T.Dict[str, str]) -> T.List["DetailItem"]:
+        """
+        Create MANY :class:`DetailItem` from environment variable key value pairs.
+        """
+        items = [
+            cls(
+                title=f"🎯 env var: {format_key_value(k, v)}",
+                subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy value.",
+                uid=k,
+                variables={"copy": v, "url": None},
+            )
+            for k, v in env_vars.items()
+        ]
+        if len(items):
+            return items
+        else:
+            return [
+                cls(
+                    title=f"🏷 env var: 🔴 No environment variable found",
+                    subtitle=f"no environment variable found",
+                    uid=f"no environment variable found",
+                )
+            ]
+
+    @classmethod
+    def from_tags(cls, tags: T.Dict[str, str]) -> T.List["DetailItem"]:
         """
         Create MANY :class:`DetailItem` from AWS resource tag key value pairs.
         """
         items = [
-            cls(
+            cls.new(
                 title=f"🏷 tag: {format_key_value(k, v)}",
-                subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy key and value.",
+                subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy value.",
+                copy=v,
                 uid=f"Tag {k}",
-                variables={"copy": f"{k} = {v}", "url": None},
             )
             for k, v in tags.items()
         ]
@@ -710,8 +761,9 @@ class DetailItem(ArsBaseItem):
             return items
         else:
             return [
-                cls(
+                cls.new(
                     title=f"🏷 tag: 🔴 No tag found",
+                    subtitle=f"no tag found",
                     uid=f"no tag found",
                 )
             ]
@@ -725,16 +777,6 @@ class DetailItem(ArsBaseItem):
             title=f"❗ {type}",
             subtitle=f"💬 {msg}",
         )
-
-
-# @dataclasses.dataclass
-# class Boto3ClientErrorItem(ArsBaseItem):
-#     """
-#     Represent an item to show the debug information of a boto3 client error
-#     """
-#
-#     def enter_handler(self, ui: zf.UI):
-#         zf.open_file(Path(self.arg))
 
 
 @dataclasses.dataclass
