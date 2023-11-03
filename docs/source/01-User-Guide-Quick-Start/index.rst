@@ -137,11 +137,39 @@ Content of ``${HOME}/.aws/credentials``:
 
 Switch Between AWS Profile
 ------------------------------------------------------------------------------
-You can use the ``ars set-profile`` command to enter an interactive session to set the default profile. This feature is based on my another project ``awscli_mate``. Please refer the `Use awscli_mate as a Interactive CLI <https://github.com/MacHu-GWU/awscli_mate-project#use-awscli_mate-as-a-interactive-cli>`_ to learn more.
+You can use the ``ars set-profile`` command to enter an interactive session to set the default profile.
 
 .. code-block:: bash
 
     ars set-profile
+
+Then you will see four options. Mostly you only need the first one ``Set an named profile as default``.
+
+.. code-block::
+
+    (Query):
+    [x] 📝 Set an named profile as default
+          Hit 'Tab' to search profile
+    [ ] 🔐 Do CLI MFA Authentication
+          Hit 'Tab' to select a base profile
+    [ ] 🌐 Sign in to AWS Console
+          Hit 'Tab' to select a profile to sign in
+    [ ] 🔄 Switch Role in to AWS Console
+          Hit 'Tab' to select a profile to switch to
+
+Then you can type query to select the profile you want to set as default, then hit "Enter".
+
+.. code-block::
+
+    (Query): set_profile_as_default
+    [x] 📝 my_company_dev | us-east-1
+          Hit 'Enter' to set 'my_company_dev' as the default profile.
+    [ ] 📝 my_company_test | eu-west-1
+          Hit 'Enter' to set 'my_company_test' as the default profile.
+    [ ] 📝 my_company_prod | eu-west-1
+          Hit 'Enter' to set 'my_company_prod' as the default profile.
+
+This feature is based on my another project ``awscli_mate``. Please refer the `Use awscli_mate as a Interactive CLI <https://github.com/MacHu-GWU/awscli_mate-project#use-awscli_mate-as-a-interactive-cli>`_ to learn more.
 
 
 .. _search-aws-resource:

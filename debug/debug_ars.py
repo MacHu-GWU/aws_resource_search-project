@@ -1,18 +1,41 @@
-from boto_session_manager import BotoSesManager
-from aws_resource_search.ars_v2 import ARS
-from rich import print as rprint
+# -*- coding: utf-8 -*-
 
-bsm = BotoSesManager(profile_name="awshsh_app_dev_us_east_1")
-ars = ARS(bsm=bsm)
+"""
+This script helps developer to debug specific AWS resource type searcher.
+"""
+
+from rich import print as rprint
+from aws_resource_search.ui.boto_ses import bsm, ars
+
 
 if __name__ == "__main__":
-    # res = ars.s3_bucket.search(bsm=bsm, query="data", verbose=True)
-    # res = ars.iam_role.search(bsm=bsm, query="")
-    res = ars.glue_table.search(
+    # --------------------------------------------------------------------------
+    query = "*"
+    limit = 50
+    boto_kwargs = {}
+    refresh_data = True
+    simple_response = True
+    verbose = False
+    # --------------------------------------------------------------------------
+    sr = ars.s3_bucket
+    # sr = ars.iam_role
+    # --------------------------------------------------------------------------
+    res = sr.search(
         bsm=bsm,
-        query="test_3",
-        boto_kwargs={"DatabaseName": "mydatabase"},
-        refresh_data=True,
+        query=query,
+        limit=limit,
+        boto_kwargs=boto_kwargs,
+        refresh_data=refresh_data,
+        verbose=verbose,
     )
-    rprint(res)
-    # rprint(res[0].get_console_url(ars.aws_console))
+    if isinstance(res, dict):
+        hits = res.pop("hits")
+        docs = [hit["_source"] for hit in hits]
+        rprint(res)
+    else:
+        docs = res
+
+    # for doc in res:
+    for doc in res[:3]:
+        rprint(doc)
+        print(doc.get_console_url(ars.aws_console))
