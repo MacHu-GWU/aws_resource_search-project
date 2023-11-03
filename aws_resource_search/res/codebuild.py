@@ -54,7 +54,16 @@ class CodeBuildProject(res_lib.BaseDocument):
 
         with self.enrich_details(detail_items):
             res = ars.bsm.codebuild_client.batch_get_projects(names=[self.name])
-            dct = res["projects"][0]
+            projects = res.get("projects", [])
+            if len(projects) == 0:
+                return [
+                    res_lib.DetailItem.new(
+                        title="🚨 Project not found, maybe it's deleted?",
+                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        url=self.get_console_url(ars.aws_console),
+                    )
+                ]
+            dct = projects[0]
             description = dct.get("description", "NA")
             serviceRole = dct.get("serviceRole", "NA")
             concurrentBuildLimit = dct.get("concurrentBuildLimit", "NA")

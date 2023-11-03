@@ -80,35 +80,50 @@ class CloudFormationStack(res_lib.BaseDocument):
         return console.cloudformation.get_stack(name_or_arn=self.arn)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        status_icon = cloudformation_stack_status_icon_mapper[self.status]
         Item = res_lib.DetailItem.from_detail
         aws = ars.aws_console
-        detail_items = [
-            Item("arn", self.arn, url=aws.cloudformation.get_stack(self.arn)),
-            Item("status", self.status, text=f"{status_icon} {self.status}"),
-            Item("role_arn", self.role_arn, url=aws.iam.get_role(self.role_arn)),
-        ]
 
-        outputs: dict = {
-            dct["OutputKey"]: dct for dct in self.raw_data.get("Outputs", [])
-        }
-        detail_items.extend(
-            [
-                res_lib.DetailItem(
-                    title="🎯 output: {} (export = {})".format(
-                        format_key_value(k, dct["OutputValue"]),
-                        dct.get("ExportName", "NA"),
-                    ),
-                    subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy the value.",
-                    uid=f"Output {k}",
-                    variables={"copy": dct["OutputValue"], "url": None},
-                )
-                for k, dct in outputs.items()
+        detail_items = []
+        with self.enrich_details(detail_items):
+            res = ars.bsm.cloudformation_client.describe_stacks(StackName=self.name)
+            stacks = res.get("Stacks", [])
+            if len(stacks) == 0:
+                return [
+                    res_lib.DetailItem.new(
+                        title="🚨 Stack not found, maybe it's deleted?",
+                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        url=ars.aws_console.cloudformation.filter_stack(name=self.name),
+                    )
+                ]
+            stack = stacks[0]
+            arn = stack["StackId"]
+            status = stack["StackStatus"]
+            role_arn = stack.get("RoleARN", "NA")
+            status_icon = cloudformation_stack_status_icon_mapper[self.status]
+            detail_items = [
+                Item("arn", arn, url=aws.cloudformation.get_stack(arn)),
+                Item("status", status, text=f"{status_icon} {status}"),
+                Item("role_arn", role_arn, url=aws.iam.get_role(role_arn)),
             ]
-        )
 
-        tags: dict = {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-        detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            outputs: dict = {dct["OutputKey"]: dct for dct in stack.get("Outputs", [])}
+            detail_items.extend(
+                [
+                    res_lib.DetailItem(
+                        title="🎯 output: {} (export = {})".format(
+                            format_key_value(k, dct["OutputValue"]),
+                            dct.get("ExportName", "NA"),
+                        ),
+                        subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy the value.",
+                        uid=f"Output {k}",
+                        variables={"copy": dct["OutputValue"], "url": None},
+                    )
+                    for k, dct in outputs.items()
+                ]
+            )
+
+            tags: dict = {dct["Key"]: dct["Value"] for dct in stack.get("Tags", [])}
+            detail_items.extend(res_lib.DetailItem.from_tags(tags))
         return detail_items
 
 
