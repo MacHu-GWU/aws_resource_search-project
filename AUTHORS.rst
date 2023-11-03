@@ -2,13 +2,6 @@
 
 About the Author
 ------------------------------------------------------------------------------
+**Sanhe Hu** is a passionate **Python Developer** and **AWS Solution Architect** from 2010. His expertise and keen interests lie in mastering and innovating within the domains of **Cloud Computing, AWS Services, Machine Learning, Big Data Architecture, Serverless Computing, Game Tech, and Open Source**.
 
-::
-
-   (\ (\
-   ( -.-)o    I am a lovely Rabbit!
-   o_(")(")
-
-**Sanhe Hu** is a very active **Python Developer** Since 2010. Research area includes **Machine Learning, Big Data Infrastructure, Block Chain, Business Intelligent, AWS, Distributive System**. Love photography, outdoor, arts, game, and also the best `Python <https://www.python.org/>`_.
-
-- My Github: https://github.com/MacHu-GWU
+- My popular open sources: https://github.com/MacHu-GWU
