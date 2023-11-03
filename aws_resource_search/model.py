@@ -34,3 +34,30 @@ class BaseAwsResourceModel(BaseModel):
     aws_region: T.Optional[str] = dataclasses.field(default=None)
     arn: T.Optional[str] = dataclasses.field(default=None)
     console_url: T.Optional[str] = dataclasses.field(default=None)
+
+
+@dataclasses.dataclass
+class SearcherMetadata:
+    """
+    Example::
+
+        {
+            "id": "s3-bucket",
+            "desc": "A bucket is a container for objects.",
+            "ngram": "simple storage service"
+        }
+    """
+    id: str = dataclasses.field()
+    desc: str = dataclasses.field()
+    ngram: str = dataclasses.field()
+    module: str = dataclasses.field(default=None)
+    var: str = dataclasses.field(default=None)
+
+    @property
+    def id_snake(self) -> str:
+        """
+        Example::
+
+            "s3_bucket"
+        """
+        return self.id.replace("-", "_")

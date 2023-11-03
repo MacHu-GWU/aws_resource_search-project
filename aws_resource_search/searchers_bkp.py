@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import dataclasses
-
-
 searchers_metadata = {
     "cloudformation-stack": {"mod": "cloudformation", "var": "cloudformation_stack_searcher"},
     "codebuild-jobrun": {"mod": "codebuild", "var": "codebuild_job_run_searcher"},

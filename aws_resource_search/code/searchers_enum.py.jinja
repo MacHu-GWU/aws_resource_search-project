@@ -1,0 +1,12 @@
+# -*- coding: utf-8 -*-
+
+searchers_metadata = {
+    {%- for _, resource_type, module_name, variable_name in tuples %}
+    "{{ resource_type }}": {"mod": "{{ module_name}}", "var": "{{ variable_name }}"},
+    {%- endfor %}
+}
+
+class SearcherEnum:
+    {%- for resource_type_snake, resource_type, _, _ in tuples %}
+    {{ resource_type_snake }} = "{{ resource_type}}"
+    {%- endfor %}

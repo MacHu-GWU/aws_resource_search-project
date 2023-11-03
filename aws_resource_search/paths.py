@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from pathlib_mate import Path
+from pathlib import Path
 
-dir_python_lib = Path.dir_here(__file__)
+dir_python_lib = Path(__file__).absolute().parent
 
 dir_project_root = dir_python_lib.parent
+
+# ------------------------------------------------------------------------------
+# Source code related
+# ------------------------------------------------------------------------------
+path_searchers_json = dir_python_lib.joinpath("searchers.json")
 
 # ------------------------------------------------------------------------------
 # Virtual Environment Related
