@@ -8,6 +8,7 @@ resource types.
 """
 
 import typing as T
+import json
 import dataclasses
 
 from .. import res_lib
@@ -143,11 +144,43 @@ class S3Bucket(res_lib.BaseDocument):
                 location = "us-east-1"
             detail_items.append(Item("location", location))
 
+        # below, we call more API to get more information
+        with self.enrich_details(detail_items):
+            res = ars.bsm.s3_client.get_bucket_versioning(Bucket=self.name)
+            versioning = res.get("Status", "Not enabled yet")
+            mfa_delete = res.get("MFADelete", "Not enabled yet")
+            detail_items.extend([
+                Item("versioning", versioning),
+                Item("mfa_delete", mfa_delete),
+            ])
+
+        with self.enrich_details(detail_items):
+            res = ars.bsm.s3_client.get_bucket_encryption(Bucket=self.name)
+            rules = res.get("ServerSideEncryptionConfiguration", {}).get("Rules", [])
+            if rules:
+                rule = rules[0]
+                sse_algorithm = rule.get("ApplyServerSideEncryptionByDefault", {}).get("SSEAlgorithm", "Unknown")
+                kms_master_key_id = rule.get("ApplyServerSideEncryptionByDefault", {}).get("KMSMasterKeyID", "Unknown")
+                bucket_key_enabled = rule.get("BucketKeyEnabled", "Unknown")
+                detail_items.extend([
+                    Item("sse_algorithm", sse_algorithm),
+                    Item("kms_master_key_id", kms_master_key_id),
+                    Item("bucket_key_enabled", bucket_key_enabled),
+                ])
+
         # similar to the second code block
         with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_policy(Bucket=self.name)
             detail_items.append(
                 Item("bucket_policy", self.one_line(res.get("Policy", "{}")))
+            )
+
+        with self.enrich_details(detail_items):
+            res = ars.bsm.s3_client.get_bucket_cors(Bucket=self.name)
+            dct = {"CORSRules": res.get("CORSRules", [])}
+            cors = json.dumps(dct)
+            detail_items.append(
+                Item("CORS", cors, self.one_line(cors))
             )
 
         # the last code block is usually to get the tags of the resource
