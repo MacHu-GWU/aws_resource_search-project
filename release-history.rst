@@ -8,11 +8,38 @@ Backlog (TODO)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
+- add a JSON config system for this app.
+- add ``ars config`` command to view and edit the json file.
+
 **Minor Improvements**
 
 **Bugfixes**
 
 **Miscellaneous**
+
+
+0.3.1 (2023-11-02)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Add ``ars -h`` to show help message.
+- Add ``ars which`` command to show the current AWS account and region information.
+- Removed ``ars-set-profile``, add ``ars set-profile`` command instead.
+- Add ``ars clear`` command to clear all cache and index.
+
+**Minor Improvements**
+
+- Improved the message when the boto3 list resources API call returns an empty list.
+- Improved the message when searcher returns no match.
+- Improved the autocomplete when the searcher returns no match, so user can easily re-enter the query.
+
+**Bugfixes**
+
+- Fix a bug that codebuild-jobrun may fail if there's no build in the project.
+
+**Miscellaneous**
+
+- Improve the documentation.
 
 
 0.2.1 (2023-11-01)

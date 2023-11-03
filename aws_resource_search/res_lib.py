@@ -322,7 +322,10 @@ class BaseDocument(BaseModel):
             yield None
         except botocore.exceptions.ClientError as e:
             detail_items.append(
-                DetailItem.from_error("maybe permission denied", str(e))
+                DetailItem.from_error(
+                    type=f"{e.operation_name} failed",
+                    msg=str(e),
+                )
             )
 
     @staticmethod
@@ -724,11 +727,38 @@ class DetailItem(ArsBaseItem):
         )
 
 
+# @dataclasses.dataclass
+# class Boto3ClientErrorItem(ArsBaseItem):
+#     """
+#     Represent an item to show the debug information of a boto3 client error
+#     """
+#
+#     def enter_handler(self, ui: zf.UI):
+#         zf.open_file(Path(self.arg))
+
+
 @dataclasses.dataclass
-class Boto3ClientErrorItem(ArsBaseItem):
+class InfoItem(ArsBaseItem):
     """
-    Represent an item to show the debug information of a boto3 client error
+    Represent an item to show any information. Nothing would happen when user
+    press any of the user action key.
     """
 
-    def enter_handler(self, ui: zf.UI):
+
+class OpenUrlItem(ArsBaseItem):
+    """
+    Represent an item to open a url when user tap "Enter".
+    """
+
+    def enter_handler(self, ui: "zf.UI"):
+        self.open_url_or_print(ui, self.arg)
+
+
+@dataclasses.dataclass
+class OpenFileItem(ArsBaseItem):
+    """
+    Represent an item to open a file when user tap "Enter".
+    """
+
+    def enter_handler(self, ui: "zf.UI"):
         zf.open_file(Path(self.arg))

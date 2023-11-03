@@ -13,7 +13,7 @@ from ..terminal import ShortcutEnum, highlight_text
 from ..paths import dir_index, dir_cache
 from ..compat import TypedDict
 from ..searchers import searchers_metadata
-from ..res_lib import preprocess_query, ArsBaseItem
+from ..res_lib import preprocess_query, ArsBaseItem, InfoItem, OpenUrlItem
 
 if T.TYPE_CHECKING:
     from .main import UI
@@ -106,14 +106,31 @@ class AwsResourceTypeItem(ArsBaseItem):
 def search_resource_type_and_return_items(
     query: str,
     refresh_data: bool = False,
-) -> T.List[AwsResourceTypeItem]:
+) -> T.List[T.Union[AwsResourceTypeItem, OpenUrlItem]]:
     docs: T.List[ResourceTypeDocument] = resource_type_dataset.search(
         query=query,
         limit=50,
         simple_response=True,
         refresh_data=refresh_data,
     )
-    return AwsResourceTypeItem.from_many_document(docs)
+    if len(docs):
+        return AwsResourceTypeItem.from_many_document(docs)
+    else:
+        return [
+            OpenUrlItem(
+                title=f"🔴 No resource type found, maybe it is not supported yet.",
+                subtitle=(
+                    "Please try another query, "
+                    "or type {} to submit a Github issue for new resource, "
+                    "or tap {} to clear existing query."
+                ).format(
+                    ShortcutEnum.ENTER,
+                    ShortcutEnum.TAB,
+                ),
+                arg="https://github.com/MacHu-GWU/aws_resource_search-project/issues/new?assignees=MacHu-GWU&labels=enhancement&projects=&template=support-new-aws-resource.md&title=%5BFeature%5D+I+want+to+be+able+to+search+%24%7Bservice_name%7D-%24%7Bresource_name%7D",
+                autocomplete="",
+            )
+        ]
 
 
 def select_resource_type_handler(

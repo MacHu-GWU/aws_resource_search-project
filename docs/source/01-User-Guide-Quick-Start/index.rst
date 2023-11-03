@@ -4,13 +4,23 @@ User Guide - Quick Start
 
 Installation
 ------------------------------------------------------------------------------
-``aws_resource_search`` requires ``Python3.8+``. To install, just run::
+``aws_resource_search`` requires ``Python3.8+``. To install, just run:
+
+.. code-block:: bash
 
     pip install aws-resource-search
 
-To verify the installation, run::
+To show the help message, run:
 
-    ars --version
+.. code-block:: bash
+
+    ars -h
+
+To verify the installation, run:
+
+.. code-block:: bash
+
+    ars -v
 
 If you just want to quickly explore the feature, you can use `AWS Cloud Shell <https://aws.amazon.com/cloudshell/>`_, an AWS managed shell environment without need setting the AWS CLI credentials. You can enter the cloud shell by clicking the icon on the top right corner of the AWS Console.
 
@@ -20,8 +30,16 @@ Then you can just do:
 
 .. code-block:: bash
 
+    # this install aws-resource-search in to global python
+    pip3 install aws-resource-search
+    ars -h
+
+    # or you can install aws-resource-search in virtualenv
+    pip3 install virtualenv
+    virtualenv .venv
+    source .venv/bin/activate
     pip install aws-resource-search
-    ars --version
+    ars -h
 
 Congrats, you are all set! You can jump to :ref:`search-aws-resource` section to continue.
 
@@ -32,7 +50,7 @@ Setup Your AWS CLI
 
 If you want to search across multiple AWS accounts and regions, you can create multiple AWS CLI profiles and switch between them. For detailed instructions on setting up multiple AWS profiles, please refer the `Official Configuration and credential file settings <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html>`_ document.
 
-In summary, the configuration and credential file should looks like:
+In summary, the configuration and credential file should looks like below.
 
 Content of ``${HOME}/.aws/config``:
 
@@ -44,7 +62,7 @@ Content of ``${HOME}/.aws/config``:
 
     # setup for IAM user based authentication
     [profile account_name_1_region_1_iam_user_1]
-    region = us-east-1
+    region = us-east-1 # <--- don't forget region
     output = json
 
     [profile account_name_1_region_2_iam_user_1]
@@ -61,7 +79,7 @@ Content of ``${HOME}/.aws/config``:
 
     # setup for IAM assumed role based authentication
     [profile account_name_3_region_1_role_1]
-    region = us-east-1
+    region = us-east-1 # <--- don't forget region
     output = json
     role_arn = arn:aws:iam::111122223333:role/my-role-name
     source_profile = account_name_1_region_1_iam_user_1
@@ -69,7 +87,7 @@ Content of ``${HOME}/.aws/config``:
     # setup for Single Sign On (SSO) based authentication
     [profile account_name_4_region_1_role_1]
     sso_start_url = https://mycompany.awsapps.com/start#/
-    sso_region = us-east-1
+    sso_region = us-east-1 # <--- don't forget region
     sso_account_id = 123456789012
     sso_role_name = MySSORole
     region = us-east-1
@@ -99,18 +117,31 @@ Content of ``${HOME}/.aws/credentials``:
     aws_access_key_id = A1B2C3D4ACCESSKEYEXAMPLE
     aws_secret_access_key = A1B2C3D4SECRETKEYEXAMPLE
 
+    # it uses assume role, so no need to put any credential here
+    # but you should still put an empty section here to match the .aws/config file
     [account_name_3_region_1_role_1]
 
+    # it uses SSO, so no need to put any credential here
+    # but you should still put an empty section here to match the .aws/config file
     [account_name_4_region_1_role_1]
+
+.. admonition:: Golden Rules to manage your .aws files
+   :class: note
+
+    1. all named profile should be declared in ``.aws/config`` file.
+    2. the profile in ``.aws/config`` and ``.aws/credentials`` should match, even a profile doesn't need credential, you should still create an empty section in ``.aws/credentials`` file.
+    3. don't forget to explicitly set AWS region in ``.aws/config`` using ``region = ${your_region}``.
+    4. follow the above example to setup assumed role profile and single-sign-on profile.
+    5. if there's an boto3 error, read this golden rules again.
 
 
 Switch Between AWS Profile
 ------------------------------------------------------------------------------
-You can use the ``ars-set-profile`` command to enter an interactive session to set the default profile. This feature is based on my another project ``awscli_mate``. Please refer the `Use awscli_mate as a Interactive CLI <https://github.com/MacHu-GWU/awscli_mate-project#use-awscli_mate-as-a-interactive-cli>`_ to learn more.
+You can use the ``ars set-profile`` command to enter an interactive session to set the default profile. This feature is based on my another project ``awscli_mate``. Please refer the `Use awscli_mate as a Interactive CLI <https://github.com/MacHu-GWU/awscli_mate-project#use-awscli_mate-as-a-interactive-cli>`_ to learn more.
 
 .. code-block:: bash
 
-    ars-set-profile
+    ars set-profile
 
 
 .. _search-aws-resource:

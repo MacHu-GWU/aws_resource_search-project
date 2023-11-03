@@ -25,7 +25,8 @@ from ..res_lib import (
     preprocess_query,
     Searcher,
     ArsBaseItem,
-    Boto3ClientErrorItem,
+    InfoItem,
+    OpenFileItem,
 )
 from ..terminal import ShortcutEnum, format_resource_type, highlight_text
 from ..compat import TypedDict
@@ -40,6 +41,7 @@ class AwsResourceItemVariables(TypedDict):
     """
     Type hint for the variables field in :class:`AwsResourceItem`.
     """
+
     doc: T_DOCUMENT_OBJ
 
 
@@ -158,8 +160,7 @@ class AwsResourceItem(ArsBaseItem):
         ui.run_sub_session(
             handler=handler,
             initial_query=(
-                f"{ui.remove_text_format(self.title)}, "
-                f"press F1 to go back."
+                f"{ui.remove_text_format(self.title)}, " f"press F1 to go back."
             ),
         )
 
@@ -183,12 +184,13 @@ T_DOC_TO_ITEM_FUNC = T.Callable[[T_DOCUMENT_OBJ], AwsResourceItem]
 
 
 def search_resource_and_return_items(
+    ui: "UI",
     searcher: Searcher,
     query: str,
     boto_kwargs: T.Optional[dict] = None,
     refresh_data: bool = False,
     doc_to_item_func: T_DOC_TO_ITEM_FUNC = None,
-) -> T.List[AwsResourceItem]:
+) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     A wrapper of the :class:`~aws_resource_search.res_lib.Searcher`.
     It will return a list of UI items instead of a list of documents.
@@ -212,19 +214,19 @@ def search_resource_and_return_items(
         )
     except botocore.exceptions.ClientError as e:  # pragma: no cover
         return [
-            AwsResourceItem(
+            InfoItem(
                 title=(
                     f"🔴 boto3 client error! "
                     f"check your default profile in ~/.aws/config and ~/.aws/credentials file."
                 ),
                 subtitle=repr(e),
             ),
-            Boto3ClientErrorItem(
+            OpenFileItem(
                 title=f"Check ~/.aws/config",
                 subtitle=f"{ShortcutEnum.ENTER} to open file",
                 arg=str(path_aws_config),
             ),
-            Boto3ClientErrorItem(
+            OpenFileItem(
                 title=f"Check ~/.aws/credentials",
                 subtitle=f"{ShortcutEnum.ENTER} to open file",
                 arg=str(path_aws_config),
@@ -247,12 +249,23 @@ def search_resource_and_return_items(
         return items
     else:
         # display helper text to tell user that we can't find any resource
+        line = ui.line_editor.line
+        if "@" in line:  # cannot find any sub resource
+            autocomplete = line.split("@", 1)[0] + "@"
+        else:  # cannot find resource
+            autocomplete = line.split(":", 1)[0] + ": "
         return [
-            AwsResourceItem(
+            InfoItem(
                 title=f"🔴 No {searcher.resource_type!r} found",
-                subtitle="Please try another query, or type {} to refresh data.".format(
-                    highlight_text("!~")
+                subtitle=(
+                    "Please try another query, "
+                    "or type {} to refresh data, "
+                    "or tap {} to clear existing query."
+                ).format(
+                    highlight_text("!~"),
+                    ShortcutEnum.TAB,
                 ),
+                autocomplete=autocomplete,
             )
         ]
 
@@ -286,6 +299,7 @@ def search_resource(
         ui.run_handler(items=creating_index_items(resource_type))
         ui.repaint()
         return search_resource_and_return_items(
+            ui=ui,
             searcher=searcher,
             query=final_query,
             boto_kwargs=boto_kwargs,
@@ -298,6 +312,7 @@ def search_resource(
         ui.repaint()
         ui.line_editor.press_backspace(n=2)
         return search_resource_and_return_items(
+            ui=ui,
             searcher=searcher,
             query=preprocess_query(final_query[:-2]),
             boto_kwargs=boto_kwargs,
@@ -307,6 +322,7 @@ def search_resource(
 
     # example: "ec2-inst: dev box"
     return search_resource_and_return_items(
+        ui=ui,
         searcher=searcher,
         query=final_query,
         boto_kwargs=boto_kwargs,

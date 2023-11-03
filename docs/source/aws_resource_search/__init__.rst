@@ -10,6 +10,7 @@ sub packages and modules
 .. toctree::
     :maxdepth: 1
 
+    cli <cli/__init__>
     code <code/__init__>
     conf <conf/__init__>
     res <res/__init__>
@@ -17,7 +18,6 @@ sub packages and modules
     api <api>
     ars <ars>
     ars_base <ars_base>
-    cli <cli>
     compat <compat>
     constants <constants>
     exc <exc>
