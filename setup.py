@@ -186,7 +186,7 @@ if __name__ == "__main__":
         extras_require=EXTRA_REQUIRE,
         entry_points={
             "console_scripts": [
-                "ars=aws_resource_search.cli:run",
+                "ars=aws_resource_search.cli.main:run",
                 "ars-set-profile=awscli_mate.ui:main",
             ],
         },
