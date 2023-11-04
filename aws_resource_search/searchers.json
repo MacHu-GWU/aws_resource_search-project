@@ -75,7 +75,7 @@
         "desc": "IAM user is an entity that you create in AWS.",
         "ngram": ""
     },
-    "kms-alias": {
+    "kms-key-alias": {
         "desc": "A human friendly name for KMS keys.",
         "ngram": "key management service"
     },

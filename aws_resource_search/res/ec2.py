@@ -7,6 +7,7 @@ import aws_arns.api as arns
 
 from .. import res_lib
 from ..terminal import format_key_value, highlight_text
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -134,7 +135,7 @@ ec2_instance_searcher = res_lib.Searcher(
     # extract document
     doc_class=Ec2Instance,
     # search
-    resource_type="ec2-instance",
+    resource_type=SearcherEnum.ec2_instance,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True),
@@ -256,7 +257,7 @@ ec2_vpc_searcher = res_lib.Searcher(
     # extract document
     doc_class=Ec2Vpc,
     # search
-    resource_type="ec2-vpc",
+    resource_type=SearcherEnum.ec2_vpc,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="is_default"),
@@ -356,7 +357,7 @@ ec2_subnet_searcher = res_lib.Searcher(
     # extract document
     doc_class=Ec2Subnet,
     # search
-    resource_type="ec2-subnet",
+    resource_type=SearcherEnum.ec2_subnet,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True),
@@ -444,7 +445,7 @@ ec2_securitygroup_searcher = res_lib.Searcher(
     # extract document
     doc_class=Ec2SecurityGroup,
     # search
-    resource_type="ec2-securitygroup",
+    resource_type=SearcherEnum.ec2_security_group,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.TextField(name="description", stored=True),

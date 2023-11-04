@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import dataclasses
 import typing as T
 import json
 import importlib
@@ -39,7 +39,13 @@ def dump_raw_searcher_metadata_list(sr_meta_list: T.List[SearcherMetadata]):
     """
     Dump searcher_metadata to searcher.json file.
     """
-    path_searchers_json.write_text(json.dumps(sr_meta_list, indent=4, sort_keys=True))
+    data = {}
+    for sr_meta in sr_meta_list:
+        data[sr_meta.id] = {
+            "desc": sr_meta.desc,
+            "ngram": sr_meta.ngram,
+        }
+    path_searchers_json.write_text(json.dumps(data, indent=4, sort_keys=True))
 
 
 def generate_searchers_enum_py_module(sr_meta_list: T.List[SearcherMetadata]):
@@ -47,6 +53,7 @@ def generate_searchers_enum_py_module(sr_meta_list: T.List[SearcherMetadata]):
     path_py = dir_python_lib.joinpath("searchers_enum.py")
     tpl = jinja2.Template(path_tpl.read_text())
     path_py.write_text(tpl.render(sr_meta_list=sr_meta_list))
+
 
 # def enrich_searcher_metadata(sr_meta_list: T.List[SearcherMetadata]):
 #     # py_modules: T.List[T.Tuple[str, str, str, str]] = list()

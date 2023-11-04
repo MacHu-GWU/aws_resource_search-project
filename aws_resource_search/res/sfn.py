@@ -7,6 +7,7 @@ from datetime import datetime
 
 from .. import res_lib
 from ..terminal import format_key_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -101,7 +102,7 @@ sfn_state_machine_searcher = res_lib.Searcher(
     # extract document
     doc_class=SfnStateMachine,
     # search
-    resource_type="sfn-statemachine",
+    resource_type=SearcherEnum.sfn_state_machine,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="type"),
@@ -216,7 +217,7 @@ sfn_execution_searcher = res_lib.Searcher(
     # extract document
     doc_class=SfnExecution,
     # search
-    resource_type="sfn-execution",
+    resource_type=SearcherEnum.sfn_state_machine_execution,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="sm_name"),

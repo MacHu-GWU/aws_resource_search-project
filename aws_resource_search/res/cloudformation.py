@@ -5,6 +5,7 @@ import dataclasses
 
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -141,7 +142,7 @@ cloudformation_stack_searcher = res_lib.Searcher(
     # extract document
     doc_class=CloudFormationStack,
     # search
-    resource_type="cloudformation-stack",
+    resource_type=SearcherEnum.cloudformation_stack,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),

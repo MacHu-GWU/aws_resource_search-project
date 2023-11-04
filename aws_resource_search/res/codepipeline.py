@@ -8,6 +8,7 @@ import aws_arns.api as arns
 
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum, format_key, format_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -110,7 +111,7 @@ codepipeline_pipeline_searcher = res_lib.Searcher(
     # extract document
     doc_class=CodePipelinePipeline,
     # search
-    resource_type="codepipeline-pipeline",
+    resource_type=SearcherEnum.codepipeline_pipeline,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="version"),

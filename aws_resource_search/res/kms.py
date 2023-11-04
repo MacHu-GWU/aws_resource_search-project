@@ -5,11 +5,11 @@ Key Management Service (KMS) related resources.
 """
 
 import typing as T
-import json
 import dataclasses
 
 from .. import res_lib
 from ..terminal import format_key_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -23,7 +23,7 @@ def normalize_alias(alias: str) -> str:
 
 
 @dataclasses.dataclass
-class KmsAlias(res_lib.BaseDocument):
+class KmsKeyAlias(res_lib.BaseDocument):
     key_id: str = dataclasses.field()
     id: str = dataclasses.field()
     name: str = dataclasses.field()
@@ -97,9 +97,9 @@ kms_key_alias_searcher = res_lib.Searcher(
     },
     result_path=res_lib.ResultPath("Aliases"),
     # extract document
-    doc_class=KmsAlias,
+    doc_class=KmsKeyAlias,
     # search
-    resource_type="kms-alias",
+    resource_type=SearcherEnum.kms_key_alias,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="key_id"),

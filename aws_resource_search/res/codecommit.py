@@ -7,6 +7,7 @@ import aws_arns.api as arns
 
 from .. import res_lib
 from ..terminal import format_key_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -103,7 +104,7 @@ codecommit_repository_searcher = res_lib.Searcher(
     # extract document
     doc_class=CodeCommitRepository,
     # search
-    resource_type="codecommit-repository",
+    resource_type=SearcherEnum.codecommit_repository,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),

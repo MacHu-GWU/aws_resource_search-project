@@ -20,7 +20,7 @@ class SearcherEnum:
     iam_policy = "iam-policy"
     iam_role = "iam-role"
     iam_user = "iam-user"
-    kms_alias = "kms-alias"
+    kms_key_alias = "kms-key-alias"
     lambda_function = "lambda-function"
     lambda_function_alias = "lambda-function-alias"
     lambda_layer = "lambda-layer"

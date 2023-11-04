@@ -8,6 +8,7 @@ import aws_arns.api as arns
 
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -71,7 +72,7 @@ glue_database_searcher = res_lib.Searcher(
     # extract document
     doc_class=GlueDatabase,
     # search
-    resource_type="glue-database",
+    resource_type=SearcherEnum.glue_database,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="catalog_id"),
@@ -147,7 +148,7 @@ glue_table_searcher = res_lib.Searcher(
     # extract document
     doc_class=GlueTable,
     # search
-    resource_type="glue-table",
+    resource_type=SearcherEnum.glue_database_table,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="catalog_id"),
@@ -256,7 +257,7 @@ glue_job_searcher = res_lib.Searcher(
     # extract document
     doc_class=GlueJob,
     # search
-    resource_type="glue-job",
+    resource_type=SearcherEnum.glue_job,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="description"),
@@ -388,7 +389,7 @@ glue_job_run_searcher = res_lib.Searcher(
     # extract document
     doc_class=GlueJobRun,
     # search
-    resource_type="glue-jobrun",
+    resource_type=SearcherEnum.glue_job_run,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="job_name"),
@@ -490,7 +491,7 @@ glue_crawler_searcher = res_lib.Searcher(
     # extract document
     doc_class=GlueCrawler,
     # search
-    resource_type="glue-crawler",
+    resource_type=SearcherEnum.glue_crawler,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),

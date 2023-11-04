@@ -8,6 +8,7 @@ import aws_arns.api as arns
 
 from .. import res_lib
 from ..terminal import format_key_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -103,7 +104,7 @@ ssm_parameter_searcher = res_lib.Searcher(
     # extract document
     doc_class=SsmParameter,
     # search
-    resource_type="ssm-parameter",
+    resource_type=SearcherEnum.ssm_parameter,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.NgramWordsField(name="type", minsize=2, maxsize=4, stored=True),

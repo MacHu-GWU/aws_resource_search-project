@@ -7,6 +7,7 @@ import aws_arns.api as arns
 
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -162,7 +163,7 @@ lambda_function_searcher = res_lib.Searcher(
     # extract document
     doc_class=LambdaFunction,
     # search
-    resource_type="lambda-function",
+    resource_type=SearcherEnum.lambda_function,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="description"),
@@ -176,7 +177,7 @@ lambda_function_searcher = res_lib.Searcher(
 
 
 @dataclasses.dataclass
-class LambdaAlias(res_lib.BaseDocument):
+class LambdaFunctionAlias(res_lib.BaseDocument):
     description: str = dataclasses.field()
     func_name: str = dataclasses.field()
     id: str = dataclasses.field()
@@ -312,9 +313,9 @@ lambda_function_alias_searcher = res_lib.Searcher(
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
     result_path=res_lib.ResultPath("Aliases"),
     # extract document
-    doc_class=LambdaAlias,
+    doc_class=LambdaFunctionAlias,
     # search
-    resource_type="lambda-alias",
+    resource_type=SearcherEnum.lambda_function_alias,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="description"),
@@ -377,7 +378,7 @@ lambda_layer_searcher = res_lib.Searcher(
     # extract document
     doc_class=LambdaLayer,
     # search
-    resource_type="lambda-layer",
+    resource_type=SearcherEnum.lambda_layer,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="description"),

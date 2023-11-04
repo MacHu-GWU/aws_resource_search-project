@@ -7,6 +7,7 @@ import aws_arns.api as arns
 
 from .. import res_lib
 from ..terminal import format_key_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -67,7 +68,7 @@ iam_group_searcher = res_lib.Searcher(
     # extract document
     doc_class=IamGroup,
     # search
-    resource_type="iam-group",
+    resource_type=SearcherEnum.iam_group,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
@@ -131,7 +132,7 @@ iam_user_searcher = res_lib.Searcher(
     # extract document
     doc_class=IamUser,
     # search
-    resource_type="iam-user",
+    resource_type=SearcherEnum.iam_user,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
@@ -250,7 +251,7 @@ iam_role_searcher = res_lib.Searcher(
     # extract document
     doc_class=IamRole,
     # search
-    resource_type="iam-role",
+    resource_type=SearcherEnum.iam_role,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
@@ -345,7 +346,7 @@ iam_policy_searcher = res_lib.Searcher(
     # extract document
     doc_class=IamPolicy,
     # search
-    resource_type="iam-policy",
+    resource_type=SearcherEnum.iam_policy,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),

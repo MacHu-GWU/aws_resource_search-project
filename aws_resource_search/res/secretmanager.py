@@ -6,6 +6,7 @@ import dataclasses
 
 from .. import res_lib
 from ..terminal import format_key_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -92,7 +93,7 @@ secretsmanager_secret_searcher = res_lib.Searcher(
     # extract document
     doc_class=SecretsManagerSecret,
     # search
-    resource_type="secretsmanager-secret",
+    resource_type=SearcherEnum.secretsmanager_secret,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="description"),

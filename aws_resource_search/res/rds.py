@@ -5,6 +5,7 @@ import dataclasses
 
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -135,7 +136,7 @@ rds_db_instance_searcher = res_lib.Searcher(
     # extract document
     doc_class=RdsDbInstance,
     # search
-    resource_type="rds-dbinstance",
+    resource_type=SearcherEnum.rds_db_instance,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
@@ -278,7 +279,7 @@ rds_db_cluster_searcher = res_lib.Searcher(
     # extract document
     doc_class=RdsDbCluster,
     # search
-    resource_type="rds-dbcluster",
+    resource_type=SearcherEnum.rds_db_cluster,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),

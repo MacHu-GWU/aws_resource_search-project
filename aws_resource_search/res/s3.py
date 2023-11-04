@@ -13,6 +13,7 @@ import dataclasses
 
 from .. import res_lib
 from ..terminal import format_key_value
+from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -216,7 +217,7 @@ s3_bucket_searcher = res_lib.Searcher(
     # --- search
     # the resource type identifier in string, the naming convention is
     # ${service_name}-${resource_name}
-    resource_type="s3-bucket",
+    resource_type=SearcherEnum.s3_bucket,
     # define how to index this document and how to search this document
     # the field list here has to match the attribute list in the document class
     # all field should be stored, so that we can recover the document object
