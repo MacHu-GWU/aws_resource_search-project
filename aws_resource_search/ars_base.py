@@ -15,7 +15,7 @@ import aws_console_url.api as aws_console_url
 
 from .compat import cached_property
 from .paths import dir_index, dir_cache
-from .searchers import searchers_metadata
+from .searchers import finder
 from .res_lib import Searcher
 
 if T.TYPE_CHECKING:
@@ -28,11 +28,14 @@ _searchers_cache = dict()  # resource type searcher object cache
 def load_searcher(resource_type: str) -> Searcher:
     """
     Lazy load corresponding :class:`aws_resource_search.res_lib.Searcher`
-    object by resource type, with cache.
+    object by resource type from ``aws_resource_search.res.${module}.py`` module.
+    It leverages the lookup data in ``aws_resource_search.searchers.json``.
+
+    It checks cache first, if not found, it will load the module and cache it.
     """
     if resource_type not in _searchers_cache:
-        mod = searchers_metadata[resource_type]["mod"]
-        var = searchers_metadata[resource_type]["var"]
+        mod = finder.sm_meta_mapper[resource_type].module
+        var = finder.sm_meta_mapper[resource_type].var
         module = importlib.import_module(f"aws_resource_search.res.{mod}")
         searcher = getattr(module, var)
         _searchers_cache[resource_type] = searcher
@@ -83,10 +86,10 @@ class ARSBase:
         """
         Return all resource types.
         """
-        return list(searchers_metadata.keys())
+        return finder.all_resource_types()
 
     def is_valid_resource_type(self, resource_type: str) -> bool:
         """
         Check if the resource type is supported.
         """
-        return resource_type in searchers_metadata
+        return finder.is_valid_resource_type(resource_type)

@@ -1,73 +1,51 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
+import json
 import dataclasses
 
+from .model import SearcherMetadata
+from .paths import path_searchers_json
 
-searchers_metadata = {
-    "cloudformation-stack": {"mod": "cloudformation", "var": "cloudformation_stack_searcher"},
-    "codebuild-jobrun": {"mod": "codebuild", "var": "codebuild_job_run_searcher"},
-    "codebuild-project": {"mod": "codebuild", "var": "codebuild_project_searcher"},
-    "codecommit-repository": {"mod": "codecommit", "var": "codecommit_repository_searcher"},
-    "codepipeline-pipeline": {"mod": "codepipeline", "var": "codepipeline_pipeline_searcher"},
-    "dynamodb-table": {"mod": "dynamodb", "var": "dynamodb_table_searcher"},
-    "ec2-instance": {"mod": "ec2", "var": "ec2_instance_searcher"},
-    "ec2-securitygroup": {"mod": "ec2", "var": "ec2_securitygroup_searcher"},
-    "ec2-subnet": {"mod": "ec2", "var": "ec2_subnet_searcher"},
-    "ec2-vpc": {"mod": "ec2", "var": "ec2_vpc_searcher"},
-    "glue-crawler": {"mod": "glue", "var": "glue_crawler_searcher"},
-    "glue-database": {"mod": "glue", "var": "glue_database_searcher"},
-    "glue-job": {"mod": "glue", "var": "glue_job_searcher"},
-    "glue-jobrun": {"mod": "glue", "var": "glue_job_run_searcher"},
-    "glue-table": {"mod": "glue", "var": "glue_table_searcher"},
-    "iam-group": {"mod": "iam", "var": "iam_group_searcher"},
-    "iam-policy": {"mod": "iam", "var": "iam_policy_searcher"},
-    "iam-role": {"mod": "iam", "var": "iam_role_searcher"},
-    "iam-user": {"mod": "iam", "var": "iam_user_searcher"},
-    "kms-alias": {"mod": "kms", "var": "kms_key_alias_searcher"},
-    "lambda-alias": {"mod": "awslambda", "var": "lambda_function_alias_searcher"},
-    "lambda-function": {"mod": "awslambda", "var": "lambda_function_searcher"},
-    "lambda-layer": {"mod": "awslambda", "var": "lambda_layer_searcher"},
-    "rds-dbcluster": {"mod": "rds", "var": "rds_db_cluster_searcher"},
-    "rds-dbinstance": {"mod": "rds", "var": "rds_db_instance_searcher"},
-    "s3-bucket": {"mod": "s3", "var": "s3_bucket_searcher"},
-    "secretsmanager-secret": {"mod": "secretmanager", "var": "secretsmanager_secret_searcher"},
-    "sfn-execution": {"mod": "sfn", "var": "sfn_execution_searcher"},
-    "sfn-statemachine": {"mod": "sfn", "var": "sfn_state_machine_searcher"},
-    "sns-topic": {"mod": "sns", "var": "sns_topic_searcher"},
-    "sqs-queue": {"mod": "sqs", "var": "sqs_queue_searcher"},
-    "ssm-parameter": {"mod": "ssm", "var": "ssm_parameter_searcher"},
-}
 
-class SearcherEnum:
-    cloudformation_stack = "cloudformation-stack"
-    codebuild_jobrun = "codebuild-jobrun"
-    codebuild_project = "codebuild-project"
-    codecommit_repository = "codecommit-repository"
-    codepipeline_pipeline = "codepipeline-pipeline"
-    dynamodb_table = "dynamodb-table"
-    ec2_instance = "ec2-instance"
-    ec2_securitygroup = "ec2-securitygroup"
-    ec2_subnet = "ec2-subnet"
-    ec2_vpc = "ec2-vpc"
-    glue_crawler = "glue-crawler"
-    glue_database = "glue-database"
-    glue_job = "glue-job"
-    glue_jobrun = "glue-jobrun"
-    glue_table = "glue-table"
-    iam_group = "iam-group"
-    iam_policy = "iam-policy"
-    iam_role = "iam-role"
-    iam_user = "iam-user"
-    kms_alias = "kms-alias"
-    lambda_alias = "lambda-alias"
-    lambda_function = "lambda-function"
-    lambda_layer = "lambda-layer"
-    rds_dbcluster = "rds-dbcluster"
-    rds_dbinstance = "rds-dbinstance"
-    s3_bucket = "s3-bucket"
-    secretsmanager_secret = "secretsmanager-secret"
-    sfn_execution = "sfn-execution"
-    sfn_statemachine = "sfn-statemachine"
-    sns_topic = "sns-topic"
-    sqs_queue = "sqs-queue"
-    ssm_parameter = "ssm-parameter"
+@dataclasses.dataclass
+class SearcherFinder:
+    """
+    This is a helper class to access the implemented searcher metadata.
+    """
+
+    sm_meta_mapper: T.Dict[str, SearcherMetadata] = dataclasses.field(init=False)
+
+    def reload(self):
+        """
+        Reload the lookup data from ``aws_resource_search/searchers.json``.
+        """
+        data = json.loads(path_searchers_json.read_text())
+        self.sm_meta_mapper = {
+            id: SearcherMetadata(
+                id=id,
+                desc=dct["desc"],
+                ngram=dct["ngram"],
+                module=dct["module"],
+                var=dct["var"],
+            )
+            for id, dct in data.items()
+        }
+
+    def __post_init__(self):
+        self.reload()
+
+    def all_resource_types(self) -> T.List[str]:
+        """
+        Return all resource types.
+        """
+        return list(self.sm_meta_mapper.keys())
+
+    def is_valid_resource_type(self, resource_type: str) -> bool:
+        """
+        Check if the resource type is supported.
+        """
+        return resource_type in self.sm_meta_mapper
+
+
+finder = SearcherFinder()  # singleton object

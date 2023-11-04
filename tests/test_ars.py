@@ -3,7 +3,7 @@
 from rich import print as rprint
 
 from aws_resource_search.ars import ARS
-from aws_resource_search.searchers import searchers_metadata, SearcherEnum
+from aws_resource_search.searchers_enum import SearcherEnum
 from aws_resource_search.logger import logger
 from aws_resource_search.tests.fake_aws.api import FakeAws, guid, envs, rand_env
 
@@ -50,8 +50,8 @@ class TestARS(FakeAws):
             # SearcherEnum.lambda_layer,
             # SearcherEnum.s3_bucket,
             # SearcherEnum.secretsmanager_secret,
-            # SearcherEnum.sfn_execution,
-            SearcherEnum.sfn_statemachine,
+            SearcherEnum.sfn_state_machine_execution,
+            SearcherEnum.sfn_state_machine,
             # SearcherEnum.sns_topic,
             # SearcherEnum.sqs_queue,
             # SearcherEnum.ssm_parameter,

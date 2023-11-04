@@ -14,8 +14,8 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("cloudformation-stack")
     
     @cached_property
-    def codebuild_jobrun(self) -> Searcher:
-        return self.get_searcher("codebuild-jobrun")
+    def codebuild_job_run(self) -> Searcher:
+        return self.get_searcher("codebuild-job-run")
     
     @cached_property
     def codebuild_project(self) -> Searcher:
@@ -38,8 +38,8 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("ec2-instance")
     
     @cached_property
-    def ec2_securitygroup(self) -> Searcher:
-        return self.get_searcher("ec2-securitygroup")
+    def ec2_security_group(self) -> Searcher:
+        return self.get_searcher("ec2-security-group")
     
     @cached_property
     def ec2_subnet(self) -> Searcher:
@@ -58,16 +58,16 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("glue-database")
     
     @cached_property
+    def glue_database_table(self) -> Searcher:
+        return self.get_searcher("glue-database-table")
+    
+    @cached_property
     def glue_job(self) -> Searcher:
         return self.get_searcher("glue-job")
     
     @cached_property
-    def glue_jobrun(self) -> Searcher:
-        return self.get_searcher("glue-jobrun")
-    
-    @cached_property
-    def glue_table(self) -> Searcher:
-        return self.get_searcher("glue-table")
+    def glue_job_run(self) -> Searcher:
+        return self.get_searcher("glue-job-run")
     
     @cached_property
     def iam_group(self) -> Searcher:
@@ -86,16 +86,16 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("iam-user")
     
     @cached_property
-    def kms_alias(self) -> Searcher:
-        return self.get_searcher("kms-alias")
-    
-    @cached_property
-    def lambda_alias(self) -> Searcher:
-        return self.get_searcher("lambda-alias")
+    def kms_key_alias(self) -> Searcher:
+        return self.get_searcher("kms-key-alias")
     
     @cached_property
     def lambda_function(self) -> Searcher:
         return self.get_searcher("lambda-function")
+    
+    @cached_property
+    def lambda_function_alias(self) -> Searcher:
+        return self.get_searcher("lambda-function-alias")
     
     @cached_property
     def lambda_layer(self) -> Searcher:
@@ -106,8 +106,8 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("rds-db-cluster")
     
     @cached_property
-    def rds_dbinstance(self) -> Searcher:
-        return self.get_searcher("rds-dbinstance")
+    def rds_db_instance(self) -> Searcher:
+        return self.get_searcher("rds-db-instance")
     
     @cached_property
     def s3_bucket(self) -> Searcher:
@@ -118,12 +118,12 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("secretsmanager-secret")
     
     @cached_property
-    def sfn_execution(self) -> Searcher:
-        return self.get_searcher("sfn-execution")
+    def sfn_state_machine(self) -> Searcher:
+        return self.get_searcher("sfn-state-machine")
     
     @cached_property
-    def sfn_statemachine(self) -> Searcher:
-        return self.get_searcher("sfn-statemachine")
+    def sfn_state_machine_execution(self) -> Searcher:
+        return self.get_searcher("sfn-state-machine-execution")
     
     @cached_property
     def sns_topic(self) -> Searcher:

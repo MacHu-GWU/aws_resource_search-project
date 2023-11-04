@@ -9,8 +9,8 @@ from .res_lib import Searcher
 
 @dataclasses.dataclass
 class ARS(ARSBase):  # pragma: no cover
-    {%- for resource_type_snake, resource_type in tuples %}
+    {%- for sr_meta in sr_meta_list %}
     @cached_property
-    def {{ resource_type_snake }}(self) -> Searcher:
-        return self.get_searcher("{{ resource_type }}")
+    def {{ sr_meta.id_snake }}(self) -> Searcher:
+        return self.get_searcher("{{ sr_meta.id }}")
     {% endfor %}

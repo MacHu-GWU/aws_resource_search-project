@@ -14,7 +14,7 @@ try:
 except ImportError:
     pass
 
-from ..searchers import searchers_metadata
+from ..searchers import finder
 from ..terminal import terminal
 from .search_resource_type import (
     AwsResourceTypeItem,
@@ -24,15 +24,6 @@ from .search_resource import (
     AwsResourceItem,
     search_resource_handler,
 )
-
-
-def is_valid_resource_type(resource_type: str) -> bool:
-    """
-    Check if the given resource_type is a valid value that we support.
-
-    :param resource_type: for example, ec2-instance, s3-bucket.
-    """
-    return resource_type in searchers_metadata
 
 
 def handler(
@@ -77,7 +68,7 @@ def handler(
             resource_query = query.split(":")[1].strip()
 
             # example: "s3-bucket"
-            if is_valid_resource_type(service_query):
+            if finder.is_valid_resource_type(service_query):
                 return search_resource_handler(
                     ui=ui,
                     resource_type=service_query,
@@ -95,7 +86,7 @@ def handler(
         # use "resource query" to search
         service_query = q.trimmed_parts[0]
         resource_query = query.split(":")[1].strip()
-        if is_valid_resource_type(service_query):
+        if finder.is_valid_resource_type(service_query):
             return search_resource_handler(
                 ui=ui,
                 resource_type=service_query,
