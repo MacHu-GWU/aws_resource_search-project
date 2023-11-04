@@ -121,11 +121,11 @@ def generate_searchers_py_module(py_modules):
     path_py.write_text(tpl.render(tuples=py_modules))
 
 
-def generate_implemented_resource_types(py_modules):
+def generate_implemented_resource_types(sr_meta_list: T.List[SearcherMetadata]):
     dir_folder = dir_project_root.joinpath(
         "docs", "source", "03-User-Guide-Implemented-AWS-Resource-Types"
     )
     path_tpl = dir_here.joinpath("searchers_index.rst.jinja")
     path_index = dir_folder.joinpath("index.rst")
     tpl = jinja2.Template(path_tpl.read_text())
-    path_index.write_text(tpl.render(tuples=py_modules))
+    path_index.write_text(tpl.render(sr_meta_list=sr_meta_list))
