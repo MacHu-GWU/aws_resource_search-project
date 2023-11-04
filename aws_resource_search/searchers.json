@@ -47,6 +47,10 @@
         "desc": "Databases are used to organize metadata tables in the AWS Glue. ",
         "ngram": "db"
     },
+    "glue-database-table": {
+        "desc": "The metadata definition that represents your data.",
+        "ngram": "db tb"
+    },
     "glue-job": {
         "desc": "The business logic that is required to perform ETL work.",
         "ngram": ""
@@ -54,10 +58,6 @@
     "glue-job-run": {
         "desc": "A job run is the execution of an ETL job.",
         "ngram": ""
-    },
-    "glue-database-table": {
-        "desc": "The metadata definition that represents your data.",
-        "ngram": "db tb"
     },
     "iam-group": {
         "desc": "An IAM user group is a collection of IAM users.",
@@ -79,12 +79,12 @@
         "desc": "A human friendly name for KMS keys.",
         "ngram": "key management service"
     },
-    "lambda-function-alias": {
-        "desc": "A Lambda alias is a pointer to a function version that you can update.",
-        "ngram": "lbd"
-    },
     "lambda-function": {
         "desc": "A function is a resource that you can invoke to run your code in Lambda.",
+        "ngram": "lbd"
+    },
+    "lambda-function-alias": {
+        "desc": "A Lambda alias is a pointer to a function version that you can update.",
         "ngram": "lbd"
     },
     "lambda-layer": {
@@ -107,12 +107,12 @@
         "desc": "A secret consists of secret information, the secret value, plus metadata about the secret.",
         "ngram": "sm"
     },
-    "sfn-state-machine-execution": {
-        "desc": "A execution of a state machine.",
-        "ngram": "step functions"
-    },
     "sfn-state-machine": {
         "desc": "A series of event-driven steps",
+        "ngram": "step functions"
+    },
+    "sfn-state-machine-execution": {
+        "desc": "A execution of a state machine.",
         "ngram": "step functions"
     },
     "sns-topic": {
