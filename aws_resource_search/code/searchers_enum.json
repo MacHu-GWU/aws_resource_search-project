@@ -1,194 +1,130 @@
 {
     "cloudformation-stack": {
         "desc": "A stack is a collection of AWS resources that you can manage as a single unit.",
-        "module": "cloudformation",
-        "ngram": "cfn",
-        "var": "cloudformation_stack_searcher"
+        "ngram": "cfn"
     },
     "codebuild-job-run": {
         "desc": "Codebuild job run, it is not a batch job run.",
-        "module": "codebuild",
-        "ngram": "jobrun",
-        "var": "codebuild_job_run_searcher"
+        "ngram": "jobrun"
     },
     "codebuild-project": {
         "desc": "A build project includes information about how to run a build.",
-        "module": "codebuild",
-        "ngram": "",
-        "var": "codebuild_project_searcher"
+        "ngram": ""
     },
     "codecommit-repository": {
         "desc": "A repository is where you store code and files for your project.",
-        "module": "codecommit",
-        "ngram": "",
-        "var": "codecommit_repository_searcher"
+        "ngram": ""
     },
     "codepipeline-pipeline": {
         "desc": "Code pipeline is a workflow construct that describes how software changes go through a release process.",
-        "module": "codepipeline",
-        "ngram": "",
-        "var": "codepipeline_pipeline_searcher"
+        "ngram": ""
     },
     "dynamodb-table": {
         "desc": "A table is a collection of data.",
-        "module": "dynamodb",
-        "ngram": "",
-        "var": "dynamodb_table_searcher"
+        "ngram": ""
     },
     "ec2-instance": {
         "desc": "An EC2 instance is simply a virtual server in AWS",
-        "module": "ec2",
-        "ngram": "aws elastic compute cloud",
-        "var": "ec2_instance_searcher"
+        "ngram": "aws elastic compute cloud"
     },
     "ec2-security-group": {
         "desc": "A security group acts as a firewall that controls the traffic allowed to and from the resources in your VPC.",
-        "module": "ec2",
-        "ngram": "sg securitygroup",
-        "var": "ec2_securitygroup_searcher"
+        "ngram": "sg securitygroup"
     },
     "ec2-subnet": {
         "desc": "A subnet is a range of IP addresses in your VPC.",
-        "module": "ec2",
-        "ngram": "",
-        "var": "ec2_subnet_searcher"
+        "ngram": ""
     },
     "ec2-vpc": {
         "desc": "A virtual private cloud (VPC) is a virtual network dedicated to your AWS account.",
-        "module": "ec2",
-        "ngram": "virtual private cloud",
-        "var": "ec2_vpc_searcher"
+        "ngram": "virtual private cloud"
     },
     "glue-crawler": {
         "desc": "You can use a crawler to populate the AWS Glue Data Catalog with tables.",
-        "module": "glue",
-        "ngram": "",
-        "var": "glue_crawler_searcher"
+        "ngram": ""
     },
     "glue-database": {
         "desc": "Databases are used to organize metadata tables in the AWS Glue. ",
-        "module": "glue",
-        "ngram": "db",
-        "var": "glue_database_searcher"
+        "ngram": "db"
     },
     "glue-database-table": {
         "desc": "The metadata definition that represents your data.",
-        "module": "glue",
-        "ngram": "db tb",
-        "var": "glue_table_searcher"
+        "ngram": "db tb"
     },
     "glue-job": {
         "desc": "The business logic that is required to perform ETL work.",
-        "module": "glue",
-        "ngram": "",
-        "var": "glue_job_searcher"
+        "ngram": ""
     },
     "glue-job-run": {
         "desc": "A job run is the execution of an ETL job.",
-        "module": "glue",
-        "ngram": "",
-        "var": "glue_job_run_searcher"
+        "ngram": ""
     },
     "iam-group": {
         "desc": "An IAM user group is a collection of IAM users.",
-        "module": "iam",
-        "ngram": "",
-        "var": "iam_group_searcher"
+        "ngram": ""
     },
     "iam-policy": {
         "desc": "IAM policies define permissions for an action regardless of the method that you use to perform the operation.",
-        "module": "iam",
-        "ngram": "",
-        "var": "iam_policy_searcher"
+        "ngram": ""
     },
     "iam-role": {
         "desc": "An IAM role is an IAM identity that you can create in your account that has specific permissions.",
-        "module": "iam",
-        "ngram": "",
-        "var": "iam_role_searcher"
+        "ngram": ""
     },
     "iam-user": {
         "desc": "IAM user is an entity that you create in AWS.",
-        "module": "iam",
-        "ngram": "",
-        "var": "iam_user_searcher"
+        "ngram": ""
     },
     "kms-key-alias": {
         "desc": "A human friendly name for KMS keys.",
-        "module": "kms",
-        "ngram": "key management service",
-        "var": "kms_key_alias_searcher"
+        "ngram": "key management service"
     },
     "lambda-function": {
         "desc": "A function is a resource that you can invoke to run your code in Lambda.",
-        "module": "awslambda",
-        "ngram": "lbd",
-        "var": "lambda_function_searcher"
+        "ngram": "lbd"
     },
     "lambda-function-alias": {
         "desc": "A Lambda alias is a pointer to a function version that you can update.",
-        "module": "awslambda",
-        "ngram": "lbd",
-        "var": "lambda_function_alias_searcher"
+        "ngram": "lbd"
     },
     "lambda-layer": {
         "desc": "A Lambda layer is a .zip file archive that can contain additional code or other content.",
-        "module": "awslambda",
-        "ngram": "",
-        "var": "lambda_layer_searcher"
+        "ngram": ""
     },
     "rds-db-cluster": {
         "desc": "A DB cluster deployment is a semi-synchronous, high availability deployment mode of Amazon RDS with two readable standby DB instances.",
-        "module": "rds",
-        "ngram": "relational database service",
-        "var": "rds_db_cluster_searcher"
+        "ngram": "relational database service"
     },
     "rds-db-instance": {
         "desc": "A DB instance is an isolated database environment running in the cloud.",
-        "module": "rds",
-        "ngram": "relational database service",
-        "var": "rds_db_instance_searcher"
+        "ngram": "relational database service"
     },
     "s3-bucket": {
         "desc": "A bucket is a container for objects.",
-        "module": "s3",
-        "ngram": "simple storage service",
-        "var": "s3_bucket_searcher"
+        "ngram": "simple storage service"
     },
     "secretsmanager-secret": {
         "desc": "A secret consists of secret information, the secret value, plus metadata about the secret.",
-        "module": "secretmanager",
-        "ngram": "sm",
-        "var": "secretsmanager_secret_searcher"
+        "ngram": "sm"
     },
     "sfn-state-machine": {
         "desc": "A series of event-driven steps",
-        "module": "sfn",
-        "ngram": "step functions stepfunctions",
-        "var": "sfn_state_machine_searcher"
+        "ngram": "step functions stepfunctions"
     },
     "sfn-state-machine-execution": {
         "desc": "A execution of a state machine.",
-        "module": "sfn",
-        "ngram": "step functions stepfunctions",
-        "var": "sfn_execution_searcher"
+        "ngram": "step functions stepfunctions"
     },
     "sns-topic": {
         "desc": "An Amazon SNS topic is a logical access point that acts as a communication channel.",
-        "module": "sns",
-        "ngram": "simple notification service",
-        "var": "sns_topic_searcher"
+        "ngram": "simple notification service"
     },
     "sqs-queue": {
         "desc": "A form of asynchronous service-to-service communication used in serverless and microservices architectures",
-        "module": "sqs",
-        "ngram": "simple queue service",
-        "var": "sqs_queue_searcher"
+        "ngram": "simple queue service"
     },
     "ssm-parameter": {
         "desc": "Provides secure, hierarchical storage for configuration data management and secrets management. ",
-        "module": "ssm",
-        "ngram": "system manager parameter store",
-        "var": "ssm_parameter_searcher"
+        "ngram": "system manager parameter store"
     }
 }

@@ -5,15 +5,15 @@ This module implements the resource type search feature.
 """
 
 import typing as T
+import json
 import dataclasses
 
 import sayt.api as sayt
 
-from ..terminal import ShortcutEnum, highlight_text
-from ..paths import dir_index, dir_cache
+from ..terminal import ShortcutEnum, highlight_text, format_resource_type
+from ..paths import dir_index, dir_cache, path_searchers_json
 from ..compat import TypedDict
-from ..searchers import searchers_metadata
-from ..res_lib import preprocess_query, ArsBaseItem, InfoItem, OpenUrlItem
+from ..res_lib import preprocess_query, ArsBaseItem, OpenUrlItem
 
 if T.TYPE_CHECKING:
     from .main import UI
@@ -22,12 +22,20 @@ if T.TYPE_CHECKING:
 class ResourceTypeDocument(TypedDict):
     id: str
     name: str
+    desc: str
+    ngram: str
 
 
-def downloader():
+def downloader() -> T.List[ResourceTypeDocument]:
+    data = json.loads(path_searchers_json.read_text())
     return [
-        {"id": resource_type, "name": resource_type}
-        for resource_type in searchers_metadata
+        {
+            "id": resource_type,
+            "name": resource_type,
+            "desc": dct["desc"],
+            "ngram": dct["ngram"],
+        }
+        for resource_type, dct in data.items()
     ]
 
 
@@ -36,16 +44,10 @@ resource_type_dataset = sayt.DataSet(
     dir_index=dir_index,
     index_name=index_name,
     fields=[
-        sayt.IdField(
-            name="id",
-            stored=True,
-        ),
-        sayt.NgramWordsField(
-            name="name",
-            stored=True,
-            minsize=2,
-            maxsize=6,
-        ),
+        sayt.IdField(name="id", stored=True),
+        sayt.NgramWordsField(name="name", stored=True, minsize=2, maxsize=10),
+        sayt.StoredField(name="desc"),
+        sayt.NgramWordsField(name="ngram", stored=True, minsize=2, maxsize=10),
     ],
     dir_cache=dir_cache,
     cache_key=index_name,
@@ -79,11 +81,12 @@ class AwsResourceTypeItem(ArsBaseItem):
             }
         """
         resource_type = doc["name"]
+        desc = doc["desc"]
         return cls(
-            title=resource_type,
+            title=f"{format_resource_type(resource_type)}: {desc}",
             subtitle=(
                 f"hit {ShortcutEnum.TAB} or {ShortcutEnum.ENTER} and enter your query "
-                f"to search {highlight_text(resource_type)}."
+                f"to search {resource_type}."
             ),
             uid=doc["id"],
             arg=doc["name"],
