@@ -1,7 +1,7 @@
 {
     "cloudformation-stack": {
         "desc": "A stack is a collection of AWS resources that you can manage as a single unit.",
-        "ngram": "cfn"
+        "ngram": "cfn cft"
     },
     "codebuild-job-run": {
         "desc": "Codebuild job run, it is not a batch job run.",

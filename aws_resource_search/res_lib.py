@@ -186,6 +186,34 @@ def get_description(
     return get_none_or_default(data, path, default)
 
 
+def get_datetime(
+    data: T.Any,
+    path: str,
+    default: datetime = datetime(1970, 1, 1, tzinfo=timezone.utc),
+) -> datetime:
+    """
+    Extract isoformat datetime string from a dictionary using Jmespath.
+
+    Example:
+
+        >>> get_datetime({"CreateDate": datetime(2021, 1, 1)}, path="CreateDate")
+        datetime(2021, 1, 1)
+    """
+    res = jmespath.search(path, data)
+    if bool(res) is False:
+        return default
+    elif isinstance(res, datetime):
+        return res
+    else:
+        raise TypeError
+
+
+def to_simple_fmt(dt: datetime) -> str:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def get_datetime_isofmt(
     data: T.Any,
     path: str,
@@ -225,7 +253,7 @@ def get_datetime_simplefmt(
     if bool(res) is False:
         return default
     elif isinstance(res, datetime):
-        if datetime.tzinfo is None:
+        if res.tzinfo is None:
             res = res.replace(tzinfo=timezone.utc)
         return res.strftime("%Y-%m-%d %H:%M:%S")
     else:
