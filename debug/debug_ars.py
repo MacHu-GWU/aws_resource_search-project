@@ -28,6 +28,8 @@ if __name__ == "__main__":
         refresh_data=refresh_data,
         verbose=verbose,
     )
+    print(type(res[0]))
+    print(res[0])
     if isinstance(res, dict):
         hits = res.pop("hits")
         docs = [hit["_source"] for hit in hits]

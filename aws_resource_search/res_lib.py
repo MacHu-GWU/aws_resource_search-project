@@ -147,7 +147,27 @@ class BaseDocument(BaseModel):
     This is the base class for AWS resource documents. A 'document' is a
     searchable object stored in the index, representing the metadata of
     an AWS resource. To create a per-AWS-resource document class, you need to
-    inherit from this class. In your subclass, you must implement the
+    inherit from this class. For example, you can define a document class for
+    S3 bucket like this:
+
+        >>> @dataclasses.dataclass
+        >>> class S3BucketDocument(BaseDocument):
+        ...     id: str = dataclasses.field()
+        ...     name: str = dataclasses.field()
+
+    The base document has a mandatory field ``raw_data``, which is used to store
+    the data in the boto3 API call response. For example, for `s3_client.list_buckets <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_buckets.html>`, the raw data is:
+
+    .. code-block:: python
+
+        {
+            'Name': 'string',
+            'CreationDate': datetime(2015, 1, 1)
+        }
+
+    In your subclass,
+
+    In your subclass, you must implement the
     following methods. Please read the docstrings to understand their functionality.
 
     - :meth:`from_resource`
