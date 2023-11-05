@@ -59,6 +59,12 @@ class S3Bucket(res_lib.BaseDocument):
             creation_date=resource["CreationDate"].isoformat(),
         )
 
+    # it may have some additional property methods to provide more
+    # human intuitive access to AWS resource attribute.
+    @property
+    def bucket_name(self) -> str:
+        return self.name
+
     # it has to have a property named "title", it is the first line of the
     # search result item in the dropdown menu. you can format the title using
     # terminal format and color
@@ -150,24 +156,32 @@ class S3Bucket(res_lib.BaseDocument):
             res = ars.bsm.s3_client.get_bucket_versioning(Bucket=self.name)
             versioning = res.get("Status", "Not enabled yet")
             mfa_delete = res.get("MFADelete", "Not enabled yet")
-            detail_items.extend([
-                Item("versioning", versioning),
-                Item("mfa_delete", mfa_delete),
-            ])
+            detail_items.extend(
+                [
+                    Item("versioning", versioning),
+                    Item("mfa_delete", mfa_delete),
+                ]
+            )
 
         with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_encryption(Bucket=self.name)
             rules = res.get("ServerSideEncryptionConfiguration", {}).get("Rules", [])
             if rules:
                 rule = rules[0]
-                sse_algorithm = rule.get("ApplyServerSideEncryptionByDefault", {}).get("SSEAlgorithm", "Unknown")
-                kms_master_key_id = rule.get("ApplyServerSideEncryptionByDefault", {}).get("KMSMasterKeyID", "Unknown")
+                sse_algorithm = rule.get("ApplyServerSideEncryptionByDefault", {}).get(
+                    "SSEAlgorithm", "Unknown"
+                )
+                kms_master_key_id = rule.get(
+                    "ApplyServerSideEncryptionByDefault", {}
+                ).get("KMSMasterKeyID", "Unknown")
                 bucket_key_enabled = rule.get("BucketKeyEnabled", "Unknown")
-                detail_items.extend([
-                    Item("sse_algorithm", sse_algorithm),
-                    Item("kms_master_key_id", kms_master_key_id),
-                    Item("bucket_key_enabled", bucket_key_enabled),
-                ])
+                detail_items.extend(
+                    [
+                        Item("sse_algorithm", sse_algorithm),
+                        Item("kms_master_key_id", kms_master_key_id),
+                        Item("bucket_key_enabled", bucket_key_enabled),
+                    ]
+                )
 
         # similar to the second code block
         with self.enrich_details(detail_items):
@@ -180,9 +194,7 @@ class S3Bucket(res_lib.BaseDocument):
             res = ars.bsm.s3_client.get_bucket_cors(Bucket=self.name)
             dct = {"CORSRules": res.get("CORSRules", [])}
             cors = json.dumps(dct)
-            detail_items.append(
-                Item("CORS", cors, self.one_line(cors))
-            )
+            detail_items.append(Item("CORS", cors, self.one_line(cors)))
 
         # the last code block is usually to get the tags of the resource
         with self.enrich_details(detail_items):
@@ -195,7 +207,11 @@ class S3Bucket(res_lib.BaseDocument):
 
 # create a res_lib.Searcher object. It defines the search behavior including
 # how to get the data, how to index the data, and how to search the data.
-s3_bucket_searcher = res_lib.Searcher(
+class S3BucketSearcher(res_lib.Searcher[S3Bucket]):
+    pass
+
+
+s3_bucket_searcher = S3BucketSearcher(
     # --- list resources
     # the s3 client argument in https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
     service="s3",

@@ -86,7 +86,11 @@ class SqsQueue(res_lib.BaseDocument):
     # fmt: on
 
 
-sqs_queue_searcher = res_lib.Searcher(
+class SqsQueueSearcher(res_lib.Searcher[SqsQueue]):
+    pass
+
+
+sqs_queue_searcher = SqsQueueSearcher(
     # list resources
     service="sqs",
     method="list_queues",

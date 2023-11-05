@@ -121,7 +121,11 @@ class RdsDbInstance(res_lib.BaseDocument):
     # fmt: on
 
 
-rds_db_instance_searcher = res_lib.Searcher(
+class RdsDbInstanceSearcher(res_lib.Searcher[RdsDbInstance]):
+    pass
+
+
+rds_db_instance_searcher = RdsDbInstanceSearcher(
     # list resources
     service="rds",
     method="describe_db_instances",
@@ -263,6 +267,10 @@ class RdsDbCluster(res_lib.BaseDocument):
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
         return detail_items
     # fmt: on
+
+
+class RdsDbClusterSearcher(res_lib.Searcher[RdsDbCluster]):
+    pass
 
 
 rds_db_cluster_searcher = res_lib.Searcher(

@@ -87,7 +87,11 @@ class DynamodbTable(res_lib.BaseDocument):
         return detail_items
 
 
-dynamodb_table_searcher = res_lib.Searcher(
+class DynamodbTableSearcher(res_lib.Searcher[DynamodbTable]):
+    pass
+
+
+dynamodb_table_searcher = DynamodbTableSearcher(
     # list resources
     service="dynamodb",
     method="list_tables",

@@ -94,7 +94,11 @@ class SsmParameter(res_lib.BaseDocument):
     # fmt: on
 
 
-ssm_parameter_searcher = res_lib.Searcher(
+class SsmParameterSearcher(res_lib.Searcher[SsmParameter]):
+    pass
+
+
+ssm_parameter_searcher = SsmParameterSearcher(
     # list resources
     service="ssm",
     method="describe_parameters",

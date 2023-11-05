@@ -68,6 +68,8 @@ class FakeAws(
         moto.mock_ssm,
         moto.mock_stepfunctions,
         moto.mock_sts,
+        moto.mock_sqs,
+        moto.mock_sns,
     ]
 
     ars: ARS

@@ -58,7 +58,11 @@ class IamGroup(res_lib.BaseDocument):
         return console.iam.get_user_group(name_or_arn=self.arn)
 
 
-iam_group_searcher = res_lib.Searcher(
+class IamGroupSearcher(res_lib.Searcher[IamGroup]):
+    pass
+
+
+iam_group_searcher = IamGroupSearcher(
     # list resources
     service="iam",
     method="list_groups",
@@ -122,7 +126,11 @@ class IamUser(res_lib.BaseDocument):
         return console.iam.get_user(name_or_arn=self.arn)
 
 
-iam_user_searcher = res_lib.Searcher(
+class IamUserSearcher(res_lib.Searcher[IamUser]):
+    pass
+
+
+iam_user_searcher = IamUserSearcher(
     # list resources
     service="iam",
     method="list_users",
@@ -241,7 +249,11 @@ class IamRole(res_lib.BaseDocument):
     # fmt: on
 
 
-iam_role_searcher = res_lib.Searcher(
+class IamRoleSearcher(res_lib.Searcher[IamRole]):
+    pass
+
+
+iam_role_searcher = IamRoleSearcher(
     # list resources
     service="iam",
     method="list_roles",
@@ -336,7 +348,11 @@ class IamPolicy(res_lib.BaseDocument):
     # fmt: on
 
 
-iam_policy_searcher = res_lib.Searcher(
+class IamPolicySearcher(res_lib.Searcher[IamPolicy]):
+    pass
+
+
+iam_policy_searcher = IamPolicySearcher(
     # list resources
     service="iam",
     method="list_policies",

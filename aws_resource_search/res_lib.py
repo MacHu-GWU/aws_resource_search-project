@@ -416,7 +416,7 @@ def preprocess_query(query: T.Optional[str]) -> str:
 
 
 @dataclasses.dataclass
-class Searcher(BaseModel):
+class Searcher(BaseModel, T.Generic[T_DOCUMENT_OBJ]):
     """
     :param service:
     :param method:

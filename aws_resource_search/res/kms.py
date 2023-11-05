@@ -87,7 +87,11 @@ class KmsKeyAlias(res_lib.BaseDocument):
     # fmt: on
 
 
-kms_key_alias_searcher = res_lib.Searcher(
+class KmsKeyAliasSearcher(res_lib.Searcher[KmsKeyAlias]):
+    pass
+
+
+kms_key_alias_searcher = KmsKeyAliasSearcher(
     # list resources
     service="kms",
     method="list_aliases",

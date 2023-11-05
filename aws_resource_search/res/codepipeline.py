@@ -96,7 +96,11 @@ class CodePipelinePipeline(res_lib.BaseDocument):
     # fmt: on
 
 
-codepipeline_pipeline_searcher = res_lib.Searcher(
+class CodePipelinePipelineSearcher(res_lib.Searcher[CodePipelinePipeline]):
+    pass
+
+
+codepipeline_pipeline_searcher = CodePipelinePipelineSearcher(
     # list resources
     service="codepipeline",
     method="list_pipelines",

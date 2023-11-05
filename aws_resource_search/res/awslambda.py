@@ -99,14 +99,16 @@ class LambdaFunction(res_lib.BaseDocument):
                     Item("architectures", architectures),
                 ]
             )
-            detail_items.extend([
-                Item(
-                    "layer",
-                    dct["Arn"],
-                    url=ars.aws_console.awslambda.get_layer(name_or_arn=dct["Arn"]),
-                )
-                for dct in func_config.get("Layers", [])
-            ])
+            detail_items.extend(
+                [
+                    Item(
+                        "layer",
+                        dct["Arn"],
+                        url=ars.aws_console.awslambda.get_layer(name_or_arn=dct["Arn"]),
+                    )
+                    for dct in func_config.get("Layers", [])
+                ]
+            )
 
             env_vars = func_config.get("Environment", {}).get("Variables", {})
             detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars))
@@ -153,7 +155,11 @@ class LambdaFunction(res_lib.BaseDocument):
         return detail_items
 
 
-lambda_function_searcher = res_lib.Searcher(
+class LambdaFunctionSearcher(res_lib.Searcher[LambdaFunction]):
+    pass
+
+
+lambda_function_searcher = LambdaFunctionSearcher(
     # list resources
     service="lambda",
     method="list_functions",
@@ -305,7 +311,11 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
         return detail_items
 
 
-lambda_function_alias_searcher = res_lib.Searcher(
+class LambdaFunctionAliasSearcher(res_lib.Searcher[LambdaFunctionAlias]):
+    pass
+
+
+lambda_function_alias_searcher = LambdaFunctionAliasSearcher(
     # list resources
     service="lambda",
     method="list_aliases",
@@ -368,7 +378,11 @@ class LambdaLayer(res_lib.BaseDocument):
         return console.awslambda.get_layer(name_or_arn=self.arn + ":1")
 
 
-lambda_layer_searcher = res_lib.Searcher(
+class LambdaLayerSearcher(res_lib.Searcher[LambdaLayer]):
+    pass
+
+
+lambda_layer_searcher = LambdaLayerSearcher(
     # list resources
     service="lambda",
     method="list_layers",

@@ -77,7 +77,11 @@ class SnsTopic(res_lib.BaseDocument):
     # fmt: on
 
 
-sns_topic_searcher = res_lib.Searcher(
+class SnsTopicSearcher(res_lib.Searcher[SnsTopic]):
+    pass
+
+
+sns_topic_searcher = SnsTopicSearcher(
     # list resources
     service="sns",
     method="list_topics",

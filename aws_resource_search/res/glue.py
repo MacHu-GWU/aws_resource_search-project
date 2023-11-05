@@ -62,7 +62,11 @@ class GlueDatabase(res_lib.BaseDocument):
         return console.glue.get_database(database_or_arn=self.arn)
 
 
-glue_database_searcher = res_lib.Searcher(
+class GlueDatabaseSearcher(res_lib.Searcher[GlueDatabase]):
+    pass
+
+
+glue_database_searcher = GlueDatabaseSearcher(
     # list resources
     service="glue",
     method="get_databases",
@@ -138,7 +142,11 @@ class GlueTable(res_lib.BaseDocument):
         return console.glue.get_table(table_or_arn=self.arn)
 
 
-glue_table_searcher = res_lib.Searcher(
+class GlueTableSearcher(res_lib.Searcher[GlueTable]):
+    pass
+
+
+glue_table_searcher = GlueTableSearcher(
     # list resources
     service="glue",
     method="get_tables",
@@ -247,7 +255,11 @@ class GlueJob(res_lib.BaseDocument):
     # fmt: on
 
 
-glue_job_searcher = res_lib.Searcher(
+class GlueJobSearcher(res_lib.Searcher[GlueJob]):
+    pass
+
+
+glue_job_searcher = GlueJobSearcher(
     # list resources
     service="glue",
     method="get_jobs",
@@ -379,7 +391,11 @@ class GlueJobRun(res_lib.BaseDocument):
     # fmt: on
 
 
-glue_job_run_searcher = res_lib.Searcher(
+class GlueJobRunSearcher(res_lib.Searcher[GlueJobRun]):
+    pass
+
+
+glue_job_run_searcher = GlueJobRunSearcher(
     # list resources
     service="glue",
     method="get_job_runs",
@@ -394,7 +410,9 @@ glue_job_run_searcher = res_lib.Searcher(
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="job_name"),
         res_lib.sayt.StoredField(name="state"),
-        res_lib.sayt.DatetimeField(name="started_on", sortable=True, ascending=False, stored=True),
+        res_lib.sayt.DatetimeField(
+            name="started_on", sortable=True, ascending=False, stored=True
+        ),
         res_lib.sayt.StoredField(name="completed_on"),
         res_lib.sayt.StoredField(name="execution_time"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
@@ -481,7 +499,11 @@ class GlueCrawler(res_lib.BaseDocument):
         return detail_items
 
 
-glue_crawler_searcher = res_lib.Searcher(
+class GlueCrawlerSearcher(res_lib.Searcher[GlueCrawler]):
+    pass
+
+
+glue_crawler_searcher = GlueCrawlerSearcher(
     # list resources
     service="glue",
     method="get_crawlers",

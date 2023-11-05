@@ -128,7 +128,11 @@ class CloudFormationStack(res_lib.BaseDocument):
         return detail_items
 
 
-cloudformation_stack_searcher = res_lib.Searcher(
+class CloudFormationStackSearcher(res_lib.Searcher[CloudFormationStack]):
+    pass
+
+
+cloudformation_stack_searcher = CloudFormationStackSearcher(
     # list resources
     service="cloudformation",
     method="describe_stacks",

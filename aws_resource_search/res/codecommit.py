@@ -88,6 +88,10 @@ class CodeCommitRepository(res_lib.BaseDocument):
     # fmt: on
 
 
+class CodeCommitRepositorySearcher(res_lib.Searcher[CodeCommitRepository]):
+    pass
+
+
 codecommit_repository_searcher = res_lib.Searcher(
     # list resources
     service="codecommit",

@@ -39,6 +39,10 @@ class SfnStateMachine(res_lib.BaseDocument):
         )
 
     @property
+    def state_machine_name(self) -> str:
+        return self.name
+
+    @property
     def title(self) -> str:
         return format_key_value("name", self.name)
 
@@ -92,7 +96,11 @@ class SfnStateMachine(res_lib.BaseDocument):
     # fmt: on
 
 
-sfn_state_machine_searcher = res_lib.Searcher(
+class SfnStateMachineSearcher(res_lib.Searcher[SfnStateMachine]):
+    pass
+
+
+sfn_state_machine_searcher = SfnStateMachineSearcher(
     # list resources
     service="stepfunctions",
     method="list_state_machines",
@@ -207,7 +215,12 @@ class SfnExecution(res_lib.BaseDocument):
         return detail_items
     # fmt: on
 
-sfn_execution_searcher = res_lib.Searcher(
+
+class SfnExecutionSearcher(res_lib.Searcher[SfnExecution]):
+    pass
+
+
+sfn_execution_searcher = SfnExecutionSearcher(
     # list resources
     service="stepfunctions",
     method="list_executions",
@@ -221,7 +234,9 @@ sfn_execution_searcher = res_lib.Searcher(
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.StoredField(name="sm_name"),
-        res_lib.sayt.DatetimeField(name="start_at", sortable=True, ascending=False, stored=True),
+        res_lib.sayt.DatetimeField(
+            name="start_at", sortable=True, ascending=False, stored=True
+        ),
         res_lib.sayt.StoredField(name="end_at"),
         res_lib.sayt.StoredField(name="status"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
@@ -231,4 +246,3 @@ sfn_execution_searcher = res_lib.Searcher(
     cache_expire=24 * 60 * 60,
     more_cache_key=lambda boto_kwargs: [boto_kwargs["stateMachineArn"]],
 )
-

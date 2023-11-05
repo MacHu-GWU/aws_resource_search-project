@@ -1,16 +1,21 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
 import dataclasses
 
 from .ars_base import ARSBase
 from .compat import cached_property
 from .res_lib import Searcher
 
+if T.TYPE_CHECKING:
+    {%- for sr_meta in sr_meta_list %}
+    from .res.{{ sr_meta.module }} import {{ sr_meta.klass }}
+    {%- endfor %}
 
 @dataclasses.dataclass
 class ARS(ARSBase):  # pragma: no cover
     {%- for sr_meta in sr_meta_list %}
     @cached_property
-    def {{ sr_meta.id_snake }}(self) -> Searcher:
+    def {{ sr_meta.id_snake }}(self) -> "{{ sr_meta.klass }}":
         return self.get_searcher("{{ sr_meta.id }}")
     {% endfor %}

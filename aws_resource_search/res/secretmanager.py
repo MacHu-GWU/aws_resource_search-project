@@ -79,7 +79,11 @@ class SecretsManagerSecret(res_lib.BaseDocument):
     # fmt: on
 
 
-secretsmanager_secret_searcher = res_lib.Searcher(
+class SecretsManagerSecretSearcher(res_lib.Searcher[SecretsManagerSecret]):
+    pass
+
+
+secretsmanager_secret_searcher = SecretsManagerSecretSearcher(
     # list resources
     service="secretsmanager",
     method="list_secrets",

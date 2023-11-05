@@ -125,7 +125,11 @@ class Ec2Instance(res_lib.BaseDocument):
         return detail_items
 
 
-ec2_instance_searcher = res_lib.Searcher(
+class Ec2InstanceSearcher(res_lib.Searcher[Ec2Instance]):
+    pass
+
+
+ec2_instance_searcher = Ec2InstanceSearcher(
     # list resources
     service="ec2",
     method="describe_instances",
@@ -247,7 +251,11 @@ class Ec2Vpc(res_lib.BaseDocument):
         return detail_items
 
 
-ec2_vpc_searcher = res_lib.Searcher(
+class Ec2VpcSearcher(res_lib.Searcher[Ec2Vpc]):
+    pass
+
+
+ec2_vpc_searcher = Ec2VpcSearcher(
     # list resources
     service="ec2",
     method="describe_vpcs",
@@ -347,7 +355,11 @@ class Ec2Subnet(res_lib.BaseDocument):
         return detail_items
 
 
-ec2_subnet_searcher = res_lib.Searcher(
+class Ec2SubnetSearcher(res_lib.Searcher[Ec2Subnet]):
+    pass
+
+
+ec2_subnet_searcher = Ec2SubnetSearcher(
     # list resources
     service="ec2",
     method="describe_subnets",
@@ -435,7 +447,11 @@ class Ec2SecurityGroup(res_lib.BaseDocument):
         return detail_items
 
 
-ec2_securitygroup_searcher = res_lib.Searcher(
+class Ec2SecurityGroupSearcher(res_lib.Searcher[Ec2SecurityGroup]):
+    pass
+
+
+ec2_securitygroup_searcher = Ec2SecurityGroupSearcher(
     # list resources
     service="ec2",
     method="describe_security_groups",

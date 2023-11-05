@@ -116,7 +116,11 @@ class CodeBuildProject(res_lib.BaseDocument):
     # fmt: on
 
 
-codebuild_project_searcher = res_lib.Searcher(
+class CodeBuildProjectSearcher(res_lib.Searcher[CodeBuildProject]):
+    pass
+
+
+codebuild_project_searcher = CodeBuildProjectSearcher(
     # list resources
     service="codebuild",
     method="list_projects",
@@ -284,7 +288,11 @@ class CodeBuildJobRun(res_lib.BaseDocument):
     # fmt: on
 
 
-codebuild_job_run_searcher = res_lib.Searcher(
+class CodeBuildJobRunSearcher(res_lib.Searcher):
+    pass
+
+
+codebuild_job_run_searcher = CodeBuildJobRunSearcher(
     # list resources
     service="codebuild",
     method="list_builds_for_project",

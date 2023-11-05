@@ -51,6 +51,7 @@ class SearcherMetadata:
     desc: str = dataclasses.field()
     ngram: str = dataclasses.field()
     module: str = dataclasses.field(default=None)
+    klass: str = dataclasses.field(default=None)
     var: str = dataclasses.field(default=None)
 
     @property

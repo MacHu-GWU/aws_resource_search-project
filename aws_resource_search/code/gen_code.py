@@ -71,6 +71,7 @@ def enrich_searcher_metadata(sr_meta_list: T.List[SearcherMetadata]):
         for var_name, value in module.__dict__.items():
             if isinstance(value, Searcher):
                 sr_meta_dct_view[value.resource_type].module = module_name
+                sr_meta_dct_view[value.resource_type].klass = value.__class__.__name__
                 sr_meta_dct_view[value.resource_type].var = var_name
 
 
@@ -84,6 +85,7 @@ def dump_searchers_json(sr_meta_list: T.List[SearcherMetadata]):
             "desc": sr_meta.desc,
             "ngram": sr_meta.ngram,
             "module": sr_meta.module,
+            "klass": sr_meta.klass,
             "var": sr_meta.var,
         }
     path_searchers_json.write_text(json.dumps(data, indent=4, sort_keys=True))
@@ -91,7 +93,7 @@ def dump_searchers_json(sr_meta_list: T.List[SearcherMetadata]):
 
 def generate_implemented_resource_types(sr_meta_list: T.List[SearcherMetadata]):
     dir_folder = dir_project_root.joinpath(
-        "docs", "source", "03-User-Guide-Implemented-AWS-Resource-Types"
+        "docs", "source", "03-User-Guide-Implemented-AWS-Resource-Types",
     )
     path_tpl = dir_here.joinpath("searchers_index.rst.jinja")
     path_index = dir_folder.joinpath("index.rst")
