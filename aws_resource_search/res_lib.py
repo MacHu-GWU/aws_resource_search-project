@@ -146,7 +146,7 @@ def get_none_or_default(
     data: T.Any,
     path: str,
     default: T.Optional[T.Any] = None,
-) -> str:
+) -> T.Any:
     """
     A helper method to get value from ``data``. If the value doesn't exist,
     it will return the default value.
@@ -285,40 +285,6 @@ class BaseDocument(BaseModel):
     raw_data: T_RESULT_DATA = dataclasses.field()
     id: str = dataclasses.field()
     name: str = dataclasses.field()
-
-    def get_none_or_default(self, path: str, default: T.Optional[T.Any] = None) -> str:
-        """
-        A helper method to get value from ``raw_data``. If the value doesn't exist,
-        it will return the default value.
-
-        Example:
-
-            >>> doc = BaseDocument(raw_data={"a": 1, "b": {"c": 3}}, id="id", name="name")
-            >>> doc.get_none_or_default("a")
-            1
-            >>> doc.get_none_or_default("d")
-            None
-            >>> doc.get_none_or_default("d", "hello")
-            "hello"
-            >>> doc.get_none_or_default("b.c")
-            3
-            >>> doc.get_none_or_default("b.d")
-            None
-            >>> doc.get_none_or_default("b.d", "hello")
-            "hello"
-            >>> doc.get_none_or_default("c.e")
-            None
-            >>> doc.get_none_or_default("c.e", "hello")
-            "hello"
-
-        :param path: jmespath syntax
-        :param default: default value if the value doesn't exist
-        """
-        value = jmespath.search(path, self.raw_data)
-        return value if value else default
-
-    def get_description(self, path: str, default: str = "No description") -> str:
-        return self.get_none_or_default(path, default)
 
     @classmethod
     def from_resource(
@@ -467,7 +433,9 @@ class BaseDocument(BaseModel):
         try:
             return [
                 DetailItem.from_detail(
-                    arn_field_name, self.arn, url=self.get_console_url(ars.aws_console)
+                    name=arn_field_name,
+                    value=self.arn,
+                    url=self.get_console_url(ars.aws_console),
                 ),
             ]
         except NotImplementedError:
@@ -523,6 +491,33 @@ T_DOCUMENT_OBJ = T.TypeVar("T_DOCUMENT_OBJ", bound=BaseDocument)
 SEP = "____"
 
 T_MORE_CACHE_KEY = T.Callable[[sayt.T_DOCUMENT], T.List[str]]
+
+
+_built_in_fields = {"raw_data", "id", "name"}
+
+
+def define_fields(
+    fields: T.List[sayt.T_Field] = None,
+    id_field_boost: float = 5.0,
+    name_minsize: int = 2,
+    name_maxsize: int = 4,
+) -> T.List[sayt.T_Field]:
+    """
+    A helper function to define the :attr:`Searcher.fields` property. It comes
+    with the default fields: ``raw_data``, ``id``, ``name``.
+    """
+    final_fields = [
+        sayt.StoredField(name="raw_data"),
+        sayt.IdField(name="id", field_boost=id_field_boost, stored=True),
+        sayt.NgramWordsField(
+            name="name", minsize=name_minsize, maxsize=name_maxsize, stored=True
+        ),
+    ]
+    if fields:
+        final_fields.extend(
+            [field for field in fields if field.name not in _built_in_fields]
+        )
+    return final_fields
 
 
 def preprocess_query(query: T.Optional[str]) -> str:
@@ -723,10 +718,12 @@ class Searcher(BaseModel, T.Generic[T_DOCUMENT_OBJ]):
 # ------------------------------------------------------------------------------
 # Custom Item
 # ------------------------------------------------------------------------------
-
-
 @dataclasses.dataclass
 class ArsBaseItem(zf.Item):
+    """
+    Base class for all ``zelfred.Item`` subclasses in ``aws_resource_search``.
+    """
+
     def open_url_or_print(self, ui: zf.UI, url: str):
         try:
             zf.open_url(url)
@@ -783,8 +780,13 @@ class DetailItemVariables(TypedDict):
 @dataclasses.dataclass
 class DetailItem(ArsBaseItem):
     """
-    Represent a item to show the detail of a resource. User can tap
+    Represent an item to show the detail of a resource. User can tap
     'Ctrl + P' to enter this view.
+
+    The default user action behaviors are:
+
+    1. tap "Enter" to open the url to verify the detail, if url is not available, do nothing.
+    2. tap "Ctrl + A" to copy the detail value text to clipboard. if value is not available, do nothing.
     """
 
     variables: DetailItemVariables = dataclasses.field(default_factory=dict)
@@ -805,6 +807,7 @@ class DetailItem(ArsBaseItem):
         copy: T.Optional[str] = None,
         url: T.Optional[str] = None,
         uid: T.Optional[str] = None,
+        autocomplete: T.Optional[str] = None,
     ):
         """
         Create one :class:`DetailItem` that may be can copy text or open url.
@@ -818,6 +821,7 @@ class DetailItem(ArsBaseItem):
         kwargs = dict(
             title=title,
             subtitle=subtitle,
+            autocomplete=autocomplete,
             variables={"copy": copy, "url": url},
         )
         if uid:
@@ -859,16 +863,21 @@ class DetailItem(ArsBaseItem):
         )
 
     @classmethod
-    def from_env_vars(cls, env_vars: T.Dict[str, str]) -> T.List["DetailItem"]:
+    def from_env_vars(
+        cls,
+        env_vars: T.Dict[str, str],
+        url: T.Optional[str] = None,
+    ) -> T.List["DetailItem"]:
         """
         Create MANY :class:`DetailItem` from environment variable key value pairs.
         """
         items = [
-            cls(
+            cls.new(
                 title=f"🎯 env var: {format_key_value(k, v)}",
-                subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy value.",
-                uid=k,
-                variables={"copy": v, "url": None},
+                subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy value.",
+                uid=f"env_var {k}",
+                copy=v,
+                url=url,
             )
             for k, v in env_vars.items()
         ]
@@ -876,24 +885,30 @@ class DetailItem(ArsBaseItem):
             return items
         else:
             return [
-                cls(
+                cls.new(
                     title=f"🏷 env var: 🔴 No environment variable found",
                     subtitle=f"no environment variable found",
                     uid=f"no environment variable found",
+                    url=url,
                 )
             ]
 
     @classmethod
-    def from_tags(cls, tags: T.Dict[str, str]) -> T.List["DetailItem"]:
+    def from_tags(
+        cls,
+        tags: T.Dict[str, str],
+        url: T.Optional[str] = None,
+    ) -> T.List["DetailItem"]:
         """
         Create MANY :class:`DetailItem` from AWS resource tag key value pairs.
         """
         items = [
             cls.new(
                 title=f"🏷 tag: {format_key_value(k, v)}",
-                subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy value.",
+                subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy value.",
+                uid=f"tag {k}",
                 copy=v,
-                uid=f"Tag {k}",
+                url=url,
             )
             for k, v in tags.items()
         ]
@@ -905,6 +920,7 @@ class DetailItem(ArsBaseItem):
                     title=f"🏷 tag: 🔴 No tag found",
                     subtitle=f"no tag found",
                     uid=f"no tag found",
+                    url=url,
                 )
             ]
 

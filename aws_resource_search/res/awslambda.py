@@ -25,11 +25,11 @@ lambda_function_state_icon = {
 class LambdaFunction(res_lib.BaseDocument):
     @property
     def description(self) -> str:
-        return self.get_description("Description")
+        return res_lib.get_description(self.raw_data, "Description")
 
     @property
     def runtime(self) -> str:
-        return self.raw_data.get("Runtime", "Unknown")
+        return self.raw_data.get("Runtime", "NA")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -66,16 +66,18 @@ class LambdaFunction(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.awslambda.get_function(name_or_arn=self.arn)
 
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.lambda_client.get_function(FunctionName=self.name)
             func_config = res["Configuration"]
-            description = func_config.get("Description", "NA")
+            description = res_lib.get_description(func_config, "Description")
             role_arn = func_config["Role"]
-            runtime = func_config["Runtime"]
+            runtime = func_config.get("Runtime", "NA")
             timeout = func_config["Timeout"]
             memory_size = func_config["MemorySize"]
             handler = func_config["Handler"]
@@ -84,39 +86,31 @@ class LambdaFunction(res_lib.BaseDocument):
             architectures = func_config.get("Architectures", [])
 
             state_icon = lambda_function_state_icon[state]
-            detail_items.extend(
-                [
-                    Item("description", description),
-                    Item(
-                        "🧢 role_arn",
-                        role_arn,
-                        url=ars.aws_console.iam.get_role(role_arn),
-                    ),
-                    Item("runtime", runtime),
-                    Item("timeout", timeout),
-                    Item("memory_size", memory_size),
-                    Item("handler", handler),
-                    Item("state", f"{state_icon} {state}"),
-                    Item("last_modified", last_modified),
-                    Item("architectures", architectures),
-                ]
-            )
-            detail_items.extend(
-                [
-                    Item(
-                        "layer",
-                        dct["Arn"],
-                        url=ars.aws_console.awslambda.get_layer(name_or_arn=dct["Arn"]),
-                    )
-                    for dct in func_config.get("Layers", [])
-                ]
-            )
+            detail_items.extend([
+                from_detail("description", description, url=url),
+                from_detail("🧢 role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
+                from_detail("runtime", runtime, url=url),
+                from_detail("timeout", timeout, url=url),
+                from_detail("memory_size", memory_size, url=url),
+                from_detail("handler", handler, url=url),
+                from_detail("state", f"{state_icon} {state}", url=url),
+                from_detail("last_modified", last_modified, url=url),
+                from_detail("architectures", architectures, url=url),
+            ])
 
+            detail_items.extend([
+                from_detail(
+                    "layer",
+                    dct["Arn"],
+                    url=ars.aws_console.awslambda.get_layer(name_or_arn=dct["Arn"]),
+                )
+                for dct in func_config.get("Layers", [])
+            ])
             env_vars = func_config.get("Environment", {}).get("Variables", {})
-            detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars))
+            detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars, url))
 
             tags: dict = res.get("Tags", {})
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         with self.enrich_details(detail_items):
             res = ars.bsm.lambda_client.list_event_source_mappings(
@@ -129,19 +123,15 @@ class LambdaFunction(res_lib.BaseDocument):
                     event_source_arn = mapping["EventSourceArn"]
                     state = mapping["State"]
                     detail_items.append(
-                        res_lib.DetailItem(
+                        res_lib.DetailItem.new(
                             title="mapping: {}, {}".format(
                                 format_key_value("event_source_arn", event_source_arn),
                                 format_key_value("state", state),
                             ),
                             subtitle=f"🌐 {ShortcutEnum.ENTER} to open event source url, 📋 {ShortcutEnum.CTRL_A} to copy event sourec arn.",
                             uid=event_source_uuid,
-                            variables={
-                                "copy": event_source_arn,
-                                "url": arns.Arn.from_arn(
-                                    event_source_arn
-                                ).to_console_url(),
-                            },
+                            copy=event_source_arn,
+                            url=arns.Arn.from_arn(event_source_arn).to_console_url(),
                         )
                     )
             else:
@@ -150,11 +140,12 @@ class LambdaFunction(res_lib.BaseDocument):
                         title=f"🔴 No mapping found",
                         subtitle=f"{ShortcutEnum.ENTER} to confirm in AWS console",
                         uid=f"no mapping found",
-                        url=self.get_console_url(ars.aws_console),
+                        url=url,
                     )
                 )
 
         return detail_items
+    # fmt: on
 
 
 class LambdaFunctionSearcher(res_lib.Searcher[LambdaFunction]):
@@ -172,11 +163,7 @@ lambda_function_searcher = LambdaFunctionSearcher(
     doc_class=LambdaFunction,
     # search
     resource_type=SearcherEnum.lambda_function,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-    ],
+    fields=res_lib.define_fields(),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
@@ -194,8 +181,7 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
 
     @property
     def description(self) -> str:
-        desc = self.raw_data.get("Description")
-        return desc if desc else "No Description"
+        return res_lib.get_description(self.raw_data, "Description")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -213,12 +199,8 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        if not self.description:
-            description = "No description"
-        else:
-            description = self.description
         return "{}, {}".format(
-            description,
+            self.description,
             self.short_subtitle,
         )
 
@@ -233,9 +215,11 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.awslambda.get_function_alias(name_or_arn=self.arn)
 
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.lambda_client.get_function_configuration(
@@ -255,24 +239,20 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
             state_icon = lambda_function_state_icon[state]
             detail_items.extend(
                 [
-                    Item("description", description),
-                    Item(
-                        "🧢 role_arn",
-                        role_arn,
-                        url=ars.aws_console.iam.get_role(role_arn),
-                    ),
-                    Item("runtime", runtime),
-                    Item("timeout", timeout),
-                    Item("memory_size", memory_size),
-                    Item("handler", handler),
-                    Item("state", f"{state_icon} {state}"),
-                    Item("last_modified", last_modified),
-                    Item("architectures", architectures),
+                    from_detail("description", description, url=url),
+                    from_detail("🧢 role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
+                    from_detail("runtime", runtime, url=url),
+                    from_detail("timeout", timeout, url=url),
+                    from_detail("memory_size", memory_size, url=url),
+                    from_detail("handler", handler, url=url),
+                    from_detail("state", f"{state_icon} {state}", url=url),
+                    from_detail("last_modified", last_modified, url=url),
+                    from_detail("architectures", architectures, url=url),
                 ]
             )
 
             env_vars = res.get("Environment", {}).get("Variables", {})
-            detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars))
+            detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars, url))
 
         with self.enrich_details(detail_items):
             res = ars.bsm.lambda_client.list_event_source_mappings(
@@ -285,30 +265,29 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
                     event_source_arn = mapping["EventSourceArn"]
                     state = mapping["State"]
                     detail_items.append(
-                        res_lib.DetailItem(
+                        res_lib.DetailItem.new(
                             title="mapping: {}, {}".format(
                                 format_key_value("event_source_arn", event_source_arn),
                                 format_key_value("state", state),
                             ),
                             subtitle=f"🌐 {ShortcutEnum.ENTER} to open event source url, 📋 {ShortcutEnum.CTRL_A} to copy event sourec arn.",
                             uid=event_source_uuid,
-                            variables={
-                                "copy": event_source_arn,
-                                "url": arns.Arn.from_arn(
-                                    event_source_arn
-                                ).to_console_url(),
-                            },
+                            copy=event_source_arn,
+                            url =arns.Arn.from_arn(event_source_arn).to_console_url(),
                         )
                     )
             else:
                 detail_items.append(
-                    res_lib.DetailItem(
+                    res_lib.DetailItem.new(
                         title=f"🔴 No mapping found",
+                        subtitle=f"{ShortcutEnum.ENTER} to confirm in AWS console",
                         uid=f"no mapping found",
+                        url=url,
                     )
                 )
 
         return detail_items
+    # fmt: on
 
 
 class LambdaFunctionAliasSearcher(res_lib.Searcher[LambdaFunctionAlias]):
@@ -326,14 +305,7 @@ lambda_function_alias_searcher = LambdaFunctionAliasSearcher(
     doc_class=LambdaFunctionAlias,
     # search
     resource_type=SearcherEnum.lambda_function_alias,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="description"),
-        res_lib.sayt.StoredField(name="func_name"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="alias_arn"),
-    ],
+    fields=res_lib.define_fields(),
     cache_expire=24 * 60 * 60,
     more_cache_key=lambda boto_kwargs: [boto_kwargs["FunctionName"]],
 )
@@ -343,13 +315,25 @@ lambda_function_alias_searcher = LambdaFunctionAliasSearcher(
 class LambdaLayer(res_lib.BaseDocument):
     @property
     def description(self) -> str:
-        desc = self.raw_data.get("LatestMatchingVersion", {}).get("Description")
-        return desc if desc else "No Description"
+        return res_lib.get_description(
+            self.raw_data,
+            "LatestMatchingVersion.Description",
+        )
 
     @property
     def compatible_runtimes(self) -> T.List[str]:
-        return self.raw_data.get("LatestMatchingVersion", {}).get(
-            "CompatibleRuntimes", []
+        return res_lib.get_none_or_default(
+            self.raw_data,
+            "LatestMatchingVersion.CompatibleRuntimes",
+            [],
+        )
+
+    @property
+    def compatible_architectures(self) -> T.List[str]:
+        return res_lib.get_none_or_default(
+            self.raw_data,
+            "LatestMatchingVersion.CompatibleArchitectures",
+            [],
         )
 
     @classmethod
@@ -366,8 +350,9 @@ class LambdaLayer(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return "{}, {}, {}".format(
-            format_key_value("runtimes", self.compatible_runtimes),
+        return "{}, {}, {}, {}".format(
+            format_key_value("runtime", self.compatible_runtimes),
+            format_key_value("arch", self.compatible_architectures),
             format_key_value("description", self.description),
             self.short_subtitle,
         )
@@ -399,11 +384,7 @@ lambda_layer_searcher = LambdaLayerSearcher(
     doc_class=LambdaLayer,
     # search
     resource_type=SearcherEnum.lambda_layer,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-    ],
+    fields=res_lib.define_fields(),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
