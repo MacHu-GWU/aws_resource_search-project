@@ -14,7 +14,7 @@ if T.TYPE_CHECKING:
 
 
 def extract_datetime(resource: res_lib.T_RESULT_DATA) -> str:
-    return res_lib.extract_datetime(resource, "CreateDate", "No CreateDate")
+    return res_lib.get_datetime_isofmt(resource, "CreateDate", "No CreateDate")
 
 
 @dataclasses.dataclass

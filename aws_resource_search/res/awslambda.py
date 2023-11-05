@@ -23,19 +23,20 @@ lambda_function_state_icon = {
 
 @dataclasses.dataclass
 class LambdaFunction(res_lib.BaseDocument):
-    description: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    func_arn: str = dataclasses.field()
+    @property
+    def description(self) -> str:
+        return self.get_description("Description")
+
+    @property
+    def runtime(self) -> str:
+        return self.raw_data.get("Runtime", "Unknown")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            description=resource.get("Description", "No Description"),
             id=resource["FunctionName"],
             name=resource["FunctionName"],
-            func_arn=resource["FunctionArn"],
         )
 
     @property
@@ -48,8 +49,9 @@ class LambdaFunction(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return "{}, {}".format(
-            self.description,
+        return "{}, {}, {}".format(
+            format_key_value("runtime", self.runtime),
+            format_key_value("description", self.description),
             self.short_subtitle,
         )
 
@@ -59,7 +61,7 @@ class LambdaFunction(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.func_arn
+        return self.raw_data["FunctionArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.awslambda.get_function(name_or_arn=self.arn)
@@ -172,10 +174,8 @@ lambda_function_searcher = LambdaFunctionSearcher(
     resource_type=SearcherEnum.lambda_function,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="description"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
         res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="func_arn"),
     ],
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
@@ -184,15 +184,18 @@ lambda_function_searcher = LambdaFunctionSearcher(
 
 @dataclasses.dataclass
 class LambdaFunctionAlias(res_lib.BaseDocument):
-    description: str = dataclasses.field()
-    func_name: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    alias_arn: str = dataclasses.field()
-
     @property
     def alias(self) -> str:
         return self.name
+
+    @property
+    def function_name(self) -> str:
+        return self.arn.split(":")[-2]
+
+    @property
+    def description(self) -> str:
+        desc = self.raw_data.get("Description")
+        return desc if desc else "No Description"
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -200,11 +203,8 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
         lbd_func = arns.res.LambdaFunction.from_arn(alias_arn)
         return cls(
             raw_data=resource,
-            description=resource.get("Description", "No Description"),
-            func_name=lbd_func.function_name,
             id=lbd_func.alias,
             name=lbd_func.alias,
-            alias_arn=alias_arn,
         )
 
     @property
@@ -224,11 +224,11 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
 
     @property
     def autocomplete(self) -> str:
-        return f"{self.func_name}@{self.name}"
+        return f"{self.function_name}@{self.name}"
 
     @property
     def arn(self) -> str:
-        return self.alias_arn
+        return self.raw_data["AliasArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.awslambda.get_function_alias(name_or_arn=self.arn)
@@ -239,7 +239,7 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
 
         with self.enrich_details(detail_items):
             res = ars.bsm.lambda_client.get_function_configuration(
-                FunctionName=self.func_name,
+                FunctionName=self.function_name,
                 Qualifier=self.name,
             )
             description = res.get("Description", "NA")
@@ -341,21 +341,23 @@ lambda_function_alias_searcher = LambdaFunctionAliasSearcher(
 
 @dataclasses.dataclass
 class LambdaLayer(res_lib.BaseDocument):
-    description: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    layer_arn: str = dataclasses.field()
+    @property
+    def description(self) -> str:
+        desc = self.raw_data.get("LatestMatchingVersion", {}).get("Description")
+        return desc if desc else "No Description"
+
+    @property
+    def compatible_runtimes(self) -> T.List[str]:
+        return self.raw_data.get("LatestMatchingVersion", {}).get(
+            "CompatibleRuntimes", []
+        )
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            description=resource.get("LatestMatchingVersion", {}).get(
-                "Description", "No Description"
-            ),
             id=resource["LayerName"],
             name=resource["LayerName"],
-            layer_arn=resource["LayerArn"],
         )
 
     @property
@@ -364,7 +366,11 @@ class LambdaLayer(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return self.description
+        return "{}, {}, {}".format(
+            format_key_value("runtimes", self.compatible_runtimes),
+            format_key_value("description", self.description),
+            self.short_subtitle,
+        )
 
     @property
     def autocomplete(self) -> str:
@@ -372,7 +378,7 @@ class LambdaLayer(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.layer_arn
+        return self.raw_data["LayerArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.awslambda.get_layer(name_or_arn=self.arn + ":1")
@@ -395,10 +401,8 @@ lambda_layer_searcher = LambdaLayerSearcher(
     resource_type=SearcherEnum.lambda_layer,
     fields=[
         res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="description"),
         res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
         res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="layer_arn"),
     ],
     cache_expire=24 * 60 * 60,
     more_cache_key=None,

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Utility class and function in this module will be used in
-:mod:`aws_resource_search.res` module.
+Utility class and function in this module will be used in writing
+:mod:`aws_resource_search.res` module nice and clean.
 """
 
 import typing as T
@@ -12,7 +12,7 @@ import copy
 import dataclasses
 import contextlib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 import jmespath
 import botocore.exceptions
@@ -46,7 +46,9 @@ T_RESULT_DATA = T.Union[sayt.T_DOCUMENT, str]
 
 class ResourceIterproxy(IterProxy[T_RESULT_DATA]):
     """
-    todo: docstring
+    Advanced iterator object for AWS resource data in boto3 API response.
+
+    Ref: https://github.com/MacHu-GWU/iterproxy-project
     """
 
 
@@ -118,7 +120,6 @@ def list_resources(
         ...     result_path=ResultPath(path="Groups"),
         ... ):
         ...     print(iam_group_data)
-
     """
 
     def func():
@@ -141,12 +142,106 @@ def list_resources(
 # ------------------------------------------------------------------------------
 # Document
 # ------------------------------------------------------------------------------
+def get_none_or_default(
+    data: T.Any,
+    path: str,
+    default: T.Optional[T.Any] = None,
+) -> str:
+    """
+    A helper method to get value from ``data``. If the value doesn't exist,
+    it will return the default value.
+
+    Example:
+
+        >>> doc = {"a": 1, "b": {"c": 3})
+        >>> get_none_or_default(data, "a")
+        1
+        >>> get_none_or_default(data, "d")
+        None
+        >>> get_none_or_default(data, "d", "hello")
+        "hello"
+        >>> get_none_or_default(data, "b.c")
+        3
+        >>> get_none_or_default(data, "b.d")
+        None
+        >>> get_none_or_default(data, "b.d", "hello")
+        "hello"
+        >>> get_none_or_default(data, "c.e")
+        None
+        >>> get_none_or_default(data, "c.e", "hello")
+        "hello"
+
+    :param path: jmespath syntax
+    :param default: default value if the value doesn't exist
+    """
+    value = jmespath.search(path, data)
+    return value if value else default
+
+
+def get_description(
+    data: T.Any,
+    path: str,
+    default: T.Optional[str] = "No description",
+) -> str:
+    return get_none_or_default(data, path, default)
+
+
+def get_datetime_isofmt(
+    data: T.Any,
+    path: str,
+    default: str = "No datetime",
+) -> str:
+    """
+    Extract isoformat datetime string from a dictionary using Jmespath.
+
+    Example:
+
+        >>> get_datetime_isofmt({"CreateDate": datetime(2021, 1, 1)}, path="CreateDate")
+        "2021-01-01T00:00:00"
+    """
+    res = jmespath.search(path, data)
+    if bool(res) is False:
+        return default
+    elif isinstance(res, datetime):
+        return res.isoformat()
+    else:
+        return res
+
+
+def get_datetime_simplefmt(
+    data: T.Any,
+    path: str,
+    default: str = "No datetime",
+) -> str:
+    """
+    Extract isoformat datetime string from a dictionary using Jmespath.
+
+    Example:
+
+        >>> get_datetime_simplefmt({"CreateDate": datetime(2021, 1, 1, microsecond=123000)}, path="CreateDate")
+        "2021-01-01 00:00:00"
+    """
+    res = jmespath.search(path, data)
+    if bool(res) is False:
+        return default
+    elif isinstance(res, datetime):
+        if datetime.tzinfo is None:
+            res = res.replace(tzinfo=timezone.utc)
+        return res.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        return res
+
+
 @dataclasses.dataclass
 class BaseDocument(BaseModel):
     """
     This is the base class for AWS resource documents. A 'document' is a
     searchable object stored in the index, representing the metadata of
-    an AWS resource. To create a per-AWS-resource document class, you need to
+    an AWS resource.
+
+    **Guide, how to subclass this correctly**
+
+    To create a per-AWS-resource document class, you need to
     inherit from this class. For example, you can define a document class for
     S3 bucket like this:
 
@@ -156,7 +251,9 @@ class BaseDocument(BaseModel):
         ...     name: str = dataclasses.field()
 
     The base document has a mandatory field ``raw_data``, which is used to store
-    the data in the boto3 API call response. For example, for `s3_client.list_buckets <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_buckets.html>`, the raw data is:
+    the data in the boto3 API call response. For example, for
+    `s3_client.list_buckets <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_buckets.html>`,
+    the raw data is:
 
     .. code-block:: python
 
@@ -165,10 +262,19 @@ class BaseDocument(BaseModel):
             'CreationDate': datetime(2015, 1, 1)
         }
 
-    In your subclass,
+    Besides ``raw_data``, the base document also has two mandatory fields ``id``
+    and ``name``. The ``id`` field is used to uniquely identify the document,
+    and it is also a searchable ``IdField``. The ``name`` field is a human-firendly
+    name, and it is also an n-gram searchable ``NgramWordsField``. Both ``id``
+    and ``name`` should be able to extracted from ``raw_data``. However, we still
+    need to store the copy of its value in this attribute, because we need to
+    index them as searchable fields. You can define more searchable attribute
+    as you need.
 
-    In your subclass, you must implement the
-    following methods. Please read the docstrings to understand their functionality.
+    If an attribute is not searchable, you can define it as a property method.
+
+    In your subclass, you must implement the following methods.
+    Please read the docstrings to understand their functionality.
 
     - :meth:`from_resource`
     - :meth:`title`
@@ -177,6 +283,42 @@ class BaseDocument(BaseModel):
     """
 
     raw_data: T_RESULT_DATA = dataclasses.field()
+    id: str = dataclasses.field()
+    name: str = dataclasses.field()
+
+    def get_none_or_default(self, path: str, default: T.Optional[T.Any] = None) -> str:
+        """
+        A helper method to get value from ``raw_data``. If the value doesn't exist,
+        it will return the default value.
+
+        Example:
+
+            >>> doc = BaseDocument(raw_data={"a": 1, "b": {"c": 3}}, id="id", name="name")
+            >>> doc.get_none_or_default("a")
+            1
+            >>> doc.get_none_or_default("d")
+            None
+            >>> doc.get_none_or_default("d", "hello")
+            "hello"
+            >>> doc.get_none_or_default("b.c")
+            3
+            >>> doc.get_none_or_default("b.d")
+            None
+            >>> doc.get_none_or_default("b.d", "hello")
+            "hello"
+            >>> doc.get_none_or_default("c.e")
+            None
+            >>> doc.get_none_or_default("c.e", "hello")
+            "hello"
+
+        :param path: jmespath syntax
+        :param default: default value if the value doesn't exist
+        """
+        value = jmespath.search(path, self.raw_data)
+        return value if value else default
+
+    def get_description(self, path: str, default: str = "No description") -> str:
+        return self.get_none_or_default(path, default)
 
     @classmethod
     def from_resource(
@@ -373,28 +515,6 @@ class BaseDocument(BaseModel):
 
 
 T_DOCUMENT_OBJ = T.TypeVar("T_DOCUMENT_OBJ", bound=BaseDocument)
-
-
-def extract_datetime(
-    resource: T_RESULT_DATA,
-    jpath: str,
-    default: str = "No datetime",
-) -> str:
-    """
-    Extract isoformat datetime string from a dictionary using Jmespath.
-
-    Example:
-
-        >>> extract_datetime({"CreateDate": datetime(2021, 1, 1)}, path="CreateDate")
-        "2021-01-01T00:00:00"
-    """
-    res = jmespath.search(jpath, resource)
-    if res is None:
-        return default
-    elif isinstance(res, datetime):
-        return res.isoformat()
-    else:
-        return res
 
 
 # ------------------------------------------------------------------------------

@@ -10,6 +10,7 @@ resource types.
 import typing as T
 import json
 import dataclasses
+from datetime import datetime
 
 from .. import res_lib
 from ..terminal import format_key_value
@@ -31,17 +32,13 @@ class S3Bucket(res_lib.BaseDocument):
     """
 
     # declare the field names and types.
-    # it has to have at least two fields: "id" and "name".
-    # the id field is used to uniquely identify the resource, in this case,
-    # it is the bucket name.
-    # the name field is used to display the resource in the search result list
     # for most of AWS resource, it may have a "${resource_name}_arn" attribute.
     # most of AWS resource should store the ARN value as an attribute.
     # however, S3 bucket ARN can be calculated from the bucket name, so we
     # don't need to declare it here.
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    creation_date: str = dataclasses.field()
+    @property
+    def creation_date(self) -> T.Optional[datetime]:
+        return self.raw_data.get("CreationDate")
 
     # it has to have a class method named "from_resource", it converts the
     # the s3 bucket data in the response of boto3 s3_client.list_buckets method
@@ -56,7 +53,6 @@ class S3Bucket(res_lib.BaseDocument):
             raw_data=resource,
             id=resource["Name"],
             name=resource["Name"],
-            creation_date=resource["CreationDate"].isoformat(),
         )
 
     # it may have some additional property methods to provide more
@@ -255,8 +251,6 @@ s3_bucket_searcher = S3BucketSearcher(
             sortable=True,
             ascending=True,
         ),
-        # the creation_date is just for rendering
-        res_lib.sayt.StoredField(name="creation_date"),
     ],
     # the list_buckets API result will be cached for 24 hours, so that we don't
     # need to rebuild the index every time when user search
