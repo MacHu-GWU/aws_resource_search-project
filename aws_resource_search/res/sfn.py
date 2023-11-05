@@ -18,24 +18,23 @@ sfn_statemachine_status_icon_mapper = {
     "DELETING": "🔴",
 }
 
+sfn_statemachine_type_icon_mapper = {
+    "STANDARD": "⌛",
+    "EXPRESS": "🚀",
+}
+
 
 @dataclasses.dataclass
 class SfnStateMachine(res_lib.BaseDocument):
     type: str = dataclasses.field()
-    create_at: datetime = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    sm_arn: str = dataclasses.field()
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            type=resource.get("type", "Unknown"),
-            create_at=resource["creationDate"],
             id=resource["name"],
             name=resource["name"],
-            sm_arn=resource["stateMachineArn"],
+            type=resource.get("type", "STANDARD"),
         )
 
     @property
@@ -48,9 +47,9 @@ class SfnStateMachine(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return "{}, {}, {}".format(
-            format_key_value("type", self.type),
-            format_key_value("create_at", self.create_at),
+        type_icon = sfn_statemachine_type_icon_mapper[self.type]
+        return "{}, {}".format(
+            format_key_value("type", f"{type_icon} {self.type}"),
             self.short_subtitle,
         )
 
@@ -60,7 +59,7 @@ class SfnStateMachine(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.sm_arn
+        return self.raw_data["stateMachineArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.step_function.get_state_machine_view_tab(name_or_arn=self.arn)
@@ -111,14 +110,13 @@ sfn_state_machine_searcher = SfnStateMachineSearcher(
     doc_class=SfnStateMachine,
     # search
     resource_type=SearcherEnum.sfn_state_machine,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="type"),
-        res_lib.sayt.StoredField(name="create_at"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="sm_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.NgramWordsField(
+                name="type", minsize=2, maxsize=4, stored=True
+            ),
+        ]
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
@@ -135,25 +133,25 @@ sfn_execution_status_icon_mapper = {
 
 @dataclasses.dataclass
 class SfnExecution(res_lib.BaseDocument):
-    sm_name: str = dataclasses.field()
-    start_at: datetime = dataclasses.field()
-    end_at: datetime = dataclasses.field()
     status: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    exec_arn: str = dataclasses.field()
+    start_at: datetime = dataclasses.field()
+
+    @property
+    def state_machine_name(self) -> str:
+        return self.raw_data["stateMachineArn"].split(":")[-1]
+
+    @property
+    def end_at(self) -> datetime:
+        return res_lib.get_datetime(self.raw_data, "stopDate")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            sm_name=resource["stateMachineArn"].split(":")[-1],
-            start_at=resource.get("startDate", "NA"),
-            end_at=resource.get("stopDate", "NA"),
-            status=resource["status"],
             id=resource["executionArn"].split(":")[-1],
             name=resource["executionArn"].split(":")[-1],
-            exec_arn=resource["executionArn"],
+            status=resource["status"],
+            start_at=res_lib.get_datetime(resource, "startDate"),
         )
 
     @property
@@ -172,11 +170,11 @@ class SfnExecution(res_lib.BaseDocument):
 
     @property
     def autocomplete(self) -> str:
-        return f"{self.sm_name}@{self.name}"
+        return f"{self.state_machine_name}@{self.name}"
 
     @property
     def arn(self) -> str:
-        return self.exec_arn
+        return self.raw_data["executionArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.step_function.get_state_machine_execution(
@@ -231,18 +229,16 @@ sfn_execution_searcher = SfnExecutionSearcher(
     doc_class=SfnExecution,
     # search
     resource_type=SearcherEnum.sfn_state_machine_execution,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="sm_name"),
-        res_lib.sayt.DatetimeField(
-            name="start_at", sortable=True, ascending=False, stored=True
-        ),
-        res_lib.sayt.StoredField(name="end_at"),
-        res_lib.sayt.StoredField(name="status"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="exec_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.NgramWordsField(
+                name="status", minsize=2, maxsize=4, stored=True
+            ),
+            res_lib.sayt.DatetimeField(
+                name="start_at", sortable=True, ascending=False, stored=True
+            ),
+        ]
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=lambda boto_kwargs: [boto_kwargs["stateMachineArn"]],
 )
