@@ -7,11 +7,11 @@ from .ars_base import ARSBase
 from .compat import cached_property
 from .res_lib import Searcher
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from .res.cloudformation import CloudFormationStackSearcher
     from .res.codebuild import CodeBuildJobRunSearcher
     from .res.codebuild import CodeBuildProjectSearcher
-    from .res.codecommit import Searcher
+    from .res.codecommit import CodeCommitRepositorySearcher
     from .res.codepipeline import CodePipelinePipelineSearcher
     from .res.dynamodb import DynamodbTableSearcher
     from .res.ec2 import Ec2InstanceSearcher
@@ -56,7 +56,7 @@ class ARS(ARSBase):  # pragma: no cover
         return self.get_searcher("codebuild-project")
     
     @cached_property
-    def codecommit_repository(self) -> "Searcher":
+    def codecommit_repository(self) -> "CodeCommitRepositorySearcher":
         return self.get_searcher("codecommit-repository")
     
     @cached_property

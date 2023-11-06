@@ -88,7 +88,7 @@ class CodeCommitRepositorySearcher(res_lib.Searcher[CodeCommitRepository]):
     pass
 
 
-codecommit_repository_searcher = res_lib.Searcher(
+codecommit_repository_searcher = CodeCommitRepositorySearcher(
     # list resources
     service="codecommit",
     method="list_repositories",

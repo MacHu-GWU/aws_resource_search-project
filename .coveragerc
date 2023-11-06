@@ -3,10 +3,10 @@
 [run]
 omit =
     aws_resource_search/_version.py
-    aws_resource_search/cli.py
     aws_resource_search/code/*
     aws_resource_search/res/*
     aws_resource_search/ui/*
+    aws_resource_search/cli/*
     aws_resource_search/docs/*
     aws_resource_search/tests/*
     aws_resource_search/vendor/*

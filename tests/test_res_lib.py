@@ -4,7 +4,7 @@ import moto
 import pytest
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 import botocore.exceptions
 from aws_resource_search.res_lib import (
@@ -14,9 +14,15 @@ from aws_resource_search.res_lib import (
     human_readable_elapsed,
     get_none_or_default,
     get_description,
+    get_datetime,
     get_datetime_isofmt,
+    to_simple_fmt,
     get_datetime_simplefmt,
     BaseDocument,
+    Searcher,
+    DetailItem,
+    OpenUrlItem,
+    OpenFileItem,
 )
 from aws_resource_search.res.s3 import s3_bucket_searcher
 from aws_resource_search.res.iam import iam_group_searcher
@@ -50,6 +56,20 @@ def test_get_description():
     assert get_description({}, "description") == "No description"
 
 
+def test_get_datetime():
+    assert get_datetime({}, "create_time") == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    dt = get_datetime({"create_time": datetime(2021, 1, 1)}, "create_time")
+    assert dt.tzinfo == timezone.utc
+    dt = get_datetime(
+        {"create_time": datetime(2021, 1, 1, tzinfo=timezone.utc)}, "create_time"
+    )
+    assert dt.tzinfo == timezone.utc
+    dt = get_datetime(
+        {"create_time": datetime(2021, 1, 1)}, "create_time", as_utc=False
+    )
+    assert dt.tzinfo is None
+
+
 def test_get_datetime_isofmt():
     assert get_datetime_isofmt({}, "create_time") == "No datetime"
     assert (
@@ -67,10 +87,45 @@ def test_get_datetime_simplefmt():
         )
         == "2021-01-01 00:00:00"
     )
-    assert get_datetime_isofmt({"create_time": "2021"}, "create_time") == "2021"
+    assert get_datetime_simplefmt({"create_time": "2021"}, "create_time") == "2021"
+
+
+def test_to_simple_fmt():
+    assert (
+        to_simple_fmt(datetime(2021, 1, 1, microsecond=123000)) == "2021-01-01 00:00:00"
+    )
 
 
 class TestDocument:
+    def _test_properties_methods(self):
+        doc = BaseDocument(raw_data={}, id="test", name="test")
+        with pytest.raises(NotImplementedError):
+            _ = doc.title
+        _ = doc.subtitle
+        _ = doc.short_subtitle
+        _ = doc.autocomplete
+        with pytest.raises(NotImplementedError):
+            _ = doc.arn
+        with pytest.raises(NotImplementedError):
+            _ = doc.get_console_url(console=None)
+        with pytest.raises(NotImplementedError):
+            _ = doc.get_details(ars=None)
+        assert doc.get_initial_detail_items(ars=None) == []
+
+        from aws_resource_search.res.s3 import S3Bucket
+
+        s3_bucket = S3Bucket.from_resource(
+            resource={"Name": "test-bucket", "CreationDate": datetime(2021, 1, 1)},
+            bsm=None,
+            boto_kwargs=None,
+        )
+        _ = s3_bucket.title
+        _ = s3_bucket.subtitle
+        _ = s3_bucket.short_subtitle
+        _ = s3_bucket.autocomplete
+        _ = s3_bucket.uid
+        _ = s3_bucket.arn
+
     def _test_enrich_details(self):
         detail_items = []
         with BaseDocument.enrich_details(detail_items):
@@ -95,14 +150,16 @@ class TestDocument:
         assert BaseDocument.one_line(dict(a=1, b=2)) == '{"a": 1, "b": 2}'
 
     def test(self):
+        self._test_properties_methods()
         self._test_enrich_details()
         self._test_one_line()
 
 
-class Test(BaseMockTest):
+class TestSearcher(BaseMockTest):
     mock_list = [
         moto.mock_s3,
         moto.mock_iam,
+        moto.mock_sts,
     ]
 
     def _create_test_buckets(self):
@@ -168,10 +225,6 @@ class Test(BaseMockTest):
         assert res[0]["GroupName"] == "admin_group"
         assert res[1]["GroupName"] == "developer_group"
 
-    def _test_list_resources(self):
-        self._test_list_resources_1_s3_not_paginator()
-        self._test_list_resources_2_iam_is_paginator()
-
     def _test_preprocess_query(self):
         assert preprocess_query(None) == "*"
         assert preprocess_query("") == "*"
@@ -188,7 +241,7 @@ class Test(BaseMockTest):
 
     def _test_searcher_get_bsm(self):
         with pytest.raises(TypeError):
-            s3_bucket_searcher._get_bsm()
+            s3_bucket_searcher._get_bsm(bsm="bsm")
 
         s3_bucket_searcher._get_bsm(self.bsm)
         s3_bucket_searcher.bsm = self.bsm
@@ -208,14 +261,45 @@ class Test(BaseMockTest):
         res = iam_group_searcher.search(refresh_data=True)
         assert len(res) == 2
 
-    def _test_searcher(self):
+    def test(self):
+        self._test_list_resources_1_s3_not_paginator()
+        self._test_list_resources_2_iam_is_paginator()
+        self._test_preprocess_query()
         self._test_searcher_get_bsm()
         self._test_searcher_search()
 
-    def test(self):
-        self._test_list_resources()
-        self._test_preprocess_query()
-        self._test_searcher()
+
+class TestDetailItem:
+    def test_new(self):
+        item = DetailItem.new(title="my title", subtitle="my subtitle", uid="uid")
+        item.enter_handler(ui=None)
+        item.ctrl_a_handler(ui=None)
+        assert item.variables.get("copy") is None
+        assert item.variables.get("url") is None
+
+    def test_from_detail(self):
+        item = DetailItem.from_detail(
+            name="key",
+            value="value",
+        )
+        assert item.variables["copy"] == "value"
+        assert item.variables["url"] is None
+
+        item = DetailItem.from_detail(name="key", value="value", text="text", url="url")
+        assert item.variables["copy"] == "value"
+        assert item.variables["url"] == "url"
+
+    def test_from_env_vars(self):
+        item_list = DetailItem.from_env_vars({"key": "value"}, url="url")
+        assert len(item_list) == 1
+        item_list = DetailItem.from_env_vars({}, url="url")
+        assert len(item_list) == 1
+
+    def test_from_tags(self):
+        item_list = DetailItem.from_tags({"key": "value"}, url="url")
+        assert len(item_list) == 1
+        item_list = DetailItem.from_tags({}, url="url")
+        assert len(item_list) == 1
 
 
 if __name__ == "__main__":

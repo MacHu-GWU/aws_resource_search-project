@@ -22,7 +22,7 @@
     },
     "codecommit-repository": {
         "desc": "A repository is where you store code and files for your project.",
-        "klass": "Searcher",
+        "klass": "CodeCommitRepositorySearcher",
         "module": "codecommit",
         "ngram": "",
         "var": "codecommit_repository_searcher"

@@ -24,17 +24,17 @@ from boto_session_manager import BotoSesManager
 
 try:
     import pyperclip
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 
 from .model import BaseModel
 from .utils import get_md5_hash
-from .paths import dir_index, dir_cache, path_aws_config, path_aws_credentials
+from .paths import dir_index, dir_cache
 from .terminal import ShortcutEnum, format_key_value
 from .compat import TypedDict
 
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from .ars import ARS
 
 
@@ -238,8 +238,7 @@ def get_datetime(
                 return res.astimezone(timezone.utc)
         else:
             return res
-
-    else:
+    else:  # pragma: no cover
         raise TypeError
 
 
@@ -577,6 +576,13 @@ def define_fields(
         the name field should be n-gram searchable, and we would like to sort
         the result by name in ascending order, so we set the sortable and
         ascending to True.
+
+    :param fields: additional fields to be added.
+    :param id_field_boost: parameter for the default fields.
+    :param name_minsize: parameter for the default fields.
+    :param name_maxsize: parameter for the default fields.
+    :param name_sortable: parameter for the default fields.
+    :param name_ascending: parameter for the default fields.
     """
     final_fields = [
         sayt.StoredField(name="raw_data"),
@@ -801,7 +807,11 @@ class ArsBaseItem(zf.Item):
     Base class for all ``zelfred.Item`` subclasses in ``aws_resource_search``.
     """
 
-    def open_url_or_print(self, ui: zf.UI, url: str):
+    def open_url_or_print(self, ui: zf.UI, url: str):  # pragma: no cover
+        """
+        Sometime user are in a remote shell and doesn't have default web browser.
+        Then we print the url instead.
+        """
         try:
             zf.open_url(url)
         except FileNotFoundError as e:
@@ -817,9 +827,10 @@ class ArsBaseItem(zf.Item):
             else:
                 raise e
 
-    def copy_or_print(self, ui: zf.UI, text: str):
+    def copy_or_print(self, ui: zf.UI, text: str):  # pragma: no cover
         """
-        Sometime user are in a remote shell and cannot use the clipboard and the URL
+        Sometime user are in a remote shell and cannot use the clipboard.
+        Then we print the value instead.
         """
         try:
             pyperclip.copy(text)
@@ -833,19 +844,19 @@ class ArsBaseItem(zf.Item):
             raise KeyboardInterrupt
             # raise zf.exc.EndOfInputError(selection=self)
 
-    def post_enter_handler(self, ui: zf.UI):
+    def post_enter_handler(self, ui: zf.UI):  # pragma: no cover
         ui.wait_next_user_input()
 
-    def post_ctrl_a_handler(self, ui: zf.UI):
+    def post_ctrl_a_handler(self, ui: zf.UI):  # pragma: no cover
         ui.wait_next_user_input()
 
-    def post_ctrl_w_handler(self, ui: zf.UI):
+    def post_ctrl_w_handler(self, ui: zf.UI):  # pragma: no cover
         ui.wait_next_user_input()
 
-    def post_ctrl_u_handler(self, ui: zf.UI):
+    def post_ctrl_u_handler(self, ui: zf.UI):  # pragma: no cover
         ui.wait_next_user_input()
 
-    def post_ctrl_p_handler(self, ui: zf.UI):
+    def post_ctrl_p_handler(self, ui: zf.UI):  # pragma: no cover
         ui.wait_next_user_input()
 
 
@@ -868,11 +879,11 @@ class DetailItem(ArsBaseItem):
 
     variables: DetailItemVariables = dataclasses.field(default_factory=dict)
 
-    def enter_handler(self, ui: "zf.UI"):
+    def enter_handler(self, ui: "zf.UI"):  # pragma: no cover
         if self.variables.get("url"):
             self.open_url_or_print(ui, self.variables["url"])
 
-    def ctrl_a_handler(self, ui: "zf.UI"):
+    def ctrl_a_handler(self, ui: "zf.UI"):  # pragma: no cover
         if self.variables["copy"]:
             self.copy_or_print(ui, self.variables["copy"])
 
@@ -1025,7 +1036,7 @@ class OpenUrlItem(ArsBaseItem):
     Represent an item to open a url when user tap "Enter".
     """
 
-    def enter_handler(self, ui: "zf.UI"):
+    def enter_handler(self, ui: "zf.UI"):  # pragma: no cover
         self.open_url_or_print(ui, self.arg)
 
 
@@ -1035,5 +1046,5 @@ class OpenFileItem(ArsBaseItem):
     Represent an item to open a file when user tap "Enter".
     """
 
-    def enter_handler(self, ui: "zf.UI"):
+    def enter_handler(self, ui: "zf.UI"):  # pragma: no cover
         zf.open_file(Path(self.arg))
