@@ -6,7 +6,7 @@ import dataclasses
 import aws_arns.api as arns
 
 from .. import res_lib
-from ..terminal import format_key_value
+from ..terminal import ShortcutEnum, format_key_value
 from ..searchers_enum import SearcherEnum
 
 if T.TYPE_CHECKING:
@@ -25,8 +25,6 @@ dynamodb_table_status_icon_mapper = {
 
 @dataclasses.dataclass
 class DynamodbTable(res_lib.BaseDocument):
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
     table_arn: str = dataclasses.field()
 
     @classmethod
@@ -57,34 +55,50 @@ class DynamodbTable(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.dynamodb.get_table(table_or_arn=self.arn)
 
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.dynamodb_client.describe_table(TableName=self.name)
             dct = res["Table"]
+
+            attrs = {d["AttributeName"]: d["AttributeType"] for d in dct.get("AttributeDefinitions", [])}
+            keys = {d["AttributeName"]: d["KeyType"] for d in dct.get("KeySchema", [])}
+            for attr_name, key_type in keys.items():
+                data_type = attrs[attr_name]
+                item = res_lib.DetailItem.new(
+                    title="🔑 key_schema {}, {}, {}".format(
+                        format_key_value("key", attr_name),
+                        format_key_value("key_type", key_type),
+                        format_key_value("data_type", data_type),
+                    ),
+                    subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy key name.",
+                )
+                detail_items.append(item)
+
             TableSizeBytes = dct.get("TableSizeBytes", "Unknown")
             ItemCount = dct.get("ItemCount", "Unknown")
-            BillingMode = dct.get("BillingModeSummary", {}).get(
-                "BillingMode", "Unknown"
-            )
+            BillingMode = dct.get("BillingModeSummary", {}).get("BillingMode", "Unknown")
             TableClass = dct.get("TableClassSummary", {}).get("BillingMode", "Unknown")
             detail_items.extend(
                 [
-                    Item("TableSizeBytes", TableSizeBytes),
-                    Item("ItemCount", ItemCount),
-                    Item("BillingMode", BillingMode),
-                    Item("TableClass", TableClass),
+                    from_detail("TableSizeBytes", TableSizeBytes, url=url),
+                    from_detail("ItemCount", ItemCount, url=url),
+                    from_detail("BillingMode", BillingMode, url=url),
+                    from_detail("TableClass", TableClass, url=url),
                 ]
             )
 
         with self.enrich_details(detail_items):
             res = ars.bsm.dynamodb_client.list_tags_of_resource(ResourceArn=self.arn)
-            tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
+    # fmt: on
 
 
 class DynamodbTableSearcher(res_lib.Searcher[DynamodbTable]):
@@ -104,12 +118,11 @@ dynamodb_table_searcher = DynamodbTableSearcher(
     doc_class=DynamodbTable,
     # search
     resource_type=SearcherEnum.dynamodb_table,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="table_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.StoredField(name="table_arn"),
+        ],
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
