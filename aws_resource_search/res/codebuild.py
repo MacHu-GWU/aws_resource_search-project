@@ -115,7 +115,7 @@ class CodeBuildProject(res_lib.BaseDocument):
                 item = make_env_var_item(d["name"], d["value"], d["type"], url)
                 detail_items.append(item)
             tags: dict = {d["key"]: d["value"] for d in dct.get("tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url=url))
 
         return detail_items
     # fmt: on

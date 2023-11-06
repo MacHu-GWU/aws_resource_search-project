@@ -2,7 +2,6 @@
 
 import typing as T
 import dataclasses
-from datetime import datetime
 
 import aws_arns.api as arns
 
@@ -16,18 +15,12 @@ if T.TYPE_CHECKING:
 
 @dataclasses.dataclass
 class CodePipelinePipeline(res_lib.BaseDocument):
-    version: int = dataclasses.field()
-    update_at: datetime = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
     pipeline_arn: str = dataclasses.field()
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            version=resource.get("version", "NA"),
-            update_at=resource.get("updated", "NA"),
             id=resource["name"],
             name=resource["name"],
             pipeline_arn=arns.res.CodePipelinePipeline.new(
@@ -54,43 +47,45 @@ class CodePipelinePipeline(res_lib.BaseDocument):
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
-
-        detail_items.extend([
-            Item("version", self.version),
-            Item("update_at", self.update_at),
-        ])
-
+        url = self.get_console_url(ars.aws_console)
+        
         with self.enrich_details(detail_items):
             res = ars.bsm.codepipeline_client.get_pipeline(name=self.name)
             dct = res["pipeline"]
+            version = dct.get("version", 0)
+            update_at = res_lib.get_none_or_default(dct, "metadata.updated", "NA")
             roleArn = dct.get("roleArn", "NA")
             variables = dct.get("variables", [])
             detail_items.extend([
-                Item("roleArn", roleArn, url=ars.aws_console.iam.get_role(roleArn)),
+                from_detail("version", version, url=url),
+                from_detail("update_at", update_at, url=url),
+                from_detail("roleArn", roleArn, url=ars.aws_console.iam.get_role(roleArn)),
             ])
+
             for d in variables:
                 name = d["name"]
                 description = d["description"]
                 defaultValue = d["defaultValue"]
                 detail_items.append(
-                    res_lib.DetailItem(
+                    res_lib.DetailItem.new(
                         title="🎯 var = {}, default value = {}, ({})".format(
                             format_key(name),
                             format_value(defaultValue),
                             description,
                         ),
-                        subtitle= f"📋 {ShortcutEnum.CTRL_A} to copy.",
-                        uid=name,
-                        variables={"copy": defaultValue, "url": None},
+                        subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy var name.",
+                        uid=f"var {name}",
+                        copy=name,
+                        url=url,
                     )
                 )
 
         with self.enrich_details(detail_items):
             res = ars.bsm.codepipeline_client.list_tags_for_resource(resourceArn=self.arn)
             tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
@@ -116,21 +111,11 @@ codepipeline_pipeline_searcher = CodePipelinePipelineSearcher(
     doc_class=CodePipelinePipeline,
     # search
     resource_type=SearcherEnum.codepipeline_pipeline,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="version"),
-        res_lib.sayt.StoredField(name="update_at"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(
-            name="name",
-            minsize=2,
-            maxsize=4,
-            stored=True,
-            sortable=True,
-            ascending=True,
-        ),
-        res_lib.sayt.StoredField(name="pipeline_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.StoredField(name="pipeline_arn"),
+        ],
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

@@ -15,8 +15,6 @@ if T.TYPE_CHECKING:
 
 @dataclasses.dataclass
 class CodeCommitRepository(res_lib.BaseDocument):
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
     repo_arn: str = dataclasses.field()
 
     @classmethod
@@ -49,9 +47,9 @@ class CodeCommitRepository(res_lib.BaseDocument):
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
-
+        url = self.get_console_url(ars.aws_console)
         with self.enrich_details(detail_items):
             res = ars.bsm.codecommit_client.get_repository(repositoryName=self.name)
             dct = res["repositoryMetadata"]
@@ -65,24 +63,22 @@ class CodeCommitRepository(res_lib.BaseDocument):
             cloneUrlHttp = dct.get("cloneUrlHttp")
             cloneUrlSsh = dct.get("cloneUrlSsh")
             detail_items.extend([
-                Item("accountId", accountId),
-                Item("repositoryId", repositoryId),
-                Item("repositoryName", repositoryName),
-                Item("repositoryDescription", self.one_line(repositoryDescription)),
-                Item("defaultBranch", defaultBranch),
-                Item("lastModifiedDate", lastModifiedDate),
-                Item("creationDate", creationDate),
-                Item("cloneUrlHttp", cloneUrlHttp),
-                Item("cloneUrlSsh", cloneUrlSsh),
+                from_detail("accountId", accountId, url=url),
+                from_detail("repositoryId", repositoryId, url=url),
+                from_detail("repositoryName", repositoryName, url=url),
+                from_detail("repositoryDescription", self.one_line(repositoryDescription), url=url),
+                from_detail("defaultBranch", defaultBranch, url=url),
+                from_detail("lastModifiedDate", lastModifiedDate, url=url),
+                from_detail("creationDate", creationDate, url=url),
+                from_detail("cloneUrlHttp", cloneUrlHttp, url=url),
+                from_detail("cloneUrlSsh", cloneUrlSsh, url=url),
+                from_detail("cloneUrlGitRemoteCodecommit", f"codecommit::{ars.bsm.aws_region}://{self.name}", url=url)
             ])
-            detail_items.append(
-                Item("cloneUrlGitRemoteCodecommit", f"codecommit::{ars.bsm.aws_region}://{self.name}")
-            )
 
         with self.enrich_details(detail_items):
             res = ars.bsm.codecommit_client.list_tags_for_resource(resourceArn=self.arn)
             tags: dict = res["tags"]
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
@@ -109,12 +105,11 @@ codecommit_repository_searcher = res_lib.Searcher(
     doc_class=CodeCommitRepository,
     # search
     resource_type=SearcherEnum.codecommit_repository,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="repo_arn"),
-    ],
-    cache_expire=24 * 60 * 60,
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.StoredField(name="repo_arn"),
+        ]
+    ),
+    cache_expire=7 * 24 * 60 * 60,
     more_cache_key=None,
 )
