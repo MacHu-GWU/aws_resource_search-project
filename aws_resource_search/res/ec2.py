@@ -23,8 +23,18 @@ ec2_instance_state_icon_mapper = {
 }
 
 
+class Ec2Mixin:
+    @staticmethod
+    def get_tags(raw_data) -> T.Dict[str, str]:
+        return {dct["Key"]: dct["Value"] for dct in raw_data.get("Tags", [])}
+
+    @property
+    def tags(self: T.Union["Ec2Mixin", res_lib.BaseDocument]) -> T.Dict[str, str]:
+        return self.get_tags(self.raw_data)
+
+
 @dataclasses.dataclass
-class Ec2Instance(res_lib.BaseDocument):
+class Ec2Instance(res_lib.BaseDocument, Ec2Mixin):
     state: str = dataclasses.field()
     vpc_id: str = dataclasses.field()
     subnet_id: str = dataclasses.field()
@@ -55,13 +65,8 @@ class Ec2Instance(res_lib.BaseDocument):
     def inst_profile_arn(self) -> str:
         return self.raw_data.get("IamInstanceProfile", {}).get("Arn", "NA")
 
-    @property
-    def tags(self) -> T.Dict[str, str]:
-        return {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
-        tags = {dct["Key"]: dct["Value"] for dct in resource.get("Tags", [])}
         return cls(
             raw_data=resource,
             state=resource["State"]["Name"],
@@ -69,7 +74,7 @@ class Ec2Instance(res_lib.BaseDocument):
             subnet_id=resource.get("SubnetId", "no subnet id"),
             id=resource["InstanceId"],
             id_ng=resource["InstanceId"],
-            name=tags.get("Name", "No instance name"),
+            name=cls.get_tags(resource).get("Name", "No instance name"),
             inst_arn=arns.res.Ec2Instance.new(
                 aws_account_id=bsm.aws_account_id,
                 aws_region=bsm.aws_region,
@@ -188,7 +193,7 @@ ec2_vpc_state_icon_mapper = {
 
 
 @dataclasses.dataclass
-class Ec2Vpc(res_lib.BaseDocument):
+class Ec2Vpc(res_lib.BaseDocument, Ec2Mixin):
     state: str = dataclasses.field()
     cidr_ipv4: str = dataclasses.field()
     cidr_ipv6: str = dataclasses.field()
@@ -199,14 +204,8 @@ class Ec2Vpc(res_lib.BaseDocument):
     def is_default(self) -> str:
         return self.raw_data["IsDefault"]
 
-    @property
-    def tags(self) -> T.Dict[str, str]:
-        return {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
-        tags = {dct["Key"]: dct["Value"] for dct in resource.get("Tags", [])}
-
         CidrBlockAssociationSet = resource.get("CidrBlockAssociationSet", [])
         if CidrBlockAssociationSet:
             cidr_ipv4 = CidrBlockAssociationSet[0].get("CidrBlock", "NA")
@@ -226,7 +225,7 @@ class Ec2Vpc(res_lib.BaseDocument):
             cidr_ipv6=cidr_ipv6,
             id=resource["VpcId"],
             id_ng=resource["VpcId"],
-            name=tags.get("Name", "No vpc name"),
+            name=cls.get_tags(resource).get("Name", "No vpc name"),
             vpc_arn=arns.res.Vpc.new(
                 aws_account_id=bsm.aws_account_id,
                 aws_region=bsm.aws_region,
@@ -326,7 +325,7 @@ ec2_vpc_searcher = Ec2VpcSearcher(
 
 
 @dataclasses.dataclass
-class Ec2Subnet(res_lib.BaseDocument):
+class Ec2Subnet(res_lib.BaseDocument, Ec2Mixin):
     state: str = dataclasses.field()
     vpc_id: str = dataclasses.field()
     az: str = dataclasses.field()
@@ -348,13 +347,8 @@ class Ec2Subnet(res_lib.BaseDocument):
     def ipv6_native(self) -> str:
         return self.raw_data.get("Ipv6Native", "NA")
 
-    @property
-    def tags(self) -> T.Dict[str, str]:
-        return {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
-
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
-        tags = {dct["Key"]: dct["Value"] for dct in resource.get("Tags", [])}
         return cls(
             raw_data=resource,
             state=resource["State"],
@@ -362,7 +356,7 @@ class Ec2Subnet(res_lib.BaseDocument):
             az=resource["AvailabilityZone"],
             id=resource["SubnetId"],
             id_ng=resource["SubnetId"],
-            name=tags.get("Name", "No subnet name"),
+            name=cls.get_tags(resource).get("Name", "No subnet name"),
         )
 
     @property
@@ -453,7 +447,7 @@ ec2_subnet_searcher = Ec2SubnetSearcher(
 
 
 @dataclasses.dataclass
-class Ec2SecurityGroup(res_lib.BaseDocument):
+class Ec2SecurityGroup(res_lib.BaseDocument, Ec2Mixin):
     vpc_id: str = dataclasses.field()
     id_ng: str = dataclasses.field()
     sg_arn: str = dataclasses.field()
@@ -461,10 +455,6 @@ class Ec2SecurityGroup(res_lib.BaseDocument):
     @property
     def description(self) -> str:
         return res_lib.get_description(self.raw_data, "Description")
-
-    @property
-    def tags(self) -> T.Dict[str, str]:
-        return {dct["Key"]: dct["Value"] for dct in self.raw_data.get("Tags", [])}
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -483,7 +473,7 @@ class Ec2SecurityGroup(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name_tag", self.name)
+        return format_key_value("group_name", self.name)
 
     @property
     def subtitle(self) -> str:

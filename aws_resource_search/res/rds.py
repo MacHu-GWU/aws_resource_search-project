@@ -14,22 +14,22 @@ if T.TYPE_CHECKING:
 @dataclasses.dataclass
 class RdsDbInstance(res_lib.BaseDocument):
     status: str = dataclasses.field()
-    klass: str = dataclasses.field()
     engine: str = dataclasses.field()
     id: str = dataclasses.field()
     name: str = dataclasses.field()
-    db_arn: str = dataclasses.field()
+
+    @property
+    def klass(self) -> str:
+        return self.raw_data.get("DBInstanceClass", "Unknown")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
             status=resource["DBInstanceStatus"],
-            klass=resource.get("DBInstanceClass", "Unknown"),
             engine=resource.get("Engine", "Unknown"),
             id=resource["DBInstanceIdentifier"],
             name=resource["DBInstanceIdentifier"],
-            db_arn=resource["DBInstanceArn"],
         )
 
     @property
@@ -51,18 +51,18 @@ class RdsDbInstance(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.db_arn
+        return self.raw_data["DBInstanceArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.rds.get_database_instance(id_or_arn=self.arn)
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         url = self.get_console_url(ars.aws_console)
         detail_items = [
-            Item("arn", self.arn, url=url),
-            Item("DBInstanceIdentifier", self.id),
+            from_detail("arn", self.arn, url=url),
+            from_detail("DBInstanceIdentifier", self.id, url=url),
         ]
 
         with self.enrich_details(detail_items):
@@ -96,27 +96,27 @@ class RdsDbInstance(res_lib.BaseDocument):
             DBClusterIdentifier = db.get("DBClusterIdentifier", "Unknown")
 
             detail_items.extend([
-                Item("DBInstanceStatus", DBInstanceStatus, url=url),
-                Item("DBInstanceClass", DBInstanceClass, url=url),
-                Item("Engine", Engine, url=url),
-                Item("EngineVersion", EngineVersion, url=url),
-                Item("Host", Host, url=url),
-                Item("Port", Port, url=url),
-                Item("MasterUsername", MasterUsername, url=url),
-                Item("DBName", DBName, url=url),
-                Item("MultiAZ", MultiAZ, url=url),
-                Item("AvailabilityZone", AvailabilityZone, url=url),
-                Item("AutoMinorVersionUpgrade", AutoMinorVersionUpgrade, url=url),
-                Item("PubliclyAccessible", PubliclyAccessible, url=url),
-                Item("StorageType", StorageType, url=url),
-                Item("AllocatedStorage", AllocatedStorage, url=url),
-                Item("StorageEncrypted", StorageEncrypted, url=url),
-                Item("DeletionProtection", DeletionProtection, url=url),
-                Item("DBClusterIdentifier", DBClusterIdentifier, url=ars.aws_console.rds.get_database_cluster(id_or_arn=DBClusterIdentifier)),
+                from_detail("DBInstanceStatus", DBInstanceStatus, url=url),
+                from_detail("DBInstanceClass", DBInstanceClass, url=url),
+                from_detail("Engine", Engine, url=url),
+                from_detail("EngineVersion", EngineVersion, url=url),
+                from_detail("Host", Host, url=url),
+                from_detail("Port", Port, url=url),
+                from_detail("MasterUsername", MasterUsername, url=url),
+                from_detail("DBName", DBName, url=url),
+                from_detail("MultiAZ", MultiAZ, url=url),
+                from_detail("AvailabilityZone", AvailabilityZone, url=url),
+                from_detail("AutoMinorVersionUpgrade", AutoMinorVersionUpgrade, url=url),
+                from_detail("PubliclyAccessible", PubliclyAccessible, url=url),
+                from_detail("StorageType", StorageType, url=url),
+                from_detail("AllocatedStorage", AllocatedStorage, url=url),
+                from_detail("StorageEncrypted", StorageEncrypted, url=url),
+                from_detail("DeletionProtection", DeletionProtection, url=url),
+                from_detail("DBClusterIdentifier", DBClusterIdentifier, url=ars.aws_console.rds.get_database_cluster(id_or_arn=DBClusterIdentifier)),
             ])
 
             tags: dict = {dct["Key"]: dct["Value"] for dct in db.get("TagList", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
         return detail_items
     # fmt: on
 
@@ -141,15 +141,14 @@ rds_db_instance_searcher = RdsDbInstanceSearcher(
     doc_class=RdsDbInstance,
     # search
     resource_type=SearcherEnum.rds_db_instance,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="klass"),
-        res_lib.sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="db_arn"),
-    ],
+    fields=res_lib.define_fields(
+        # fmt: off
+        fields=[
+            res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
+            res_lib.sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True),
+        ],
+        # fmt: on
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
@@ -158,22 +157,20 @@ rds_db_instance_searcher = RdsDbInstanceSearcher(
 @dataclasses.dataclass
 class RdsDbCluster(res_lib.BaseDocument):
     status: str = dataclasses.field()
-    klass: str = dataclasses.field()
     engine: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    db_arn: str = dataclasses.field()
+
+    @property
+    def klass(self) -> str:
+        return self.raw_data.get("DBInstanceClass", "Unknown")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
             status=resource["Status"],
-            klass=resource.get("DBClusterInstanceClass", "Unknown"),
             engine=resource.get("Engine", "Unknown"),
             id=resource["DBClusterIdentifier"],
             name=resource["DBClusterIdentifier"],
-            db_arn=resource["DBClusterArn"],
         )
 
     @property
@@ -195,7 +192,7 @@ class RdsDbCluster(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.db_arn
+        return self.raw_data["DBClusterArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.rds.get_database_cluster(id_or_arn=self.arn)
@@ -206,7 +203,7 @@ class RdsDbCluster(res_lib.BaseDocument):
         url = self.get_console_url(ars.aws_console)
         detail_items = [
             Item("arn", self.arn, url=url),
-            Item("DBClusterIdentifier", self.id),
+            Item("DBClusterIdentifier", self.id, url=url),
         ]
         with self.enrich_details(detail_items):
             res = ars.bsm.rds_client.describe_db_clusters(DBClusterIdentifier=self.name)
@@ -264,7 +261,7 @@ class RdsDbCluster(res_lib.BaseDocument):
             ])
 
             tags: dict = {dct["Key"]: dct["Value"] for dct in db.get("TagList", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
         return detail_items
     # fmt: on
 
@@ -288,15 +285,12 @@ rds_db_cluster_searcher = res_lib.Searcher(
     doc_class=RdsDbCluster,
     # search
     resource_type=SearcherEnum.rds_db_cluster,
+    # fmt: off
     fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
         res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="klass"),
         res_lib.sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="db_arn"),
     ],
+    # fmt: on
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

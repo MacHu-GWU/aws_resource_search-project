@@ -25,18 +25,14 @@ def normalize_alias(alias: str) -> str:
 @dataclasses.dataclass
 class KmsKeyAlias(res_lib.BaseDocument):
     key_id: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    alias_arn: str = dataclasses.field()
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            key_id=resource.get("TargetKeyId", "NA"),
             id=normalize_alias(resource["AliasName"]),
             name=normalize_alias(resource["AliasName"]),
-            alias_arn=resource["AliasArn"],
+            key_id=resource.get("TargetKeyId", "NA"),
         )
 
     @property
@@ -56,33 +52,38 @@ class KmsKeyAlias(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.alias_arn
+        return self.raw_data["AliasArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.kms.get_key(key_id_or_alias_or_arn=self.key_id)
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
+
         detail_items.extend([
-            Item("KeyId", self.raw_data.get("TargetKeyId", "NA"), url=self.get_console_url(ars.aws_console)),
-            Item("CreationDate", self.raw_data.get("RotationLambdaARN", "NA")),
-            Item("LastUpdatedDate", self.raw_data.get("RotationEnabled", "NA")),
+            from_detail("KeyId", self.raw_data.get("TargetKeyId", "NA"), url=url),
         ])
 
         with self.enrich_details(detail_items):
             res = ars.bsm.kms_client.describe_key(KeyId=self.key_id)
             dct = res["KeyMetadata"]
             detail_items.extend([
-                Item("KeyState", dct.get("KeyState", "NA")),
-                Item("KeyManager", dct.get("KeyManager", "NA")),
+                from_detail("KeyManager", dct.get("KeyManager", "NA"), url=url),
+                from_detail("Description", dct.get("Description", "No description"), url=url),
+                from_detail("CreationDate", dct.get("CreationDate", "NA"), url=url),
+                from_detail("DeletionDate", dct.get("DeletionDate", "NA"), url=url),
+                from_detail("ValidTo", dct.get("ValidTo", "NA"), url=url),
+                from_detail("KeyState", dct.get("KeyState", "NA"), url=url),
+                from_detail("KeyUsage", dct.get("KeyUsage", "NA"), url=url),
             ])
 
         with self.enrich_details(detail_items):
             res = ars.bsm.kms_client.list_resource_tags(KeyId=self.key_id)
-            tags: dict = {dct["TagKey"]: dct["TagValue"] for dct in self.raw_data.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            tags: dict = {dct["TagKey"]: dct["TagValue"] for dct in res.get("Tags", [])}
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
         return detail_items
     # fmt: on
 
@@ -104,13 +105,11 @@ kms_key_alias_searcher = KmsKeyAliasSearcher(
     doc_class=KmsKeyAlias,
     # search
     resource_type=SearcherEnum.kms_key_alias,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="key_id"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="alias_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.NgramWordsField(name="key_id", minsize=2, maxsize=4, stored=True),
+        ],
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

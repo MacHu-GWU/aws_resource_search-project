@@ -14,22 +14,28 @@ if T.TYPE_CHECKING:
     from ..ars import ARS
 
 
+class GlueMixin:
+    @property
+    def description(self: res_lib.BaseDocument) -> str:
+        return res_lib.get_description(self.raw_data, "Description")
+
+
 @dataclasses.dataclass
-class GlueDatabase(res_lib.BaseDocument):
-    catalog_id: str = dataclasses.field()
-    database: str = dataclasses.field()
-    description: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
+class GlueDatabase(res_lib.BaseDocument, GlueMixin):
     database_arn: str = dataclasses.field()
+
+    @property
+    def catalog_id(self) -> str:
+        return self.raw_data["CatalogId"]
+
+    @property
+    def database(self) -> str:
+        return self.raw_data["Name"]
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            catalog_id=resource["CatalogId"],
-            database=resource["Name"],
-            description=resource.get("Description", "No Description"),
             id=resource["Name"],
             name=resource["Name"],
             database_arn="arn:aws:glue:{aws_region}:{aws_account_id}:database/{database}".format(
@@ -77,38 +83,38 @@ glue_database_searcher = GlueDatabaseSearcher(
     doc_class=GlueDatabase,
     # search
     resource_type=SearcherEnum.glue_database,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="catalog_id"),
-        res_lib.sayt.StoredField(name="database"),
-        res_lib.sayt.StoredField(name="description"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="database_arn"),
-    ],
+    fields=res_lib.define_fields(
+        # fmt: off
+        fields=[
+            res_lib.sayt.StoredField(name="database_arn"),
+        ],
+        # fmt: on
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class GlueTable(res_lib.BaseDocument):
-    catalog_id: str = dataclasses.field()
-    database: str = dataclasses.field()
-    table: str = dataclasses.field()
-    description: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
+class GlueTable(res_lib.BaseDocument, GlueMixin):
     table_arn: str = dataclasses.field()
+
+    @property
+    def catalog_id(self) -> str:
+        return self.raw_data["CatalogId"]
+
+    @property
+    def database(self) -> str:
+        return self.raw_data["DatabaseName"]
+
+    @property
+    def table(self) -> str:
+        return self.raw_data["Name"]
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            catalog_id=resource["CatalogId"],
-            database=resource["DatabaseName"],
-            table=resource["Name"],
-            description=resource.get("Description", "No Description"),
             id="{}.{}".format(resource["DatabaseName"], resource["Name"]),
             name="{}.{}".format(resource["DatabaseName"], resource["Name"]),
             table_arn="arn:aws:glue:{aws_region}:{aws_account_id}:table/{database}/{table}".format(
@@ -157,33 +163,26 @@ glue_table_searcher = GlueTableSearcher(
     doc_class=GlueTable,
     # search
     resource_type=SearcherEnum.glue_database_table,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="catalog_id"),
-        res_lib.sayt.StoredField(name="database"),
-        res_lib.sayt.StoredField(name="table"),
-        res_lib.sayt.StoredField(name="description"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="table_arn"),
-    ],
+    fields=res_lib.define_fields(
+        # fmt: off
+        fields=[
+            res_lib.sayt.StoredField(name="table_arn"),
+        ],
+        # fmt: on
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=lambda boto_kwargs: [boto_kwargs["DatabaseName"]],
 )
 
 
 @dataclasses.dataclass
-class GlueJob(res_lib.BaseDocument):
-    description: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
+class GlueJob(res_lib.BaseDocument, GlueMixin):
     job_arn: str = dataclasses.field()
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            description=resource.get("Description", "No Description"),
             id=resource["Name"],
             name=resource["Name"],
             job_arn="arn:aws:glue:{aws_region}:{aws_account_id}:job/{job}".format(
@@ -215,15 +214,15 @@ class GlueJob(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.glue.get_job(name_or_arn=self.arn)
 
-    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_job(JobName=self.name)
             job_dct = res["Job"]
-
+            # fmt: off
             description = job_dct.get("Description", "NA")
             role_arn = job_dct["Role"]
             glue_version = job_dct.get("GlueVersion", "NA")
@@ -235,24 +234,24 @@ class GlueJob(res_lib.BaseDocument):
             script_location = job_dct.get("Command", {}).get("ScriptLocation", "NA")
 
             detail_items.extend([
-                Item("description", description),
-                Item("role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
-                Item("glue_version", glue_version),
-                Item("worker_type", worker_type),
-                Item("number_of_workers", number_of_workers),
-                Item("max_concurrent_runs", max_concurrent_runs),
-                Item("max_retries", max_retries),
-                Item("execution_class", execution_class),
-                Item("script_location", script_location, url=ars.aws_console.s3.get_console_url(uri_liked=script_location)),
+                from_detail("description", description, url=url),
+                from_detail("role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
+                from_detail("glue_version", glue_version, url=url),
+                from_detail("worker_type", worker_type, url=url),
+                from_detail("number_of_workers", number_of_workers, url=url),
+                from_detail("max_concurrent_runs", max_concurrent_runs, url=url),
+                from_detail("max_retries", max_retries, url=url),
+                from_detail("execution_class", execution_class, url=url),
+                from_detail("script_location", script_location, url=ars.aws_console.s3.get_console_url(uri_liked=script_location)),
             ])
+            # fmt: on
 
         with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_tags(ResourceArn=self.arn)
             tags: dict = res.get("Tags", {})
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
-    # fmt: on
 
 
 class GlueJobSearcher(res_lib.Searcher[GlueJob]):
@@ -270,13 +269,13 @@ glue_job_searcher = GlueJobSearcher(
     doc_class=GlueJob,
     # search
     resource_type=SearcherEnum.glue_job,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="description"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="job_arn"),
-    ],
+    fields=res_lib.define_fields(
+        # fmt: off
+        fields=[
+            res_lib.sayt.StoredField(name="job_arn"),
+        ],
+        # fmt: on
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
@@ -297,23 +296,29 @@ glue_job_run_state_icon_mapper = {
 
 @dataclasses.dataclass
 class GlueJobRun(res_lib.BaseDocument):
-    job_name: str = dataclasses.field()
-    state: str = dataclasses.field()
     started_on: datetime = dataclasses.field()
-    completed_on: datetime = dataclasses.field()
-    execution_time: int = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
+
+    @property
+    def job_name(self) -> str:
+        return self.raw_data["JobName"]
+
+    @property
+    def state(self) -> str:
+        return self.raw_data["JobRunState"]
+
+    @property
+    def completed_on(self) -> datetime:
+        return self.raw_data.get("CompletedOn")
+
+    @property
+    def execution_time(self) -> int:
+        return self.raw_data.get("ExecutionTime")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            job_name=resource["JobName"],
-            state=resource["JobRunState"],
             started_on=resource.get("StartedOn"),
-            completed_on=resource.get("CompletedOn"),
-            execution_time=resource.get("ExecutionTime"),
             id=resource["Id"],
             name=resource["Id"],
         )
@@ -346,11 +351,11 @@ class GlueJobRun(res_lib.BaseDocument):
             job_name_or_arn=self.job_name, job_run_id=self.id
         )
 
-    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
+        url = self.get_console_url(ars.aws_console)
         detail_items = [
-            Item("job_run_id", self.id, url=self.get_console_url(ars.aws_console)),
+            from_detail("job_run_id", self.id, url=url),
         ]
 
         with self.enrich_details(detail_items):
@@ -363,32 +368,38 @@ class GlueJobRun(res_lib.BaseDocument):
             error_message = dct.get("ErrorMessage", "NA")
             log_group_name = dct.get("LogGroupName", "NA")
 
+            # fmt: off
             detail_items.extend([
-                Item("error_message", error_message),
-                Item("output_logs", log_group_name, url=ars.aws_console.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/output")),
-                Item("error_logs", log_group_name, url=ars.aws_console.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/error")),
+                from_detail("error_message", error_message, url=url),
+                from_detail("output_logs", log_group_name, url=ars.aws_console.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/output")),
+                from_detail("error_logs", log_group_name, url=ars.aws_console.cloudwatch.get_log_stream(stream_name_or_arn=self.id, group_name=f"{log_group_name}/error")),
             ])
+            # fmt: on
 
             args = dct.get("Arguments", {})
-            detail_items.extend([
-                res_lib.DetailItem(
-                    title=f"📝 arg: {format_key_value(k, v)}",
-                    subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy argument name and value.",
-                    uid=f"arg {k}",
-                    variables={"copy": f"{k} = {v}", "url": None},
-                )
-                for k, v in args.items()
-            ])
+            detail_items.extend(
+                [
+                    res_lib.DetailItem.new(
+                        title=f"📝 arg: {format_key_value(k, v)}",
+                        subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy arg value.",
+                        uid=f"arg {k}",
+                        copy=v,
+                        url=url,
+                    )
+                    for k, v in args.items()
+                ]
+            )
             if len(args) == 0:
                 detail_items.append(
-                    res_lib.DetailItem(
+                    res_lib.DetailItem.new(
                         title=f"📝 arg: 🔴 No arg found",
+                        subtitle=f"no arg found",
                         uid=f"no arg found",
+                        url=url,
                     )
                 )
 
         return detail_items
-    # fmt: on
 
 
 class GlueJobRunSearcher(res_lib.Searcher[GlueJobRun]):
@@ -406,18 +417,14 @@ glue_job_run_searcher = GlueJobRunSearcher(
     doc_class=GlueJobRun,
     # search
     resource_type=SearcherEnum.glue_job_run,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="job_name"),
-        res_lib.sayt.StoredField(name="state"),
-        res_lib.sayt.DatetimeField(
-            name="started_on", sortable=True, ascending=False, stored=True
-        ),
-        res_lib.sayt.StoredField(name="completed_on"),
-        res_lib.sayt.StoredField(name="execution_time"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-    ],
+    fields=res_lib.define_fields(
+        # fmt: off
+        fields=[
+            res_lib.sayt.DatetimeField(name="started_on", sortable=True, ascending=False, stored=True),
+        ],
+        name_sortable=False,
+        # fmt: on
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=lambda boto_kwargs: [boto_kwargs["JobName"]],
 )
@@ -430,9 +437,7 @@ glue_crawler_state_icon_mapper = {
 
 
 @dataclasses.dataclass
-class GlueCrawler(res_lib.BaseDocument):
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
+class GlueCrawler(res_lib.BaseDocument, GlueMixin):
     crawler_arn: str = dataclasses.field()
 
     @classmethod
@@ -464,8 +469,9 @@ class GlueCrawler(res_lib.BaseDocument):
         return console.glue.get_crawler(name_or_arn=self.arn)
 
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_crawler(Name=self.name)
@@ -481,20 +487,18 @@ class GlueCrawler(res_lib.BaseDocument):
                 ).to_arn()
 
             state_icon = glue_crawler_state_icon_mapper[state]
-            detail_items.extend(
-                [
-                    Item("description", description),
-                    Item("state", state, text=f"{state_icon} {state}"),
-                    Item(
-                        "role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)
-                    ),
-                ]
-            )
+            # fmt: off
+            detail_items.extend([
+                from_detail("description", description, url=url),
+                from_detail("state", state, f"{state_icon} {state}", url=url),
+                from_detail("role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
+            ])
+            # fmt: on
 
         with self.enrich_details(detail_items):
             res = ars.bsm.glue_client.get_tags(ResourceArn=self.arn)
             tags: dict = res.get("Tags", {})
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
 
@@ -514,12 +518,11 @@ glue_crawler_searcher = GlueCrawlerSearcher(
     doc_class=GlueCrawler,
     # search
     resource_type=SearcherEnum.glue_crawler,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="crawler_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.StoredField(name="crawler_arn"),
+        ],
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

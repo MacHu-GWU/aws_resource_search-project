@@ -15,10 +15,6 @@ if T.TYPE_CHECKING:
 
 @dataclasses.dataclass
 class SnsTopic(res_lib.BaseDocument):
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    topic_arn: str = dataclasses.field()
-
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         title = arns.res.SnsTopic.from_arn(resource["TopicArn"]).resource_id
@@ -26,7 +22,6 @@ class SnsTopic(res_lib.BaseDocument):
             raw_data=resource,
             id=title,
             name=title,
-            topic_arn=resource["TopicArn"],
         )
 
     @property
@@ -39,16 +34,17 @@ class SnsTopic(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.topic_arn
+        return self.raw_data["TopicArn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.sns.get_topic(name_or_arn=self.arn)
 
-    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
 
+        # fmt: off
         with self.enrich_details(detail_items):
             res = ars.bsm.sns_client.get_topic_attributes(TopicArn=self.arn)
             access_policy = res.get("Attributes", {}).get("Policy")
@@ -59,22 +55,22 @@ class SnsTopic(res_lib.BaseDocument):
             is_fifo_topic = res.get("Attributes", {}).get("FifoTopic", "NA")
             content_based_deduplication_enabled = res.get("Attributes", {}).get("ContentBasedDeduplication", "NA")
             detail_items.extend([
-                Item("access_policy", self.one_line(access_policy)),
-                Item("delivery_policy", self.one_line(delivery_policy)),
-                Item("subscriptions_confirmed", subscriptions_confirmed),
-                Item("subscriptions_deleted", subscriptions_deleted),
-                Item("subscriptions_pending", subscriptions_pending),
-                Item("is_fifo_topic", is_fifo_topic),
-                Item("content_based_deduplication_enabled", content_based_deduplication_enabled),
+                from_detail("access_policy", access_policy, self.one_line(access_policy), url=url),
+                from_detail("delivery_policy", delivery_policy, self.one_line(delivery_policy), url=url),
+                from_detail("subscriptions_confirmed", subscriptions_confirmed, url=url),
+                from_detail("subscriptions_deleted", subscriptions_deleted, url=url),
+                from_detail("subscriptions_pending", subscriptions_pending, url=url),
+                from_detail("is_fifo_topic", is_fifo_topic, url=url),
+                from_detail("content_based_deduplication_enabled", content_based_deduplication_enabled, url=url),
             ])
+        # fmt: on
 
         with self.enrich_details(detail_items):
             res = ars.bsm.sns_client.list_tags_for_resource(ResourceArn=self.arn)
             tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
-    # fmt: on
 
 
 class SnsTopicSearcher(res_lib.Searcher[SnsTopic]):
@@ -96,12 +92,7 @@ sns_topic_searcher = SnsTopicSearcher(
     doc_class=SnsTopic,
     # search
     resource_type=SearcherEnum.sns_topic,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="topic_arn"),
-    ],
+    fields=res_lib.define_fields(),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

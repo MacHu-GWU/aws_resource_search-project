@@ -14,19 +14,16 @@ if T.TYPE_CHECKING:
 
 @dataclasses.dataclass
 class SecretsManagerSecret(res_lib.BaseDocument):
-    description: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    secret_arn: str = dataclasses.field()
+    @property
+    def description(self) -> str:
+        return res_lib.get_description(self.raw_data, "Description")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
             raw_data=resource,
-            description=resource.get("Description", "No description"),
             id=resource["Name"],
             name=resource["Name"],
-            secret_arn=resource["ARN"],
         )
 
     @property
@@ -46,37 +43,40 @@ class SecretsManagerSecret(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.secret_arn
+        return self.raw_data["ARN"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.secretmanager.get_secret(secret_name_or_arn=self.arn)
 
-    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars, arn_field_name="statemachine_arn")
+        from_details = res_lib.DetailItem.from_detail
+        detail_items = self.get_initial_detail_items(
+            ars, arn_field_name="statemachine_arn"
+        )
+        url = self.get_console_url(ars.aws_console)
 
+        # fmt: off
         with self.enrich_details(detail_items):
+            res = ars.bsm.secretsmanager_client.describe_secret(SecretId=self.name)
             detail_items.extend([
-                Item("KmsKeyId", self.raw_data.get("KmsKeyId", "NA")),
-                Item("RotationEnabled", self.raw_data.get("RotationEnabled", "NA")),
-                Item("RotationLambdaARN", self.raw_data.get("RotationLambdaARN", "NA")),
-                Item("RotationRules", json.dumps(self.raw_data.get("RotationRules", {}))),
-                Item("LastRotatedDate", self.raw_data.get("LastRotatedDate", "NA")),
-                Item("LastChangedDate", self.raw_data.get("LastChangedDate", "NA")),
-                Item("LastAccessedDate", self.raw_data.get("LastAccessedDate", "NA")),
-                Item("DeletedDate", self.raw_data.get("DeletedDate", "NA")),
-                Item("NextRotationDate", self.raw_data.get("NextRotationDate", "NA")),
-                Item("OwningService", self.raw_data.get("OwningService", "NA")),
-                Item("CreatedDate", self.raw_data.get("CreatedDate", "NA")),
-                Item("PrimaryRegion", self.raw_data.get("PrimaryRegion", "NA")),
+                from_details("KmsKeyId", res.get("KmsKeyId", "NA"), url=url),
+                from_details("RotationEnabled", res.get("RotationEnabled", "NA"), url=url),
+                from_details("RotationLambdaARN", res.get("RotationLambdaARN", "NA"), url=url),
+                from_details("RotationRules", json.dumps(res.get("RotationRules", {})), url=url),
+                from_details("LastRotatedDate", res.get("LastRotatedDate", "NA"), url=url),
+                from_details("LastChangedDate", res.get("LastChangedDate", "NA"), url=url),
+                from_details("LastAccessedDate", res.get("LastAccessedDate", "NA"), url=url),
+                from_details("DeletedDate", res.get("DeletedDate", "NA"), url=url),
+                from_details("NextRotationDate", res.get("NextRotationDate", "NA"), url=url),
+                from_details("OwningService", res.get("OwningService", "NA"), url=url),
+                from_details("CreatedDate", res.get("CreatedDate", "NA"), url=url),
+                from_details("PrimaryRegion", res.get("PrimaryRegion", "NA"), url=url),
             ])
-
+            # fmt: on
             tags: dict = {dct["key"]: dct["value"] for dct in self.raw_data.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
-    # fmt: on
 
 
 class SecretsManagerSecretSearcher(res_lib.Searcher[SecretsManagerSecret]):
@@ -98,13 +98,7 @@ secretsmanager_secret_searcher = SecretsManagerSecretSearcher(
     doc_class=SecretsManagerSecret,
     # search
     resource_type=SearcherEnum.secretsmanager_secret,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="description"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="secret_arn"),
-    ],
+    fields=res_lib.define_fields(),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

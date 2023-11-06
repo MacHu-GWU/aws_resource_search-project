@@ -570,6 +570,13 @@ def define_fields(
     """
     A helper function to define the :attr:`Searcher.fields` property. It comes
     with the default fields: ``raw_data``, ``id``, ``name``.
+
+    1. all document class has a "raw_data" field inherit from res_lib.BaseDocument.
+    2. the "id" field is the unique identifier of the document.
+    3. it should have higher weight (in field_boost) if this field is matched
+        the name field should be n-gram searchable, and we would like to sort
+        the result by name in ascending order, so we set the sortable and
+        ascending to True.
     """
     final_fields = [
         sayt.StoredField(name="raw_data"),
@@ -928,7 +935,7 @@ class DetailItem(ArsBaseItem):
             title=format_key_value(name, text),
             subtitle=subtitle,
             uid=uid,
-            copy=value,
+            copy=str(value),
             url=url,
         )
 

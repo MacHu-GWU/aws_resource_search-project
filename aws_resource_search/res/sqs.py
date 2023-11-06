@@ -15,17 +15,26 @@ if T.TYPE_CHECKING:
 
 @dataclasses.dataclass
 class SqsQueue(res_lib.BaseDocument):
-    queue_url: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
     queue_arn: str = dataclasses.field()
+
+    @property
+    def queue_url(self) -> str:
+        return self.raw_data
+
+    @property
+    def queue_name(self) -> str:
+        q = arns.res.SqsQueue.from_queue_url(url=self.queue_url)
+        return q.queue_name
+
+    @property
+    def is_fifo(self) -> bool:
+        return self.queue_name.endswith(".fifo")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         q = arns.res.SqsQueue.from_queue_url(url=resource)
         return cls(
             raw_data=resource,
-            queue_url=resource,
             id=q.queue_name,
             name=q.queue_name,
             queue_arn=q.to_arn(),
@@ -46,21 +55,23 @@ class SqsQueue(res_lib.BaseDocument):
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.sqs.get_queue(name_or_arn_or_url=self.arn)
 
-    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
-        detail_items.append(
-            Item("queue_url", self.queue_url, url=self.get_console_url(ars.aws_console)),
-        )
+        url = self.get_console_url(ars.aws_console)
 
+        detail_items.extend([
+            from_detail("queue_url", self.queue_url, url=url),
+        ])
+
+        # fmt: off
         with self.enrich_details(detail_items):
             res = ars.bsm.sqs_client.get_queue_attributes(
                 QueueUrl=self.queue_url,
                 AttributeNames=["All"],
             )
             attrs = res.get("Attributes", {})
-            is_fifo = attrs.get("FifoQueue", "NA")
+            is_fifo = self.is_fifo
             n_msg = attrs.get("ApproximateNumberOfMessages", "NA")
             n_msg_delayed = attrs.get("ApproximateNumberOfMessagesDelayed", "NA")
             n_msg_invisible = attrs.get("ApproximateNumberOfMessagesNotVisible", "NA")
@@ -68,22 +79,22 @@ class SqsQueue(res_lib.BaseDocument):
             redrive_policy = attrs.get("RedrivePolicy")
             redrive_allow_policy = attrs.get("RedriveAllowPolicy")
             detail_items.extend([
-                Item("is_fifo", is_fifo),
-                Item("n_msg", n_msg),
-                Item("n_msg_delayed", n_msg_delayed),
-                Item("n_msg_invisible", n_msg_invisible),
-                Item("policy", self.one_line(policy)),
-                Item("redrive_policy", self.one_line(redrive_policy)),
-                Item("redrive_allow_policy", self.one_line(redrive_allow_policy)),
+                from_detail("is_fifo", is_fifo, url=url),
+                from_detail("n_msg", n_msg, url=url),
+                from_detail("n_msg_delayed", n_msg_delayed, url=url),
+                from_detail("n_msg_invisible", n_msg_invisible, url=url),
+                from_detail("policy", policy, self.one_line(policy), url=url),
+                from_detail("redrive_policy", redrive_policy, self.one_line(redrive_policy), url=url),
+                from_detail("redrive_allow_policy", redrive_allow_policy, self.one_line(redrive_allow_policy), url=url),
             ])
+        # fmt: on
 
         with self.enrich_details(detail_items):
             res = ars.bsm.sqs_client.list_queue_tags(QueueUrl=self.queue_url)
             tags: dict = res.get("Tags", {})
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
-    # fmt: on
 
 
 class SqsQueueSearcher(res_lib.Searcher[SqsQueue]):
@@ -106,13 +117,11 @@ sqs_queue_searcher = SqsQueueSearcher(
     doc_class=SqsQueue,
     # search
     resource_type=SearcherEnum.sqs_queue,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="queue_url"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="queue_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.StoredField(name="queue_arn"),
+        ],
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

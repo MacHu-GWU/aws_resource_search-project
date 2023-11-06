@@ -121,18 +121,19 @@ class S3Bucket(res_lib.BaseDocument):
     # the get_details method returns a list of items to be displayed in the
     # resource details view when user tap 'Ctrl P'.
     # you may call some boto3 API to get more details about the resource.
+    # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
         """
         Include s3 uri, s3 arn, bucket location and tags in details.
         """
         # the first code block is to initialize a detail_items list
         # using the class attribute
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         aws = ars.aws_console
         url = self.get_console_url(aws)
         detail_items: T.List[res_lib.DetailItem] = [
-            Item("s3 uri", f"s3://{self.name}", url=url),
-            Item("s3 arn", self.arn, url=url),
+            from_detail("s3 uri", f"s3://{self.name}", url=url),
+            from_detail("s3 arn", self.arn, url=url),
         ]
 
         # the second code block is to call boto3 API to get more details
@@ -145,7 +146,7 @@ class S3Bucket(res_lib.BaseDocument):
             location = res["LocationConstraint"]
             if not location:
                 location = "us-east-1"
-            detail_items.append(Item("location", location))
+            detail_items.append(from_detail("location", location, url=url))
 
         # below, we call more API to get more information
         with self.enrich_details(detail_items):
@@ -154,8 +155,8 @@ class S3Bucket(res_lib.BaseDocument):
             mfa_delete = res.get("MFADelete", "Not enabled yet")
             detail_items.extend(
                 [
-                    Item("versioning", versioning),
-                    Item("mfa_delete", mfa_delete),
+                    from_detail("versioning", versioning, url=url),
+                    from_detail("mfa_delete", mfa_delete, url=url),
                 ]
             )
 
@@ -173,32 +174,32 @@ class S3Bucket(res_lib.BaseDocument):
                 bucket_key_enabled = rule.get("BucketKeyEnabled", "Unknown")
                 detail_items.extend(
                     [
-                        Item("sse_algorithm", sse_algorithm),
-                        Item("kms_master_key_id", kms_master_key_id),
-                        Item("bucket_key_enabled", bucket_key_enabled),
+                        from_detail("sse_algorithm", sse_algorithm, url=url),
+                        from_detail("kms_master_key_id", kms_master_key_id, url=url),
+                        from_detail("bucket_key_enabled", bucket_key_enabled, url=url),
                     ]
                 )
 
         # similar to the second code block
         with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_policy(Bucket=self.name)
-            detail_items.append(
-                Item("bucket_policy", self.one_line(res.get("Policy", "{}")))
-            )
+            policy = res.get("Policy", "{}")
+            detail_items.append(from_detail("bucket_policy", policy, self.one_line(policy), url=url))
 
         with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_cors(Bucket=self.name)
             dct = {"CORSRules": res.get("CORSRules", [])}
             cors = json.dumps(dct)
-            detail_items.append(Item("CORS", cors, self.one_line(cors)))
+            detail_items.append(from_detail("CORS", cors, self.one_line(cors), url=url))
 
         # the last code block is usually to get the tags of the resource
         with self.enrich_details(detail_items):
             res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
             tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagSet", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
+    # fmt: on
 
 
 # create a res_lib.Searcher object. It defines the search behavior including
@@ -230,28 +231,11 @@ s3_bucket_searcher = S3BucketSearcher(
     # the resource type identifier in string, the naming convention is
     # ${service_name}-${resource_name}
     resource_type=SearcherEnum.s3_bucket,
-    # define how to index this document and how to search this document
+    # ``fields`` define how to index this document and how to search this document
     # the field list here has to match the attribute list in the document class
     # all field should be stored, so that we can recover the document object
     # from the search result
-    fields=[
-        # all document class has a "raw_data" field inheirt from res_lib.BaseDocument
-        res_lib.sayt.StoredField(name="raw_data"),
-        # the "id" field is the unique identifier of the document,
-        # it should have higher weight (in field_boost) if this field is matched
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        # the name field should be n-gram searchable
-        # and we would like to sort the result by name in ascending order
-        # so we set the sortable and ascending to True
-        res_lib.sayt.NgramWordsField(
-            name="name",
-            minsize=2,
-            maxsize=4,
-            stored=True,
-            sortable=True,
-            ascending=True,
-        ),
-    ],
+    fields=res_lib.define_fields(),
     # the list_buckets API result will be cached for 24 hours, so that we don't
     # need to rebuild the index every time when user search
     # user can use !~ query to force refresh the index
