@@ -285,12 +285,14 @@ rds_db_cluster_searcher = res_lib.Searcher(
     doc_class=RdsDbCluster,
     # search
     resource_type=SearcherEnum.rds_db_cluster,
-    # fmt: off
-    fields=[
-        res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True),
-    ],
-    # fmt: on
+    fields=res_lib.define_fields(
+        # fmt: off
+        fields=[
+            res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
+            res_lib.sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True),
+        ],
+        # fmt: on
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
