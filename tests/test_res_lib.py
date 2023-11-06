@@ -11,6 +11,7 @@ from aws_resource_search.res_lib import (
     ResultPath,
     list_resources,
     preprocess_query,
+    human_readable_elapsed,
     get_none_or_default,
     get_description,
     get_datetime_isofmt,
@@ -23,45 +24,53 @@ from aws_resource_search.tests.mock_test import BaseMockTest
 from rich import print as rprint
 
 
+def test_human_readable_elapsed():
+    assert human_readable_elapsed(15) == "15 sec"
+    assert human_readable_elapsed(60) == "1 min"
+    assert human_readable_elapsed(90) == "1 min 30 sec"
+    assert human_readable_elapsed(3600) == "1 hour"
+    assert human_readable_elapsed(3725) == "1 hour 2.1 min"
+    assert human_readable_elapsed(86400) == "1 day"
+    assert human_readable_elapsed(93900) == "1 day 2.1 hour"
+
+
+def test_get_none_or_default():
+    data = {"a": 1, "b": {"c": 3}}
+    assert get_none_or_default(data, "a") == 1
+    assert get_none_or_default(data, "d") is None
+    assert get_none_or_default(data, "d", "hello") == "hello"
+    assert get_none_or_default(data, "b.c") == 3
+    assert get_none_or_default(data, "b.d") is None
+    assert get_none_or_default(data, "b.d", "hello") == "hello"
+    assert get_none_or_default(data, "c.e") is None
+    assert get_none_or_default(data, "c.e", "hello") == "hello"
+
+
+def test_get_description():
+    assert get_description({}, "description") == "No description"
+
+
+def test_get_datetime_isofmt():
+    assert get_datetime_isofmt({}, "create_time") == "No datetime"
+    assert (
+        get_datetime_isofmt({"create_time": datetime(2021, 1, 1)}, "create_time")
+        == "2021-01-01T00:00:00"
+    )
+    assert get_datetime_isofmt({"create_time": "2021"}, "create_time") == "2021"
+
+
+def test_get_datetime_simplefmt():
+    assert get_datetime_simplefmt({}, "create_time") == "No datetime"
+    assert (
+        get_datetime_simplefmt(
+            {"create_time": datetime(2021, 1, 1, microsecond=123000)}, "create_time"
+        )
+        == "2021-01-01 00:00:00"
+    )
+    assert get_datetime_isofmt({"create_time": "2021"}, "create_time") == "2021"
+
+
 class TestDocument:
-    def _test_get_none_or_default(self):
-        data = {"a": 1, "b": {"c": 3}}
-        assert get_none_or_default(data, "a") == 1
-        assert get_none_or_default(data, "d") is None
-        assert get_none_or_default(data, "d", "hello") == "hello"
-        assert get_none_or_default(data, "b.c") == 3
-        assert get_none_or_default(data, "b.d") is None
-        assert get_none_or_default(data, "b.d", "hello") == "hello"
-        assert get_none_or_default(data, "c.e") is None
-        assert get_none_or_default(data, "c.e", "hello") == "hello"
-
-    def _test_get_description(self):
-        assert get_description({}, "description") == "No description"
-
-    def _test_get_datetime_isofmt(self):
-        assert get_datetime_isofmt({}, "create_time") == "No datetime"
-        assert (
-            get_datetime_isofmt({"create_time": datetime(2021, 1, 1)}, "create_time")
-            == "2021-01-01T00:00:00"
-        )
-        assert get_datetime_isofmt({"create_time": "2021"}, "create_time") == "2021"
-
-    def _test_get_datetime_simplefmt(self):
-        assert get_datetime_simplefmt({}, "create_time") == "No datetime"
-        assert (
-            get_datetime_simplefmt(
-                {"create_time": datetime(2021, 1, 1, microsecond=123000)}, "create_time"
-            )
-            == "2021-01-01 00:00:00"
-        )
-        assert get_datetime_isofmt({"create_time": "2021"}, "create_time") == "2021"
-
-    def _test_extractors(self):
-        self._test_get_none_or_default()
-        self._test_get_description()
-        self._test_get_datetime_isofmt()
-        self._test_get_datetime_simplefmt()
-
     def _test_enrich_details(self):
         detail_items = []
         with BaseDocument.enrich_details(detail_items):
@@ -86,7 +95,6 @@ class TestDocument:
         assert BaseDocument.one_line(dict(a=1, b=2)) == '{"a": 1, "b": 2}'
 
     def test(self):
-        self._test_extractors()
         self._test_enrich_details()
         self._test_one_line()
 

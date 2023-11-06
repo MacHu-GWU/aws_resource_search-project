@@ -14,10 +14,26 @@ if T.TYPE_CHECKING:
     from ..ars import ARS
 
 
+def make_env_var_item(
+    name: str,
+    value: str,
+    type: str,
+    url: str,
+) -> res_lib.DetailItem:
+    return res_lib.DetailItem.new(
+        title="🎯 env var: {} ({})".format(
+            format_key_value(name, value),
+            type,
+        ),
+        subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy value.",
+        uid=f"env var {name}",
+        copy=value,
+        url=url,
+    )
+
+
 @dataclasses.dataclass
 class CodeBuildProject(res_lib.BaseDocument):
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
     project_arn: str = dataclasses.field()
 
     @classmethod
@@ -50,8 +66,9 @@ class CodeBuildProject(res_lib.BaseDocument):
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.codebuild_client.batch_get_projects(names=[self.name])
@@ -80,35 +97,23 @@ class CodeBuildProject(res_lib.BaseDocument):
             environment_privilegedMode = dct.get("environment", {}).get("privilegedMode", "NA")
             env_vars = dct.get("environment", {}).get("environmentVariables", [])
             detail_items.extend([
-                Item("description", description),
-                Item("serviceRole", serviceRole, url=ars.aws_console.iam.get_role(serviceRole)),
-                Item("concurrentBuildLimit", concurrentBuildLimit),
-                Item("timeoutInMinutes", timeoutInMinutes),
-                Item("queuedTimeoutInMinutes", queuedTimeoutInMinutes),
-                Item("resourceAccessRole", resourceAccessRole, url=ars.aws_console.iam.get_role(serviceRole)),
-                Item("source_type", source_type),
-                Item("source_location", source_location),
-                Item("source_buildspec", source_buildspec, self.one_line(source_buildspec)),
-                Item("environment_type", environment_type),
-                Item("environment_image", environment_image),
-                Item("environment_computeType", environment_computeType),
-                Item("environment_privilegedMode", environment_privilegedMode),
+                from_detail("description", description, url=url),
+                from_detail("serviceRole", serviceRole, url=ars.aws_console.iam.get_role(serviceRole)),
+                from_detail("concurrentBuildLimit", concurrentBuildLimit, url=url),
+                from_detail("timeoutInMinutes", timeoutInMinutes, url=url),
+                from_detail("queuedTimeoutInMinutes", queuedTimeoutInMinutes, url=url),
+                from_detail("resourceAccessRole", resourceAccessRole, url=ars.aws_console.iam.get_role(serviceRole)),
+                from_detail("source_type", source_type, url=url),
+                from_detail("source_location", source_location, url=url),
+                from_detail("source_buildspec", source_buildspec, self.one_line(source_buildspec), url=url),
+                from_detail("environment_type", environment_type, url=url),
+                from_detail("environment_image", environment_image, url=url),
+                from_detail("environment_computeType", environment_computeType, url=url),
+                from_detail("environment_privilegedMode", environment_privilegedMode, url=url),
             ])
             for d in env_vars:
-                name = d["name"]
-                value = d["value"]
-                type = d["type"]
-                detail_items.append(
-                    res_lib.DetailItem(
-                        title="🎯 env var: {} ({})".format(
-                            format_key_value(name, value),
-                            type,
-                        ),
-                        subtitle= f"📋 {ShortcutEnum.CTRL_A} to copy.",
-                        uid=name,
-                        variables={"copy": value, "url": None},
-                    )
-                )
+                item = make_env_var_item(d["name"], d["value"], d["type"], url)
+                detail_items.append(item)
             tags: dict = {d["key"]: d["value"] for d in dct.get("tags", [])}
             detail_items.extend(res_lib.DetailItem.from_tags(tags))
 
@@ -137,19 +142,11 @@ codebuild_project_searcher = CodeBuildProjectSearcher(
     doc_class=CodeBuildProject,
     # search
     resource_type=SearcherEnum.codebuild_project,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(
-            name="name",
-            minsize=2,
-            maxsize=4,
-            stored=True,
-            sortable=True,
-            ascending=True,
-        ),
-        res_lib.sayt.StoredField(name="project_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.StoredField(name="project_arn"),
+        ],
+    ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
@@ -166,32 +163,23 @@ codebuild_run_status_icon_mapper = {
 
 @dataclasses.dataclass
 class CodeBuildJobRun(res_lib.BaseDocument):
-    fullname: str = dataclasses.field()
     status: str = dataclasses.field()
-    start_at: datetime = dataclasses.field()
-    end_at: datetime = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
-    build_arn: str = dataclasses.field()
 
-    @classmethod
-    def from_resource(cls, resource, bsm, boto_kwargs):
-        fullname = resource
-        short_id = resource.split(":", 1)[1]
-        return cls(
-            raw_data=resource,
-            fullname=fullname,
-            status="NA",
-            start_at="NA",
-            end_at="NA",
-            id=short_id,
-            name=short_id,
-            build_arn=arns.res.CodeBuildRun.new(
-                aws_account_id=bsm.aws_account_id,
-                aws_region=bsm.aws_region,
-                fullname=fullname,
-            ).to_arn(),
-        )
+    @property
+    def fullname(self) -> str:
+        return self.raw_data["id"]
+
+    @property
+    def short_id(self) -> int:
+        return int(self.raw_data["id"].split(":", 1)[1])
+
+    @property
+    def start_at(self) -> datetime:
+        return res_lib.get_datetime(self.raw_data, "startTime")
+
+    @property
+    def end_at(self) -> datetime:
+        return res_lib.get_datetime(self.raw_data, "endTime")
 
     @classmethod
     def from_many_resources(
@@ -211,18 +199,10 @@ class CodeBuildJobRun(res_lib.BaseDocument):
             short_id = dct["id"].split(":", 1)[1]
             yield cls(
                 raw_data=dct,
-                fullname=dct["id"],
-                status=dct["buildStatus"],
-                start_at=dct.get("startTime"),
-                end_at=dct.get("endTime"),
                 id=short_id,
                 name=short_id,
-                build_arn=dct["arn"],
+                status=dct["buildStatus"],
             )
-
-    @property
-    def status_icon(self):
-        return codebuild_run_status_icon_mapper[self.status]
 
     @property
     def title(self) -> str:
@@ -230,9 +210,20 @@ class CodeBuildJobRun(res_lib.BaseDocument):
 
     @property
     def subtitle(self) -> str:
-        return "{}, {}, {}".format(
-            f"{self.status_icon} {self.status}",
-            format_key_value("start_at", self.start_at),
+        utc_now = res_lib.get_utc_now()
+        if self.raw_data.get("endTime"):
+            duration = int((self.end_at - self.start_at).total_seconds())
+            completed = int((utc_now - self.end_at).total_seconds())
+            completed = res_lib.human_readable_elapsed(completed)
+        else:
+            duration = int((utc_now - self.start_at).total_seconds())
+            completed = "Not yet"
+        duration = res_lib.human_readable_elapsed(duration)
+        status_icon = codebuild_run_status_icon_mapper[self.status]
+        return "{}, {}, {}, {}".format(
+            f"{status_icon} {self.status}",
+            format_key_value("duration", duration),
+            format_key_value("completed", completed),
             self.short_subtitle,
         )
 
@@ -243,46 +234,50 @@ class CodeBuildJobRun(res_lib.BaseDocument):
 
     @property
     def arn(self) -> str:
-        return self.build_arn
+        return self.raw_data["arn"]
 
     def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
         return console.codebuild.get_build_run(run_id_or_arn=self.arn)
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars)
-        detail_items.extend([
-            Item("status", self.status, text=f"{self.status_icon} {self.status}"),
-            Item("start_at", self.start_at),
-            Item("end_at", self.end_at),
-        ])
+        url = self.get_console_url(ars.aws_console)
+
+        with self.enrich_details(detail_items):
+            res = ars.bsm.codebuild_client.batch_get_builds(ids=[self.fullname])
+            builds = res.get("builds", [])
+            if len(builds) == 0:
+                return [
+                    res_lib.DetailItem.new(
+                        title="🚨 build job run not found, maybe it's deleted?",
+                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        url=url,
+                    )
+                ]
+            build = builds[0]
+            run = CodeBuildJobRun(raw_data=build, id=self.id, name=self.name)
+            status_icon = codebuild_run_status_icon_mapper[run.status]
+            detail_items.extend([
+                from_detail("status", run.status, f"{status_icon} {run.status}", url=url),
+                from_detail("start_at", run.start_at, url=url),
+                from_detail("end_at", run.end_at, url=url),
+            ])
 
         serviceRole = self.raw_data.get("serviceRole", "NA")
         source_buildspec = self.raw_data.get("source", {}).get("buildspec", "NA")
         initiator = self.raw_data.get("initiator", "NA")
         detail_items.extend([
-            Item("serviceRole", serviceRole, url=ars.aws_console.iam.get_role(serviceRole)),
-            Item("source_buildspec", source_buildspec, self.one_line(source_buildspec)),
-            Item("initiator", initiator),
+            from_detail("serviceRole", serviceRole, url=ars.aws_console.iam.get_role(serviceRole)),
+            from_detail("source_buildspec", source_buildspec, self.one_line(source_buildspec), url=url),
+            from_detail("initiator", initiator, url=url),
         ])
 
         env_vars = self.raw_data.get("environment", {}).get("environmentVariables", [])
         for d in env_vars:
-            name = d["name"]
-            value = d["value"]
-            type = d["type"]
-            detail_items.append(
-                res_lib.DetailItem(
-                    title="🎯 env var: {} ({})".format(
-                        format_key_value(name, value),
-                        type,
-                    ),
-                    subtitle=f"📋 {ShortcutEnum.CTRL_A} to copy.",
-                    uid=name,
-                    variables={"copy": value, "url": None},
-                )
-            )
+            item = make_env_var_item(d["name"], d["value"], d["type"], url)
+            detail_items.append(item)
 
         return detail_items
     # fmt: on
@@ -307,16 +302,17 @@ codebuild_job_run_searcher = CodeBuildJobRunSearcher(
     doc_class=CodeBuildJobRun,
     # search
     resource_type=SearcherEnum.codebuild_job_run,
-    fields=[
-        res_lib.sayt.StoredField(name="raw_data"),
-        res_lib.sayt.StoredField(name="fullname"),
-        res_lib.sayt.StoredField(name="status"),
-        res_lib.sayt.StoredField(name="start_at"),
-        res_lib.sayt.StoredField(name="end_at"),
-        res_lib.sayt.IdField(name="id", field_boost=5.0, stored=True),
-        res_lib.sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True),
-        res_lib.sayt.StoredField(name="build_arn"),
-    ],
+    fields=res_lib.define_fields(
+        fields=[
+            res_lib.sayt.NgramWordsField(
+                name="status",
+                minsize=2,
+                maxsize=4,
+                stored=True,
+            ),
+        ],
+        name_ascending=False,
+    ),
     cache_expire=5 * 60,
     more_cache_key=None,
 )

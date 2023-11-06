@@ -63,7 +63,9 @@ class CloudFormationStack(res_lib.BaseDocument):
         status_icon = cloudformation_stack_status_icon_mapper[self.status]
         return "{}, {}, {}".format(
             f"{status_icon} {self.status}",
-            format_key_value("update_at", res_lib.to_simple_fmt(self.last_updated_time)),
+            format_key_value(
+                "update_at", res_lib.to_simple_fmt(self.last_updated_time)
+            ),
             self.short_subtitle,
         )
 
@@ -152,12 +154,19 @@ cloudformation_stack_searcher = CloudFormationStackSearcher(
     fields=res_lib.define_fields(
         fields=[
             res_lib.sayt.NgramWordsField(
-                name="status", minsize=2, maxsize=4, stored=True
+                name="status",
+                minsize=2,
+                maxsize=4,
+                stored=True,
             ),
             res_lib.sayt.DatetimeField(
-                name="last_updated_time", sortable=True, ascending=False, stored=True
+                name="last_updated_time",
+                sortable=True,
+                ascending=False,
+                stored=True,
             ),
-        ]
+        ],
+        name_sortable=False,
     ),
     cache_expire=24 * 60 * 60,
     more_cache_key=None,

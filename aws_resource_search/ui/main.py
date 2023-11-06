@@ -182,4 +182,5 @@ def run_ui():
         capture_error=False,
         terminal=terminal,
     )
+    ui.render
     ui.run()

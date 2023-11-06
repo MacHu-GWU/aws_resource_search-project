@@ -142,6 +142,33 @@ def list_resources(
 # ------------------------------------------------------------------------------
 # Document
 # ------------------------------------------------------------------------------
+def get_utc_now() -> datetime:
+    return datetime.utcnow().replace(tzinfo=timezone.utc)
+
+
+def human_readable_elapsed(sec: int) -> str:
+    if sec < 60:
+        return f"{sec} sec"
+    elif sec < 3600:
+        div, mod = divmod(sec, 60)
+        if mod:
+            return f"{div} min {mod} sec"
+        else:
+            return f"{div} min"
+    elif sec < 86400:
+        div, mod = divmod(sec, 3600)
+        if mod:
+            return f"{div} hour {mod / 60:.1f} min"
+        else:
+            return f"{div} hour"
+    else:
+        div, mod = divmod(sec, 86400)
+        if mod:
+            return f"{div} day {mod / 3600:.1f} hour"
+        else:
+            return f"{div} day"
+
+
 def get_none_or_default(
     data: T.Any,
     path: str,
@@ -190,6 +217,7 @@ def get_datetime(
     data: T.Any,
     path: str,
     default: datetime = datetime(1970, 1, 1, tzinfo=timezone.utc),
+    as_utc: bool = True,
 ) -> datetime:
     """
     Extract isoformat datetime string from a dictionary using Jmespath.
@@ -203,7 +231,14 @@ def get_datetime(
     if bool(res) is False:
         return default
     elif isinstance(res, datetime):
-        return res
+        if as_utc:
+            if res.tzinfo is None:
+                return res.replace(tzinfo=timezone.utc)
+            else:
+                return res.astimezone(timezone.utc)
+        else:
+            return res
+
     else:
         raise TypeError
 
@@ -529,6 +564,8 @@ def define_fields(
     id_field_boost: float = 5.0,
     name_minsize: int = 2,
     name_maxsize: int = 4,
+    name_sortable: bool = True,
+    name_ascending: bool = True,
 ) -> T.List[sayt.T_Field]:
     """
     A helper function to define the :attr:`Searcher.fields` property. It comes
@@ -538,7 +575,12 @@ def define_fields(
         sayt.StoredField(name="raw_data"),
         sayt.IdField(name="id", field_boost=id_field_boost, stored=True),
         sayt.NgramWordsField(
-            name="name", minsize=name_minsize, maxsize=name_maxsize, stored=True
+            name="name",
+            minsize=name_minsize,
+            maxsize=name_maxsize,
+            stored=True,
+            sortable=name_sortable,
+            ascending=name_ascending,
         ),
     ]
     if fields:

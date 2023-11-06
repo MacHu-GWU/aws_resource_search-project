@@ -66,30 +66,32 @@ class SfnStateMachine(res_lib.BaseDocument):
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars, arn_field_name="statemachine_arn")
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.sfn_client.describe_state_machine(stateMachineArn=self.arn)
             status = res["status"]
             role_arn = res["roleArn"]
             definition = res["definition"]
-            type = res.get("type", "Unknown")
+            type = res.get("type", "STANDARD")
             creation_date = res["creationDate"]
 
             status_icon = sfn_statemachine_status_icon_mapper[status]
+            type_icon = sfn_statemachine_type_icon_mapper[type]
             detail_items.extend([
-                Item("status", status, text=f"{status_icon} {status}"),
-                Item("🧢 role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
-                Item("definition", json.dumps(json.loads(definition))),
-                Item("type", type),
-                Item("creation_date", creation_date),
+                from_detail("status", status, f"{status_icon} {status}", url=url),
+                from_detail("🧢 role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
+                from_detail("definition", definition, self.one_line(definition), url=url),
+                from_detail("type", type, f"{type_icon} {type}", url=url),
+                from_detail("creation_date", creation_date, url=url),
             ])
 
         with self.enrich_details(detail_items):
             res = ars.bsm.sfn_client.list_tags_for_resource(resourceArn=self.arn)
             tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags))
+            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
@@ -183,8 +185,9 @@ class SfnExecution(res_lib.BaseDocument):
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
+        from_detail = res_lib.DetailItem.from_detail
         detail_items = self.get_initial_detail_items(ars, arn_field_name="exec_arn")
+        url = self.get_console_url(ars.aws_console)
 
         with self.enrich_details(detail_items):
             res = ars.bsm.sfn_client.describe_execution(executionArn=self.arn)
@@ -199,14 +202,14 @@ class SfnExecution(res_lib.BaseDocument):
 
             status_icon = sfn_execution_status_icon_mapper[status]
             detail_items.extend([
-                Item("status", status, text=f"{status_icon} {status}"),
-                Item("state_machine_arn", state_machine_arn, url=ars.aws_console.step_function.get_state_machine_view_tab(state_machine_arn)),
-                Item("state_machine_version_arn", state_machine_version_arn) if state_machine_version_arn else None,
-                Item("state_machine_alias_arn", state_machine_alias_arn) if state_machine_alias_arn else None,
-                Item("input", self.one_line(input)),
-                Item("output", self.one_line(output)),
-                Item("error", self.one_line(error)),
-                Item("cause", self.one_line(cause)),
+                from_detail("status", status, f"{status_icon} {status}", url=url),
+                from_detail("state_machine_arn", state_machine_arn, url=ars.aws_console.step_function.get_state_machine_view_tab(state_machine_arn)),
+                from_detail("state_machine_version_arn", state_machine_version_arn, url=url) if state_machine_version_arn else None,
+                from_detail("state_machine_alias_arn", state_machine_alias_arn, url=url) if state_machine_alias_arn else None,
+                from_detail("input", input, self.one_line(input), url=url),
+                from_detail("output", output, self.one_line(output), url=url),
+                from_detail("error", error, self.one_line(error), url=url),
+                from_detail("cause", cause, self.one_line(cause), url=url),
             ])
 
         detail_items = [item for item in detail_items if item is not None]
@@ -237,7 +240,7 @@ sfn_execution_searcher = SfnExecutionSearcher(
             res_lib.sayt.DatetimeField(
                 name="start_at", sortable=True, ascending=False, stored=True
             ),
-        ]
+        ],
     ),
     cache_expire=24 * 60 * 60,
     more_cache_key=lambda boto_kwargs: [boto_kwargs["stateMachineArn"]],
