@@ -6,9 +6,6 @@ import fire
 from awscli_mate.ui import run_ui as run_awscli_mate_ui
 
 from .._version import __version__
-from ..ui.main import run_ui as run_ars_ui
-from . import which
-from . import clear
 
 
 class ArsCli:
@@ -34,9 +31,13 @@ class ArsCli:
     """
 
     def __call__(self, version: T.Optional[bool] = None):
+        from ..ui.boto_ses import validate_boto_session
+        from ..ui.main import run_ui as run_ars_ui
+
         if version:
             print(__version__)
         else:
+            validate_boto_session()
             run_ars_ui()
 
     def which(self):
@@ -53,6 +54,8 @@ class ArsCli:
             AWS Account Alias = my-aws-account-alias
             AWS Region = us-east-1
         """
+        from . import which
+
         which.main()
 
     def set_profile(self):
@@ -74,6 +77,8 @@ class ArsCli:
 
         - ``ars clear``: clear all index and cache of this App.
         """
+        from . import clear
+
         clear.main()
 
 

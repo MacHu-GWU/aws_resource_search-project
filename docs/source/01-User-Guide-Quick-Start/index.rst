@@ -1,5 +1,6 @@
 User Guide - Quick Start
 ==============================================================================
+If you are a first-time user, this document will guide you through the basic usage of this app
 
 
 💾 Installation
@@ -191,7 +192,7 @@ You can use the ``ars`` (AWS Resource Search) command to enter the main interact
 
 **Select Resource Type**
 
-The landing page shows a :ref:`list of implemented AWS resource types <user-guide-implemented-aws-resource-types>`. You can use your keyboard to select or filter the resource type and then tap ``Tab`` to start searching. Please refer the :ref:`user-guide-keyboard-shortcut` for full list of keyboard shortcuts.
+The landing page shows a :ref:`list of implemented AWS resource types <user-guide-implemented-aws-resource-types>`. You can use your keyboard to select or filter the resource type and then tap ``Tab`` or ``Enter`` to start searching. Please refer the :ref:`user-guide-keyboard-shortcut` for full list of keyboard shortcuts.
 
 .. code-block::
 

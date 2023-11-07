@@ -571,11 +571,12 @@ def define_fields(
     with the default fields: ``raw_data``, ``id``, ``name``.
 
     1. all document class has a "raw_data" field inherit from res_lib.BaseDocument.
-    2. the "id" field is the unique identifier of the document.
-    3. it should have higher weight (in field_boost) if this field is matched
-        the name field should be n-gram searchable, and we would like to sort
-        the result by name in ascending order, so we set the sortable and
-        ascending to True.
+    2. the ``id`` field is the unique identifier of the document. and it is also
+        a searchable ``IdField``. this field haves higher weight (in field_boost).
+    3. the ``name`` field is a human-firendly name, and it is also an
+        n-gram searchable ``NgramWordsField``. the default setting is that
+        the result is ordered by name in ascending order
+        (in name_sortable and name_ascending).
 
     :param fields: additional fields to be added.
     :param id_field_boost: parameter for the default fields.
