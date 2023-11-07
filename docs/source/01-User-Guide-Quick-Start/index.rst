@@ -172,10 +172,14 @@ Then you can type query to select the profile you want to set as default, then h
 
 .. note::
 
-    $ ars which
-    AWS Account ID = 123456789012
-    AWS Account Alias = my_company_aws_account
-    AWS Region = us-east-1
+    You can use the ``ars which`` command to check the current AWS account you are searching to
+
+    .. code-block:: bash
+
+        $ ars which
+        AWS Account ID = 123456789012
+        AWS Account Alias = my_company_aws_account
+        AWS Region = us-east-1
 
 
 This feature is based on my another project ``awscli_mate``. Please refer the `Use awscli_mate as a Interactive CLI <https://github.com/MacHu-GWU/awscli_mate-project#use-awscli_mate-as-a-interactive-cli>`_ to learn more.
