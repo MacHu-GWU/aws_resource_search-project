@@ -2,7 +2,7 @@ User Guide - Quick Start
 ==============================================================================
 
 
-Installation
+💾 Installation
 ------------------------------------------------------------------------------
 ``aws_resource_search`` requires ``Python3.8+``. To install, just run:
 
@@ -44,7 +44,7 @@ Then you can just do:
 Congrats, you are all set! You can jump to :ref:`search-aws-resource` section to continue.
 
 
-Setup Your AWS CLI
+🔑 Setup Your AWS CLI
 ------------------------------------------------------------------------------
 ``aws_resource_search`` utilizes the ``default`` AWS CLI credential on your local machine to authenticate with AWS. You can refer the `Official Configure the AWS CLI <https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html>`_ document to set up your AWS CLI.
 
@@ -135,7 +135,7 @@ Content of ``${HOME}/.aws/credentials``:
     5. if there's an boto3 error, read this golden rules again.
 
 
-Switch Between AWS Profile
+🔑 Switch Between AWS Profile
 ------------------------------------------------------------------------------
 You can use the ``ars set-profile`` command to enter an interactive session to set the default profile.
 
@@ -169,12 +169,20 @@ Then you can type query to select the profile you want to set as default, then h
     [ ] 📝 my_company_prod | eu-west-1
           Hit 'Enter' to set 'my_company_prod' as the default profile.
 
+.. note::
+
+    $ ars which
+    AWS Account ID = 123456789012
+    AWS Account Alias = my_company_aws_account
+    AWS Region = us-east-1
+
+
 This feature is based on my another project ``awscli_mate``. Please refer the `Use awscli_mate as a Interactive CLI <https://github.com/MacHu-GWU/awscli_mate-project#use-awscli_mate-as-a-interactive-cli>`_ to learn more.
 
 
 .. _search-aws-resource:
 
-Search AWS Resource
+🔍 Search AWS Resource
 ------------------------------------------------------------------------------
 You can use the ``ars`` (AWS Resource Search) command to enter the main interactive session to search AWS Resources.
 
@@ -245,7 +253,7 @@ You may notice ``🌐 Enter, 📋 Ctrl A, 🔗 Ctrl U, 👀 Ctrl P.``. These are
 
 Please refer the :ref:`user-guide-keyboard-shortcut` for full list of keyboard shortcuts.
 
-**View AWS Resource Details**
+**👀 View AWS Resource Details**
 
 You can tap ``Ctrl + P`` to view detailed information about the selected bucket. You can also tap ``Ctrl + A`` to copy the value of the detail. This is particularly useful when you need to copy a JSON object.
 
@@ -265,9 +273,9 @@ You can tap ``Ctrl + P`` to view detailed information about the selected bucket.
 
 At the end, you can press ``F1`` to return to the previous view and select another S3 bucket.
 
-**Refresh Data**
+**🔁 Refresh Data**
 
-``aws_resource_search`` uses cache to speed up the search. The dataset will be automatcially refreshed every 24 hours. If your query doesn't return any result, you can try to type ``!~`` to refresh the data.
+``aws_resource_search`` uses cache to speed up the search. The dataset will be automatcially refreshed every 24 hours. If your query doesn't return any result, you can type ``!~`` to refresh the data.
 
 .. code-block::
 
@@ -275,8 +283,20 @@ At the end, you can press ``F1`` to return to the previous view and select anoth
     [x] Pulling data for 's3-bucket', it may takes 1-60 seconds ...
           please wait, don't press any key
 
+.. note::
 
-Search Child Resource
+    The AWS resource data cache is partitioned by AWS account, region, and resource type. The ``!~`` command will only refresh the given partition. If you want to refresh all the data in all aws accounts, you can run the following command in your teminal:
+
+    .. code-block:: bash
+    
+        $ ars clear
+        clear index in /Users/username/.aws_resource_search/.index
+        clear cache in /Users/username/.aws_resource_search/.cache
+        done, you can verify at file:///Users/username/.aws_resource_search
+
+
+
+🔍 Search Child Resource
 ------------------------------------------------------------------------------
 Sometimes, you may need to specify a parent AWS resource to search for its child resources. For instance, when searching for a AWS glue table, you must specify the AWS Glue database, or when searching for StepFuction executions, you need to specify an AWS StepFunction state machine.
 

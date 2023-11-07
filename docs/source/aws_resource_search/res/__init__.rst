@@ -20,6 +20,7 @@ sub packages and modules
     glue <glue>
     iam <iam>
     kms <kms>
+    rds <rds>
     s3 <s3>
     secretmanager <secretmanager>
     sfn <sfn>

@@ -10,6 +10,5 @@ sub packages and modules
 .. toctree::
     :maxdepth: 1
 
-    ars <ars>
-    searchers <searchers>
+    gen_code <gen_code>
     

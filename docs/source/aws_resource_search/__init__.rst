@@ -19,12 +19,12 @@ sub packages and modules
     ars <ars>
     ars_base <ars_base>
     compat <compat>
-    constants <constants>
     exc <exc>
     logger <logger>
     model <model>
     res_lib <res_lib>
     searchers <searchers>
+    searchers_enum <searchers_enum>
     terminal <terminal>
     utils <utils>
     

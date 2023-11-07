@@ -10,7 +10,7 @@ import dataclasses
 
 import sayt.api as sayt
 
-from ..terminal import ShortcutEnum, highlight_text, format_resource_type
+from ..terminal import ShortcutEnum, format_resource_type
 from ..paths import dir_index, dir_cache, path_searchers_json
 from ..compat import TypedDict
 from ..res_lib import preprocess_query, ArsBaseItem, OpenUrlItem
