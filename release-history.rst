@@ -23,9 +23,8 @@ Backlog (TODO)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
-- add a JSON config system for this app.
-- add ``ars config`` command to view and edit the json file.
-
+- Add a JSON config system for this app.
+- Add ``ars config`` command to view and edit the json file.
 - Add support for:
     - lambda-alias
     - rds-dbinstance
@@ -33,12 +32,15 @@ Backlog (TODO)
 
 **Minor Improvements**
 
-- Add lambda layer information in lambda function details
+- Add lambda layer information in lambda function details.
 - Allow tap 'Enter' to open url in detail view for most of detail items.
+- Greatly refactor the source code to make it more maintainable.
+- Update document.
 
 **Bugfixes**
 
 - fix a bug that we should call api to get latest data for mutable resources.
+- fix a bug that we raise boto3 session validation error when we don't really need it in some CLI command like ``ars --version``.
 
 
 0.3.1 (2023-11-02)
