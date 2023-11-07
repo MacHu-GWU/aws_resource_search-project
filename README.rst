@@ -42,10 +42,10 @@
     :target: https://github.com/MacHu-GWU/aws_resource_search-project
 
 .. image:: https://img.shields.io/badge/Link-Submit_Issue-blue.svg
-    :target: https://github.com/MacHu-GWU/aws_resource_search-project/issues
+    :target: https://github.com/MacHu-GWU/aws_resource_search-project/issues/new/choose
 
 .. image:: https://img.shields.io/badge/Link-Request_Feature-blue.svg
-    :target: https://github.com/MacHu-GWU/aws_resource_search-project/issues
+    :target: https://github.com/MacHu-GWU/aws_resource_search-project/issues/new/choose
 
 .. image:: https://img.shields.io/badge/Link-Download-blue.svg
     :target: https://pypi.org/pypi/aws_resource_search#files
