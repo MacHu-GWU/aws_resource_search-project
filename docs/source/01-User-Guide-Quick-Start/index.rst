@@ -1,6 +1,6 @@
 User Guide - Quick Start
 ==============================================================================
-If you are a first-time user, this document will guide you through the basic usage of this app
+If you are a first-time user, this document will guide you through the basic usage of this app.
 
 
 💾 Installation
