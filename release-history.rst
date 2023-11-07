@@ -11,7 +11,6 @@ Backlog (TODO)
 - add a JSON config system for this app.
 - add ``ars config`` command to view and edit the json file.
 
--
 **Minor Improvements**
 
 **Bugfixes**
@@ -19,7 +18,7 @@ Backlog (TODO)
 **Miscellaneous**
 
 
-0.4.1 (TODO)
+0.4.1 (2023-11-07)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
@@ -73,7 +72,7 @@ Backlog (TODO)
 
 - Add support for:
     - codebuild-project
-    - codebuild-jobrun
+    - codebuild-job-run
     - codepipeline-pipeline
 
 **Minor Improvements**
