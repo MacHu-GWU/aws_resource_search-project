@@ -45,7 +45,7 @@ def format_resource_type(resource_type: str) -> str:
 
         :blue:`sfn-statemachine`: name = CognitoUserManagement
     """
-    return f"{term.blue}{resource_type}{term.normal}"
+    return f"{term.green}{resource_type}{term.normal}"
 
 
 def format_key(key: str) -> str:
