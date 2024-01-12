@@ -1028,13 +1028,14 @@ class DetailItem(ArsBaseItem):
 class InfoItem(ArsBaseItem):
     """
     Represent an item to show any information. Nothing would happen when user
-    press any of the user action key.
+    press any of the user action key. This is usually used to show some helpful
+    information to suggest user what to do.
     """
 
 
 class OpenUrlItem(ArsBaseItem):
     """
-    Represent an item to open a url when user tap "Enter".
+    Represent an item to open an url when user tap "Enter". No
     """
 
     def enter_handler(self, ui: "zf.UI"):  # pragma: no cover

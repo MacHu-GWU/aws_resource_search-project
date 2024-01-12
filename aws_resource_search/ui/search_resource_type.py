@@ -98,6 +98,10 @@ class AwsResourceTypeItem(ArsBaseItem):
         return [cls.from_document(doc) for doc in docs]
 
     def enter_handler(self, ui: "UI"):
+        """
+        For resource type search, when user hit "Enter", it does the same thing
+        as hitting "Tab" for auto-complete.
+        """
         ui.line_editor.clear_line()
         if self.autocomplete:
             ui.line_editor.enter_text(self.autocomplete)
@@ -110,6 +114,9 @@ def search_resource_type_and_return_items(
     query: str,
     refresh_data: bool = False,
 ) -> T.List[T.Union[AwsResourceTypeItem, OpenUrlItem]]:
+    """
+    Search AWS Resource Type based on the query and return items.
+    """
     docs: T.List[ResourceTypeDocument] = resource_type_dataset.search(
         query=query,
         limit=50,

@@ -16,6 +16,7 @@ except ImportError:
 
 from ..searchers import finder
 from ..terminal import terminal
+from ..res_lib import DetailItem, InfoItem, OpenUrlItem, OpenFileItem
 from .search_resource_type import (
     AwsResourceTypeItem,
     select_resource_type_handler,
@@ -29,13 +30,26 @@ from .search_resource import (
 def handler(
     query: str,
     ui: zf.UI,
-) -> T.List[T.Union[AwsResourceTypeItem, AwsResourceItem]]:
+) -> T.List[
+    T.Union[
+        AwsResourceTypeItem,
+        AwsResourceItem,
+        DetailItem,
+        InfoItem,
+        OpenUrlItem,
+        OpenFileItem,
+    ]
+]:
     """
     Main query handler. It parses the query and route the query to
     the corresponding sub handler.
 
     - :func:`~aws_resource_search.ui.search_resource_type.select_resource_type_handler`
     - :func:`~aws_resource_search.ui.search_resource.search_resource_handler`
+
+    The query can be in one of these formats:
+
+    -
     """
     zf.debugger.log(f"handler Query: {query!r}")
 
@@ -102,6 +116,7 @@ class UI(zf.UI):
     """
     todo: doc string here
     """
+
     def process_ctrl_b(self: "UI"):
         """
         If you are searching an AWS resource, it will remove the query but keep

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+todo: docstring
+"""
+
 import typing as T
 import fire
 
@@ -31,6 +35,9 @@ class ArsCli:
     """
 
     def __call__(self, version: T.Optional[bool] = None):
+        """
+        Serve for the ``ars`` command without any arguments.
+        """
         from ..ui.boto_ses import validate_boto_session
         from ..ui.main import run_ui as run_ars_ui
 
@@ -83,5 +90,8 @@ class ArsCli:
 
 
 def run():
+    """
+    The entry point of this CLI tool.
+    """
     ars_cli = ArsCli()
     fire.Fire(ars_cli)
