@@ -39,10 +39,12 @@ if T.TYPE_CHECKING:
 
 class AwsResourceItemVariables(TypedDict):
     """
-    Type hint for the variables field in :class:`AwsResourceItem`.
+    Type hint for the "variables" field in :class:`AwsResourceItem`.
     """
 
     doc: T_DOCUMENT_OBJ
+    resource_type: str
+    partitioner_resource_type: T.Optional[str]
 
 
 @dataclasses.dataclass
@@ -96,7 +98,11 @@ class AwsResourceItem(ArsBaseItem):
             subtitle=doc.subtitle,
             uid=doc.uid,
             autocomplete=f"{resource_type}: {doc.autocomplete}",
-            variables={"doc": doc},
+            variables={
+                "doc": doc,
+                "resource_type": resource_type,
+                "partitioner_resource_type": None,
+            },
         )
 
     @classmethod
@@ -376,7 +382,11 @@ def search_partitioner(
                 f"Tap {ShortcutEnum.ENTER} to open {format_resource_type(partitioner_resource_type)} url."
             ),
             autocomplete=f"{resource_type}: {doc.autocomplete}@",
-            variables={"doc": doc},
+            variables={
+                "doc": doc,
+                "resource_type": resource_type,
+                "partitioner_resource_type": partitioner_resource_type,
+            },
         )
 
     return search_resource(
@@ -391,6 +401,7 @@ def search_partitioner(
 def search_child_resource(
     ui: "UI",
     resource_type: str,
+    partitioner_resource_type: str,
     resource_query: str,
     partitioner_query: str,
     boto_kwargs: T.Dict[str, T.Any],
@@ -420,7 +431,11 @@ def search_child_resource(
             title=f"{format_resource_type(resource_type)}: {doc.title}",
             subtitle=doc.subtitle,
             autocomplete=f"{resource_type}: {doc.autocomplete}",
-            variables={"doc": doc},
+            variables={
+                "doc": doc,
+                "resource_type": resource_type,
+                "partitioner_resource_type": partitioner_resource_type,
+            },
         )
 
     return search_resource(
@@ -493,6 +508,7 @@ def search_resource_under_partitioner(
         return search_child_resource(
             ui=ui,
             resource_type=resource_type,
+            partitioner_resource_type=partitioner_resource_type,
             resource_query="*",
             partitioner_query=partitioner_query,
             boto_kwargs=boto_kwargs,
@@ -505,6 +521,7 @@ def search_resource_under_partitioner(
         return search_child_resource(
             ui=ui,
             resource_type=resource_type,
+            partitioner_resource_type=partitioner_resource_type,
             resource_query=resource_query,
             partitioner_query=partitioner_query,
             boto_kwargs=boto_kwargs,

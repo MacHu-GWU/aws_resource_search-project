@@ -13,7 +13,7 @@ import sayt.api as sayt
 from ..terminal import ShortcutEnum, format_resource_type
 from ..paths import dir_index, dir_cache, path_searchers_json
 from ..compat import TypedDict
-from ..res_lib import preprocess_query, ArsBaseItem, OpenUrlItem
+from ..res_lib import T_DOCUMENT_OBJ, preprocess_query, ArsBaseItem, OpenUrlItem
 
 if T.TYPE_CHECKING:
     from .main import UI
@@ -57,11 +57,21 @@ resource_type_dataset = sayt.DataSet(
 )
 
 
+class AwsResourceTypeItemVariables(TypedDict):
+    """
+    Type hint for the "variables" field in :class:`AwsResourceTypeItem`.
+    """
+
+    doc: ResourceTypeDocument
+    resource_type: str
+
+
 @dataclasses.dataclass
 class AwsResourceTypeItem(ArsBaseItem):
     """
     Represent an item in the resource type search result.
     """
+    variables: AwsResourceTypeItemVariables = dataclasses.field(default_factory=dict)
 
     @classmethod
     def from_document(cls, doc: ResourceTypeDocument):
@@ -91,6 +101,10 @@ class AwsResourceTypeItem(ArsBaseItem):
             uid=doc["id"],
             arg=doc["name"],
             autocomplete=doc["name"] + ": ",
+            variables={
+                "doc": doc,
+                "resource_type": resource_type,
+            },
         )
 
     @classmethod
