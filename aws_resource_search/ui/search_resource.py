@@ -116,15 +116,38 @@ class AwsResourceItem(ArsBaseItem):
         """
         return [cls.from_document(resource_type, doc) for doc in docs]
 
+    def get_id(self) -> str:
+        """
+        Get the resource id.
+        """
+        return self.variables["doc"].id
+
+    def get_name(self) -> str:
+        """
+        Get the resource name.
+        """
+        return self.variables["doc"].name
+
+    def get_console_url(self) -> str:
+        """
+        Get AWS console url of the resource.
+        """
+        doc: T_DOCUMENT_OBJ = self.variables["doc"]
+        return doc.get_console_url(ars.aws_console)
+
+    def get_arn(self) -> str:
+        """
+        Get ARN of the resource.
+        """
+        return self.variables["doc"].arn
+
     def enter_handler(self, ui: "UI"):
         """
         Default behavior:
 
         Open AWS console url in browser.
         """
-        doc: T_DOCUMENT_OBJ = self.variables["doc"]
-        console_url = doc.get_console_url(ars.aws_console)
-        self.open_url_or_print(ui, console_url)
+        self.open_url_or_print(ui, self.get_console_url())
 
     def ctrl_a_handler(self, ui: "UI"):
         """
@@ -132,8 +155,7 @@ class AwsResourceItem(ArsBaseItem):
 
         Copy ARN to clipboard.
         """
-        arn = self.variables["doc"].arn
-        self.copy_or_print(ui, arn)
+        self.copy_or_print(ui, self.get_arn())
 
     def ctrl_u_handler(self, ui: "UI"):
         """
@@ -141,9 +163,7 @@ class AwsResourceItem(ArsBaseItem):
 
         Copy AWS console url to clipboard.
         """
-        doc: T_DOCUMENT_OBJ = self.variables["doc"]
-        console_url = doc.get_console_url(ars.aws_console)
-        self.copy_or_print(ui, console_url)
+        self.copy_or_print(ui, self.get_console_url())
 
     def ctrl_p_handler(self, ui: "UI"):
         """
@@ -238,7 +258,7 @@ def search_resource_and_return_items(
             OpenFileItem(
                 title=f"Check ~/.aws/credentials",
                 subtitle=f"{ShortcutEnum.ENTER} to open file",
-                arg=str(path_aws_config),
+                arg=str(path_aws_credentials),
             ),
         ]
 
