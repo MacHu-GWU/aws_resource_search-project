@@ -190,6 +190,7 @@ def search_resource_and_return_items(
     boto_kwargs: T.Optional[dict] = None,
     refresh_data: bool = False,
     doc_to_item_func: T_DOC_TO_ITEM_FUNC = None,
+    skip_ui: bool = False,
 ) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     A wrapper of the :class:`~aws_resource_search.res_lib.Searcher`.
@@ -205,6 +206,8 @@ def search_resource_and_return_items(
         need a parent resource name as an argument for the boto3 API,
         we need special handling to convert the original doc to item.
         That's the purpose of this argument.
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
     try:
         docs: T.List[T_DOCUMENT_OBJ] = searcher.search(
@@ -276,6 +279,7 @@ def search_resource(
     query: str,
     boto_kwargs: T.Optional[dict] = None,
     doc_to_item_func: T_DOC_TO_ITEM_FUNC = None,
+    skip_ui: bool = False,
 ) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     **IMPORTANT** this is the sub logic to handle AWS resource that doesn't have
@@ -287,6 +291,8 @@ def search_resource(
     :param query: example "my bucket", "my role"
     :param doc_to_item_func: a callable function that convert document object
         to zelfred Item object.
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
     zf.debugger.log(f"search_resource Query: {query}")
     final_query = preprocess_query(query)
@@ -296,21 +302,24 @@ def search_resource(
 
     # display "creating index ..." message
     if ds.cache_key not in ds.cache:
-        ui.run_handler(items=creating_index_items(resource_type))
-        ui.repaint()
+        if skip_ui is False:
+            ui.run_handler(items=creating_index_items(resource_type))
+            ui.repaint()
         return search_resource_and_return_items(
             ui=ui,
             searcher=searcher,
             query=final_query,
             boto_kwargs=boto_kwargs,
             doc_to_item_func=doc_to_item_func,
+            skip_ui=skip_ui,
         )
 
     # manually refresh data
     if final_query.endswith("!~"):
-        ui.run_handler(items=creating_index_items(resource_type))
-        ui.repaint()
-        ui.line_editor.press_backspace(n=2)
+        if skip_ui is False:
+            ui.run_handler(items=creating_index_items(resource_type))
+            ui.repaint()
+            ui.line_editor.press_backspace(n=2)
         return search_resource_and_return_items(
             ui=ui,
             searcher=searcher,
@@ -318,6 +327,7 @@ def search_resource(
             boto_kwargs=boto_kwargs,
             refresh_data=True,
             doc_to_item_func=doc_to_item_func,
+            skip_ui=skip_ui,
         )
 
     # example: "ec2-inst: dev box"
@@ -327,6 +337,7 @@ def search_resource(
         query=final_query,
         boto_kwargs=boto_kwargs,
         doc_to_item_func=doc_to_item_func,
+        skip_ui=skip_ui,
     )
 
 
@@ -335,6 +346,7 @@ def search_partitioner(
     resource_type: str,
     partitioner_resource_type: str,
     partitioner_query: str,
+    skip_ui: bool = False,
 ) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     Search partitioner resource.
@@ -347,6 +359,8 @@ def search_partitioner(
     partitioner_searcher. It returns a list of UI items instead of a list of documents.
 
     :param query: example: "my database"
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
     zf.debugger.log(f"search_partitioner Query: {partitioner_query!r}")
 
@@ -370,6 +384,7 @@ def search_partitioner(
         resource_type=partitioner_resource_type,
         query=partitioner_query,
         doc_to_item_func=doc_to_item_func,
+        skip_ui=skip_ui,
     )
 
 
@@ -379,6 +394,7 @@ def search_child_resource(
     resource_query: str,
     partitioner_query: str,
     boto_kwargs: T.Dict[str, T.Any],
+    skip_ui: bool = False,
 ) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     Search child resource under the given partitioner.
@@ -390,6 +406,10 @@ def search_child_resource(
     :param partitioner_resource_type: example: "glue-database"
     :param resource_query: example: "my table"
     :param partitioner_query: example: "my database"
+    :param boto_kwargs: example: {"database_name": "my database"},
+        for searching glue table under the given database
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
     zf.debugger.log(f"search_child_resource Partitioner Query: {partitioner_query!r}")
     zf.debugger.log(f"search_child_resource Child Query: {resource_query!r}")
@@ -409,6 +429,7 @@ def search_child_resource(
         query=resource_query,
         boto_kwargs=boto_kwargs,
         doc_to_item_func=doc_to_item_func,
+        skip_ui=skip_ui,
     )
 
 
@@ -417,6 +438,7 @@ def search_resource_under_partitioner(
     resource_type: str,
     partitioner_resource_type: str,
     query: str,
+    skip_ui: bool = False,
 ) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     **IMPORTANT** this is the sub logic to handle AWS resource like glue table,
@@ -426,10 +448,14 @@ def search_resource_under_partitioner(
     :param partitioner_resource_type: for example, ``"glue-database"``
     :param query: for example, if the full user query is ``"glue-table: my_database@my table"``,
         then this argument is ``"my_database@my table"``.
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
     zf.debugger.log(f"search_resource_under_partitioner Query: {query}")
     q = zf.QueryParser(delimiter="@").parse(query)
     # --- search partitioner
+    # for parent resource like glue job for glue job run, state machine for step function execution
+    #
     # examples
     # - "  "
     # - "my database"
@@ -441,6 +467,7 @@ def search_resource_under_partitioner(
             partitioner_resource_type=partitioner_resource_type,
             partitioner_query="*",
             ui=ui,
+            skip_ui=skip_ui,
         )
     # example: "my database "
     elif len(q.trimmed_parts) == 1 and len(q.parts) == 1:
@@ -449,11 +476,12 @@ def search_resource_under_partitioner(
             partitioner_resource_type=partitioner_resource_type,
             partitioner_query=q.trimmed_parts[0],
             ui=ui,
+            skip_ui=skip_ui,
         )
     else:
         pass
 
-    # --- search resource
+    # --- search child resource
     # examples
     # - "my_database@"
     # - "my_database@my table"
@@ -468,6 +496,7 @@ def search_resource_under_partitioner(
             resource_query="*",
             partitioner_query=partitioner_query,
             boto_kwargs=boto_kwargs,
+            skip_ui=skip_ui,
         )
     # i.e. len(q.trimmed_parts) > 1
     # example: "my_database@my table"
@@ -479,6 +508,7 @@ def search_resource_under_partitioner(
             resource_query=resource_query,
             partitioner_query=partitioner_query,
             boto_kwargs=boto_kwargs,
+            skip_ui=skip_ui,
         )
 
 
@@ -486,6 +516,7 @@ def search_resource_handler(
     ui: "UI",
     resource_type: str,
     query: str,
+    skip_ui: bool = False,
 ) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     **IMPORTANT** This handle filter resource by query.
@@ -493,6 +524,8 @@ def search_resource_handler(
     :param resource_type: for example, ``"s3-bucket"``
     :param query: for example, if the full user query is ``"s3-bucket: my bucket"``,
         then this argument is ``"my bucket"``.
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
     ui.render.prompt = f"(Query)"
     if has_partitioner(resource_type):
@@ -501,10 +534,12 @@ def search_resource_handler(
             resource_type=resource_type,
             partitioner_resource_type=get_partitioner_resource_type(resource_type),
             query=query,
+            skip_ui=skip_ui,
         )
     else:
         return search_resource(
             ui=ui,
             resource_type=resource_type,
             query=query,
+            skip_ui=skip_ui,
         )

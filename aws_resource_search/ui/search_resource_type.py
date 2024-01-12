@@ -146,21 +146,26 @@ def search_resource_type_and_return_items(
 def select_resource_type_handler(
     ui: "UI",
     query: str,
+    skip_ui: bool = False,
 ) -> T.List[T.Union[AwsResourceTypeItem, OpenUrlItem]]:
     """
     **IMPORTANT** This handle filter resource types by query.
 
     :param query: service id and resource type search query input. For example:
         "s3 bucket", "ec2 inst"
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
-    ui.render.prompt = "(Resource Type)"
+    if skip_ui is False:
+        ui.render.prompt = "(Resource Type)"
     final_query = preprocess_query(query)
 
     # manually refresh data
     if query.strip().endswith("!~"):
-        ui.run_handler(items=[])
-        ui.repaint()
-        ui.line_editor.press_backspace(n=2)
+        if skip_ui is False:
+            ui.run_handler(items=[])
+            ui.repaint()
+            ui.line_editor.press_backspace(n=2)
         return search_resource_type_and_return_items(
             query=preprocess_query(final_query[:-2]),
             refresh_data=True,

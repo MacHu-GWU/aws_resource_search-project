@@ -30,6 +30,7 @@ from .search_resource import (
 def handler(
     query: str,
     ui: zf.UI,
+    skip_ui: bool = False,
 ) -> T.List[
     T.Union[
         AwsResourceTypeItem,
@@ -49,7 +50,10 @@ def handler(
 
     The query can be in one of these formats:
 
-    -
+    todo ...
+
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
     """
     zf.debugger.log(f"handler Query: {query!r}")
 
@@ -59,7 +63,11 @@ def handler(
 
     # example: "  "
     if len(q.trimmed_parts) == 0:
-        return select_resource_type_handler(ui=ui, query="*")
+        return select_resource_type_handler(
+            ui=ui,
+            query="*",
+            skip_ui=skip_ui,
+        )
 
     # example:
     # - "ec2 inst"
@@ -73,7 +81,11 @@ def handler(
         # - "ec2 inst: "
         # - "s3-bucket: "
         if len(q.parts) == 1:
-            return select_resource_type_handler(ui=ui, query=service_query)
+            return select_resource_type_handler(
+                ui=ui,
+                query=service_query,
+                skip_ui=skip_ui,
+            )
 
         # example:
         # - "ec2 inst"
@@ -87,11 +99,16 @@ def handler(
                     ui=ui,
                     resource_type=service_query,
                     query=resource_query,
+                    skip_ui=skip_ui,
                 )
 
             # example: "ec2 inst"
             else:
-                return select_resource_type_handler(ui=ui, query=service_query)
+                return select_resource_type_handler(
+                    ui=ui,
+                    query=service_query,
+                    skip_ui=skip_ui,
+                )
 
     # example: "ec2 inst: something", "s3-bucket: something"
     else:
@@ -105,11 +122,16 @@ def handler(
                 ui=ui,
                 resource_type=service_query,
                 query=resource_query,
+                skip_ui=skip_ui,
             )
 
         # example: # ec2 inst: something", "ec2 inst" is not a valid srv_id
         else:
-            return select_resource_type_handler(ui=ui, query=service_query)
+            return select_resource_type_handler(
+                ui=ui,
+                query=service_query,
+                skip_ui=skip_ui,
+            )
 
 
 class UI(zf.UI):
