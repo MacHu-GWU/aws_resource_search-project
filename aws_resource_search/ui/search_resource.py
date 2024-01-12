@@ -276,7 +276,7 @@ def search_resource(
     query: str,
     boto_kwargs: T.Optional[dict] = None,
     doc_to_item_func: T_DOC_TO_ITEM_FUNC = None,
-) -> T.List[AwsResourceItem]:
+) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     **IMPORTANT** this is the sub logic to handle AWS resource that doesn't have
     any mandatory boto kwargs. This is the MOST common case.
@@ -335,7 +335,7 @@ def search_partitioner(
     resource_type: str,
     partitioner_resource_type: str,
     partitioner_query: str,
-) -> T.List[AwsResourceItem]:
+) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     Search partitioner resource.
 
@@ -379,14 +379,14 @@ def search_child_resource(
     resource_query: str,
     partitioner_query: str,
     boto_kwargs: T.Dict[str, T.Any],
-) -> T.List[AwsResourceItem]:
+) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     Search child resource under the given partitioner.
 
     A wrapper of the :class:`~aws_resource_search.res_lib.Searcher`. But it will
     return a list of UI items instead of a list of documents.
 
-    :param resource_type: example: "glue-table"
+    :param resource_type: example: "glue-database-table"
     :param partitioner_resource_type: example: "glue-database"
     :param resource_query: example: "my table"
     :param partitioner_query: example: "my database"
@@ -417,7 +417,7 @@ def search_resource_under_partitioner(
     resource_type: str,
     partitioner_resource_type: str,
     query: str,
-):
+) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     **IMPORTANT** this is the sub logic to handle AWS resource like glue table,
     glue job run, that requires the parent resource name in the arguments.
@@ -486,7 +486,7 @@ def search_resource_handler(
     ui: "UI",
     resource_type: str,
     query: str,
-) -> T.List[AwsResourceItem]:
+) -> T.List[T.Union[AwsResourceItem, InfoItem, OpenFileItem]]:
     """
     **IMPORTANT** This handle filter resource by query.
 

@@ -146,7 +146,7 @@ def search_resource_type_and_return_items(
 def select_resource_type_handler(
     ui: "UI",
     query: str,
-) -> T.List[AwsResourceTypeItem]:
+) -> T.List[T.Union[AwsResourceTypeItem, OpenUrlItem]]:
     """
     **IMPORTANT** This handle filter resource types by query.
 
