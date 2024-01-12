@@ -97,6 +97,13 @@
         "ngram": "",
         "var": "ecs_task_run_searcher"
     },
+    "ecs_task_definition_family": {
+        "desc": "A name of the task definition, without revision id.",
+        "klass": "EcsTaskDefinitionFamilySearcher",
+        "module": "ecs",
+        "ngram": "",
+        "var": "ecs_task_definition_family_searcher"
+    },
     "glue-crawler": {
         "desc": "You can use a crawler to populate the AWS Glue Data Catalog with tables.",
         "klass": "GlueCrawlerSearcher",

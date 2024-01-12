@@ -22,6 +22,7 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.ecr import EcrRepositoryImageSearcher
     from .res.ecs import EcsClusterSearcher
     from .res.ecs import EcsTaskRunSearcher
+    from .res.ecs import EcsTaskDefinitionFamilySearcher
     from .res.glue import GlueCrawlerSearcher
     from .res.glue import GlueDatabaseSearcher
     from .res.glue import GlueTableSearcher
@@ -102,6 +103,10 @@ class ARS(ARSBase):  # pragma: no cover
     @cached_property
     def ecs_task_run(self) -> "EcsTaskRunSearcher":
         return self.get_searcher("ecs-task-run")
+    
+    @cached_property
+    def ecs_task_definition_family(self) -> "EcsTaskDefinitionFamilySearcher":
+        return self.get_searcher("ecs_task_definition_family")
     
     @cached_property
     def glue_crawler(self) -> "GlueCrawlerSearcher":

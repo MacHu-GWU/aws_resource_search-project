@@ -25,7 +25,9 @@ Backlog (TODO)
 - Add support for:
     - ecr-repository
     - ecr-repository-image
-
+    - ecs-cluster
+    - ecs-task-run
+    - ecs-task-definition-family
 
 0.4.1 (2023-11-07)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

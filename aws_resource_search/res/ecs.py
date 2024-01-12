@@ -202,7 +202,9 @@ class EcsTaskRun(res_lib.BaseDocument):
                     )
 
             if task_dct:
-                tags: dict = {dct["key"]: dct["value"] for dct in task_dct.get("tags", [])}
+                tags: dict = {
+                    dct["key"]: dct["value"] for dct in task_dct.get("tags", [])
+                }
                 detail_items.extend(res_lib.DetailItem.from_tags(tags, url=url))
 
         return detail_items
@@ -228,6 +230,104 @@ ecs_task_run_searcher = EcsTaskRunSearcher(
     fields=res_lib.define_fields(
         # fmt: off
         fields=[
+        ],
+        # fmt: on
+    ),
+    cache_expire=24 * 60 * 60,
+    more_cache_key=None,
+)
+
+
+@dataclasses.dataclass
+class EcsTaskDefinitionFamily(res_lib.BaseDocument):
+    v1_arn: str = dataclasses.field()
+
+    @classmethod
+    def from_resource(cls, resource, bsm, boto_kwargs):
+        ecs_task_def = arns.res.EcsTaskDefinition.new(
+            aws_account_id=bsm.aws_account_id,
+            aws_region=bsm.aws_region,
+            task_name=resource,
+            version=1,
+        )
+        return cls(
+            raw_data=resource,
+            id=ecs_task_def.task_name,
+            name=ecs_task_def.task_name,
+            v1_arn=ecs_task_def.to_arn(),
+        )
+
+    @property
+    def title(self) -> str:
+        return format_key_value("name", self.name)
+
+    @property
+    def subtitle(self) -> str:
+        return "{}".format(
+            self.short_subtitle,
+        )
+
+    @property
+    def autocomplete(self) -> str:
+        return self.name
+
+    @property
+    def arn(self) -> str:
+        return self.v1_arn
+
+    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+        return console.ecs.get_task_definition_revisions(name_or_arn=self.v1_arn)
+
+    @property
+    def task_name(self) -> str:
+        return self.name
+
+    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+        from_detail = res_lib.DetailItem.from_detail
+        detail_items = self.get_initial_detail_items(ars)
+        url = self.get_console_url(ars.aws_console)
+
+        with self.enrich_details(detail_items):
+            res = ars.bsm.ecs_client.list_task_definitions(
+                familyPrefix=self.name,
+                sort="DESC",
+                maxResults=100,
+            )
+            arn_lst = res.get("taskDefinitionArns", None)
+            if arn_lst:
+                detail_items.extend(
+                    # fmt: off
+                    [
+                        from_detail("task_definition_arn", arn, url=ars.aws_console.ecs.get_task_definition_revision_containers(name_or_arn=arn))
+                        for arn in arn_lst
+                    ]
+                    # fmt: on
+                )
+        return detail_items
+
+
+class EcsTaskDefinitionFamilySearcher(res_lib.Searcher[EcsTaskDefinitionFamily]):
+    pass
+
+
+ecs_task_definition_family_searcher = EcsTaskDefinitionFamilySearcher(
+    # list resources
+    service="ecs",
+    method="list_task_definition_families",
+    is_paginator=True,
+    default_boto_kwargs={
+        "status": "ACTIVE",
+        "PaginationConfig": {"MaxItems": 9999, "PageSize": 100},
+    },
+    result_path=res_lib.ResultPath("families"),
+    # extract document
+    doc_class=EcsTaskDefinitionFamily,
+    # search
+    resource_type=SearcherEnum.ecs_task_definition_family,
+    fields=res_lib.define_fields(
+        # fmt: off
+        fields=[
+            res_lib.sayt.StoredField(name="v1_arn"),
         ],
         # fmt: on
     ),
