@@ -27,6 +27,10 @@ if __name__ == "__main__":
     # sr = ars.ec2_security_group
     # sr = ars.ec2_subnet
     # sr = ars.ec2_vpc
+    # sr = ars.ecr_repository
+    # sr = ars.ecr_repository_image
+    # sr = ars.ecs_cluster
+    sr = ars.ecs_task_run
     # sr = ars.glue_crawler
     # sr = ars.glue_database
     # sr = ars.glue_database_table
@@ -42,7 +46,7 @@ if __name__ == "__main__":
     # sr = ars.lambda_layer
     # sr = ars.rds_db_cluster
     # sr = ars.rds_db_instance
-    sr = ars.s3_bucket
+    # sr = ars.s3_bucket
     # sr = ars.secretsmanager_secret
     # sr = ars.sfn_state_machine
     # sr = ars.sfn_state_machine_execution

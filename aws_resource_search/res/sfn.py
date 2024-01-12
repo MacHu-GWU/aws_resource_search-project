@@ -233,12 +233,11 @@ sfn_execution_searcher = SfnExecutionSearcher(
     resource_type=SearcherEnum.sfn_state_machine_execution,
     fields=res_lib.define_fields(
         fields=[
-            res_lib.sayt.NgramWordsField(
-                name="status", minsize=2, maxsize=4, stored=True
+            # fmt: off
+            res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True
             ),
-            res_lib.sayt.DatetimeField(
-                name="start_at", sortable=True, ascending=False, stored=True
-            ),
+            res_lib.sayt.DatetimeField(name="start_at", sortable=True, ascending=False, stored=True),
+            # fmt: on
         ],
     ),
     cache_expire=24 * 60 * 60,

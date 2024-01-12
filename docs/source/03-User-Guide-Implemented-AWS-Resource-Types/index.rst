@@ -15,6 +15,8 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``ec2-vpc``
 - ``ecr-repository``
 - ``ecr-repository-image``
+- ``ecs-cluster``
+- ``ecs-task-run``
 - ``glue-crawler``
 - ``glue-database``
 - ``glue-database-table``

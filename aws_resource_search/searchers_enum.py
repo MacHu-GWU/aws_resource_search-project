@@ -13,6 +13,8 @@ class SearcherEnum:
     ec2_vpc = "ec2-vpc"
     ecr_repository = "ecr-repository"
     ecr_repository_image = "ecr-repository-image"
+    ecs_cluster = "ecs-cluster"
+    ecs_task_run = "ecs-task-run"
     glue_crawler = "glue-crawler"
     glue_database = "glue-database"
     glue_database_table = "glue-database-table"

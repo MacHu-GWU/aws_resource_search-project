@@ -25,6 +25,10 @@ has_partitioner_search_patterns = {
             "repositoryName": partitioner_query
         },
     },
+    SearcherEnum.ecs_task_run: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.ecs_cluster,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {"cluster": partitioner_query},
+    },
     SearcherEnum.glue_database_table: {
         K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_database,
         K_GET_BOTO_KWARGS: lambda partitioner_query: {

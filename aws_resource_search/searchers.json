@@ -83,6 +83,20 @@
         "ngram": "ecr private repository container",
         "var": "ecr_repository_image_searcher"
     },
+    "ecs-cluster": {
+        "desc": "An Amazon ECS cluster is a logical grouping of tasks or services.",
+        "klass": "EcsClusterSearcher",
+        "module": "ecs",
+        "ngram": "",
+        "var": "ecs_cluster_searcher"
+    },
+    "ecs-task-run": {
+        "desc": "A task run is the instantiation of a task definition within a cluster.",
+        "klass": "EcsTaskRunSearcher",
+        "module": "ecs",
+        "ngram": "",
+        "var": "ecs_task_run_searcher"
+    },
     "glue-crawler": {
         "desc": "You can use a crawler to populate the AWS Glue Data Catalog with tables.",
         "klass": "GlueCrawlerSearcher",
