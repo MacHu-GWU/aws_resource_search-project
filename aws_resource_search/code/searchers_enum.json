@@ -39,6 +39,14 @@
         "desc": "A virtual private cloud (VPC) is a virtual network dedicated to your AWS account.",
         "ngram": "virtual private cloud"
     },
+    "ecr-repository": {
+        "desc": "AWS managed container image registry service that is secure, scalable, and reliable.",
+        "ngram": "ecr private repository container"
+    },
+    "ecr-repository-image": {
+        "desc": "An container image in ECR repository.",
+        "ngram": "ecr private repository container"
+    },
     "glue-crawler": {
         "desc": "You can use a crawler to populate the AWS Glue Data Catalog with tables.",
         "ngram": ""

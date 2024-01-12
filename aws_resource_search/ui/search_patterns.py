@@ -19,6 +19,12 @@ K_GET_BOTO_KWARGS = "get_boto_kwargs"
 # - in order to search glue table, you need to specify glue database
 # - in order to search glue job run, you need to specify glue job
 has_partitioner_search_patterns = {
+    SearcherEnum.ecr_repository_image: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.ecr_repository,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {
+            "repositoryName": partitioner_query
+        },
+    },
     SearcherEnum.glue_database_table: {
         K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_database,
         K_GET_BOTO_KWARGS: lambda partitioner_query: {

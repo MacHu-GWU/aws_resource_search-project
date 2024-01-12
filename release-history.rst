@@ -18,6 +18,15 @@ Backlog (TODO)
 **Miscellaneous**
 
 
+0.5.1 (TODO)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Add support for:
+    - ecr-repository
+    - ecr-repository-image
+
+
 0.4.1 (2023-11-07)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**

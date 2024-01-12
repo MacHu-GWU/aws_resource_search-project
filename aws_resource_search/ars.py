@@ -18,6 +18,8 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.ec2 import Ec2SecurityGroupSearcher
     from .res.ec2 import Ec2SubnetSearcher
     from .res.ec2 import Ec2VpcSearcher
+    from .res.ecr import EcrRepositorySearcher
+    from .res.ecr import EcrRepositoryImageSearcher
     from .res.glue import GlueCrawlerSearcher
     from .res.glue import GlueDatabaseSearcher
     from .res.glue import GlueTableSearcher
@@ -82,6 +84,14 @@ class ARS(ARSBase):  # pragma: no cover
     @cached_property
     def ec2_vpc(self) -> "Ec2VpcSearcher":
         return self.get_searcher("ec2-vpc")
+    
+    @cached_property
+    def ecr_repository(self) -> "EcrRepositorySearcher":
+        return self.get_searcher("ecr-repository")
+    
+    @cached_property
+    def ecr_repository_image(self) -> "EcrRepositoryImageSearcher":
+        return self.get_searcher("ecr-repository-image")
     
     @cached_property
     def glue_crawler(self) -> "GlueCrawlerSearcher":

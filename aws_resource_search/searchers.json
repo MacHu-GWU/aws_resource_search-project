@@ -69,6 +69,20 @@
         "ngram": "virtual private cloud",
         "var": "ec2_vpc_searcher"
     },
+    "ecr-repository": {
+        "desc": "AWS managed container image registry service that is secure, scalable, and reliable.",
+        "klass": "EcrRepositorySearcher",
+        "module": "ecr",
+        "ngram": "ecr private repository container",
+        "var": "ecr_repository_searcher"
+    },
+    "ecr-repository-image": {
+        "desc": "An container image in ECR repository.",
+        "klass": "EcrRepositoryImageSearcher",
+        "module": "ecr",
+        "ngram": "ecr private repository container",
+        "var": "ecr_repository_image_searcher"
+    },
     "glue-crawler": {
         "desc": "You can use a crawler to populate the AWS Glue Data Catalog with tables.",
         "klass": "GlueCrawlerSearcher",

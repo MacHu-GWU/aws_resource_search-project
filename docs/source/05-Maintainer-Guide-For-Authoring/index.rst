@@ -26,3 +26,20 @@ UI 的入口函数 :func:`aws_resource_search.ui.main.run_ui` 里面的内容和
 UI Handler
 ------------------------------------------------------------------------------
 
+
+如何支持更多的 AWS 服务和资源
+------------------------------------------------------------------------------
+
+1. 到 ``aws_resource_search/code/searchers_enum.json`` 中添加你要支持的 AWS 资源的类型. 其中 ``description`` 是给人类看的一句话介绍, 一般是 AWS Document 官网首页的第一句话. 而 ``ngram`` 则是额外的用于搜索 ngram 搜索的关键字, 你可以把人类在想搜这个资源时能联想到的各种词汇的全称和缩写都放在这里.
+
+.. literalinclude:: ../../../aws_resource_search/code/searchers_enum.json
+   :language: python
+   :linenos:
+
+2. 到 ``aws_resource_search/res/`` 下, 找一个跟你要支持的服务比较相近的服务作为模版, copy paste 创建一个新的模块. 模块的名字要跟 AWS Service 对应上. 然后参考其他的模块实现这个搜索器.
+3. 运行 ``scripts/code_work.py``, 自动更新其他的 enum 模块, 数据, 和代码.
+4. 如果你这个 resource 是一个先要搜索 parent resource, 然后才能搜的 sub resource, 你还要到 ``aws_resource_search/ui/search_patterns.py`` 下更新 ``has_partitioner_search_patterns`` 这个映射关系.
+
+.. literalinclude:: ../../../aws_resource_search/ui/search_patterns.py
+   :language: python
+   :linenos:

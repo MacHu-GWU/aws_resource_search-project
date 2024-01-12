@@ -11,6 +11,8 @@ class SearcherEnum:
     ec2_security_group = "ec2-security-group"
     ec2_subnet = "ec2-subnet"
     ec2_vpc = "ec2-vpc"
+    ecr_repository = "ecr-repository"
+    ecr_repository_image = "ecr-repository-image"
     glue_crawler = "glue-crawler"
     glue_database = "glue-database"
     glue_database_table = "glue-database-table"
