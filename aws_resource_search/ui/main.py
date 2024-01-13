@@ -17,6 +17,10 @@ except ImportError:
 from ..searchers import finder
 from ..terminal import terminal
 from ..res_lib import DetailItem, InfoItem, OpenUrlItem, OpenFileItem
+from .search_aws_profile import (
+    SetAwsProfileItem,
+    search_aws_profile_handler,
+)
 from .search_resource_type import (
     AwsResourceTypeItem,
     select_resource_type_handler,
@@ -33,6 +37,7 @@ def handler(
     skip_ui: bool = False,
 ) -> T.List[
     T.Union[
+        SetAwsProfileItem,
         AwsResourceTypeItem,
         AwsResourceItem,
         DetailItem,
@@ -60,6 +65,17 @@ def handler(
     # srv id is the service_id-resource_type compound identifier
     # req query is the query string for the resource search
     q = zf.QueryParser(delimiter=":").parse(query)
+
+    # --- handle special commands ---
+    # example: s3-bucket: my bucket!@another profile
+    if len(query.split("!@", 1)) > 1:
+        line_input, aws_profile_query = query.split("!@", 1)
+        return search_aws_profile_handler(
+            ui=ui,
+            line_input=line_input,
+            query=aws_profile_query,
+            skip_ui=skip_ui,
+        )
 
     # example: "  "
     if len(q.trimmed_parts) == 0:
