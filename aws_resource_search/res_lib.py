@@ -818,7 +818,7 @@ class ArsBaseItem(zf.Item):
         except FileNotFoundError as e:
             if "open" in str(e):
                 print(
-                    f"{ui.terminal.cyan}Your system doesn't support open url in browser to clipboard, "
+                    f"{ui.terminal.cyan}Your system doesn't support open url in browser, "
                     f"we print it here so you can copy manually.{ui.terminal.normal}"
                 )
                 print(url)
