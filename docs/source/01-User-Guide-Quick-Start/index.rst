@@ -333,3 +333,35 @@ When querying child resources, the query syntax is ``${resource_type}: ${parent_
           🔵 RUNNING, start = 2023-11-01 16:59:57, end = NA, 🌐 Enter, 📋 Ctrl A, 🔗 Ctrl U, 👀 Ctrl P.
     [ ] sfn-execution: execution_name = 419c4442-c959-49f8-a4eb-3c5060ca5a59
           🔵 RUNNING, start = 2023-11-01 16:59:57, end = NA, 🌐 Enter, 📋 Ctrl A, 🔗 Ctrl U, 👀 Ctrl P.
+
+
+🔑 Switch Between AWS Profile - The Fast Way
+------------------------------------------------------------------------------
+You can type ``!@`` anytime when searching, it bring you to the AWS profile selection menu. And you can hit enter to instantly switch to another AWS profile and continue searching. You never need to leave the interactive search session.
+
+.. code-block::
+
+    (Query): s3-bucket: your query here but you want to switch!@another profile
+    [x] 📝 profile = my_company_dev | region = us-east-1
+          Hit 'Enter' to set 'my_company_dev' as the default profile.
+    [ ] 📝 profile = my_company_test | region = eu-west-1
+          Hit 'Enter' to set 'my_company_test' as the default profile.
+    [ ] 📝 profile = my_company_prod | region = eu-west-1
+          Hit 'Enter' to set 'my_company_prod' as the default profile.
+
+
+🔍 Show AWS Info of Current AWS Profile
+------------------------------------------------------------------------------
+If you are not sure which AWS account and region you are currently using, you can type ``!?`` anytime when searching. It will show you the current AWS account info. Then you can tap ``Tab`` or ``Enter`` to go back searching, or tap ``Ctrl W`` to enter the AWS profile switching menu.
+
+.. code-block::
+
+    (Query): s3-bucket: !?
+    [x] 📝 See AWS Account Info of current boto session below
+          Hit Tab or Enter to go back, Hit Ctrl W to pick another AWS profile
+    [ ] Current aws_account_alias = your-aws-account-alias
+          Hit Tab or Enter to go back, Hit Ctrl W to pick another AWS profile
+    [ ] Current aws_account_id = 123456789010
+          Hit Tab or Enter to go back, Hit Ctrl W to pick another AWS profile
+    [ ] Current aws_region = us-east-1
+          Hit Tab or Enter to go back, Hit Ctrl W to pick another AWS profile
