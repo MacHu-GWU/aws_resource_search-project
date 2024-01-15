@@ -7,6 +7,7 @@ from datetime import datetime
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
 from ..searchers_enum import SearcherEnum
+from ..conf.init import config
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -168,6 +169,6 @@ cloudformation_stack_searcher = CloudFormationStackSearcher(
         ],
         name_sortable=False,
     ),
-    cache_expire=24 * 60 * 60,
+    cache_expire=config.get_cache_expire(SearcherEnum.cloudformation_stack),
     more_cache_key=None,
 )

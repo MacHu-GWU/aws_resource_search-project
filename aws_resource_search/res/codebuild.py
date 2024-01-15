@@ -9,6 +9,7 @@ import aws_arns.api as arns
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
 from ..searchers_enum import SearcherEnum
+from ..conf.init import config
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -147,7 +148,7 @@ codebuild_project_searcher = CodeBuildProjectSearcher(
             res_lib.sayt.StoredField(name="project_arn"),
         ],
     ),
-    cache_expire=24 * 60 * 60,
+    cache_expire=config.get_cache_expire(SearcherEnum.codebuild_project),
     more_cache_key=None,
 )
 
@@ -313,6 +314,6 @@ codebuild_job_run_searcher = CodeBuildJobRunSearcher(
         ],
         name_ascending=False,
     ),
-    cache_expire=5 * 60,
+    cache_expire=config.get_cache_expire(SearcherEnum.codebuild_job_run),
     more_cache_key=None,
 )

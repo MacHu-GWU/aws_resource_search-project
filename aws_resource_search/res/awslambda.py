@@ -8,6 +8,7 @@ import aws_arns.api as arns
 from .. import res_lib
 from ..terminal import format_key_value, ShortcutEnum
 from ..searchers_enum import SearcherEnum
+from ..conf.init import config
 
 if T.TYPE_CHECKING:
     from ..ars import ARS
@@ -164,7 +165,7 @@ lambda_function_searcher = LambdaFunctionSearcher(
     # search
     resource_type=SearcherEnum.lambda_function,
     fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    cache_expire=config.get_cache_expire(SearcherEnum.lambda_function),
     more_cache_key=None,
 )
 
@@ -306,7 +307,7 @@ lambda_function_alias_searcher = LambdaFunctionAliasSearcher(
     # search
     resource_type=SearcherEnum.lambda_function_alias,
     fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    cache_expire=config.get_cache_expire(SearcherEnum.lambda_function_alias),
     more_cache_key=lambda boto_kwargs: [boto_kwargs["FunctionName"]],
 )
 
@@ -385,6 +386,6 @@ lambda_layer_searcher = LambdaLayerSearcher(
     # search
     resource_type=SearcherEnum.lambda_layer,
     fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    cache_expire=config.get_cache_expire(SearcherEnum.lambda_layer),
     more_cache_key=None,
 )

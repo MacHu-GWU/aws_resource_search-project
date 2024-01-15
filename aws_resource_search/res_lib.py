@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Utility class and function in this module will be used in writing
-:mod:`aws_resource_search.res` module nice and clean.
+This module contains the frequently used imports that are needed for authoring
+``aws_resource_search.res.${aws_resource}.py`` files, so you only need to
+import this module in those files.
 """
 
 import typing as T
@@ -198,6 +199,7 @@ def get_none_or_default(
         >>> get_none_or_default(data, "c.e", "hello")
         "hello"
 
+    :param data: The data to get value from.
     :param path: jmespath syntax
     :param default: default value if the value doesn't exist
     """
@@ -220,7 +222,7 @@ def get_datetime(
     as_utc: bool = True,
 ) -> datetime:
     """
-    Extract isoformat datetime string from a dictionary using Jmespath.
+    Extract timezone aware datetime object from ``data`` using Jmespath.
 
     Example:
 
@@ -243,6 +245,9 @@ def get_datetime(
 
 
 def to_simple_fmt(dt: datetime) -> str:
+    """
+    Convert datetime to simple format string.
+    """
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
