@@ -17,6 +17,8 @@ sub packages and modules
     codepipeline <codepipeline>
     dynamodb <dynamodb>
     ec2 <ec2>
+    ecr <ecr>
+    ecs <ecs>
     glue <glue>
     iam <iam>
     kms <kms>

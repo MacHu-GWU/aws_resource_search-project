@@ -13,6 +13,7 @@ sub packages and modules
     boto_ses <boto_ses>
     common <common>
     main <main>
+    search_aws_profile <search_aws_profile>
     search_patterns <search_patterns>
     search_resource <search_resource>
     search_resource_type <search_resource_type>

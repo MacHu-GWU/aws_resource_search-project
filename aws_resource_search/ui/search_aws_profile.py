@@ -9,9 +9,8 @@ import dataclasses
 
 import awscli_mate.api as awscli_mate
 
-from ..compat import TypedDict
 from ..res_lib import ArsBaseItem
-from ..terminal import ShortcutEnum, highlight_text
+from ..terminal import ShortcutEnum, format_key_value, highlight_text
 from .boto_ses import bsm
 
 if T.TYPE_CHECKING:
@@ -31,10 +30,6 @@ def set_profile_in_bsm(profile: str):
     bsm.clear_cache()
 
 
-class SetAwsProfileItemVariables(TypedDict):
-    n_backspace: int
-
-
 @dataclasses.dataclass
 class SetAwsProfileItem(ArsBaseItem):
     """
@@ -46,17 +41,19 @@ class SetAwsProfileItem(ArsBaseItem):
 
     @classmethod
     def from_profile_region(
-        cls, profile: str, region: str, autocomplete: str, n_backspace: int
+        cls,
+        profile: str,
+        region: str,
+        autocomplete: str,
     ):
         return cls(
-            title=f"📝 {profile} | {region}",
+            title="📝 {} | {}".format(
+                format_key_value("profile", profile), format_key_value("region", region)
+            ),
             subtitle=f"Hit {ShortcutEnum.ENTER} to set {highlight_text(profile)} as the default profile.",
             uid=profile,
             arg=profile,
             autocomplete=autocomplete,
-            variables={
-                "n_backspace": n_backspace,
-            },
         )
 
     def enter_handler(self, ui: "UI"):
@@ -67,8 +64,8 @@ class SetAwsProfileItem(ArsBaseItem):
         """
         When exiting the switch profile session, recover the original query input.
         """
-        ui.line_editor.press_end()
-        ui.line_editor.press_backspace(n=self.variables["n_backspace"])
+        ui.line_editor.clear_line()
+        ui.line_editor.enter_text(self.autocomplete)
 
 
 def search_aws_profile_and_return_items(
@@ -84,14 +81,23 @@ def search_aws_profile_handler(
     query: str,
     skip_ui: bool = False,
 ) -> T.List[SetAwsProfileItem]:
+    """
+    Search AWS profile in ~/.aws/config file, order by similarity to the query.
+    This function will be triggered when user type ``!@``.
+
+    :param line_input: the original query input by user before the ``!@``.
+    :param query: aws profile query.
+
+    :param skip_ui: if True, skip the UI related logic, just return the items.
+        this argument is used for third party integration.
+    """
     ui.render.prompt = f"(Query)"
     pairs = search_aws_profile_and_return_items(query=query)
     return [
         SetAwsProfileItem.from_profile_region(
-            profile,
-            region,
+            profile=profile,
+            region=region,
             autocomplete=line_input,
-            n_backspace=len(query) + 2,  # 2 for "!@"
         )
         for profile, region in pairs
     ]

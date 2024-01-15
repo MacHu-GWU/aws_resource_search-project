@@ -17,6 +17,10 @@ except ImportError:
 from ..searchers import finder
 from ..terminal import terminal
 from ..res_lib import DetailItem, InfoItem, OpenUrlItem, OpenFileItem
+from .show_aws_info import (
+    ShowAwsInfoItem,
+    show_aws_info_handler,
+)
 from .search_aws_profile import (
     SetAwsProfileItem,
     search_aws_profile_handler,
@@ -37,6 +41,7 @@ def handler(
     skip_ui: bool = False,
 ) -> T.List[
     T.Union[
+        ShowAwsInfoItem,
         SetAwsProfileItem,
         AwsResourceTypeItem,
         AwsResourceItem,
@@ -67,7 +72,16 @@ def handler(
     q = zf.QueryParser(delimiter=":").parse(query)
 
     # --- handle special commands ---
-    # example: s3-bucket: my bucket!@another profile
+    # example: s3-bucket: my bucket!?
+    if len(query.split("!?", 1)) > 1:
+        line_input, _ = query.split("!?", 1)
+        return show_aws_info_handler(
+            ui=ui,
+            line_input=line_input,
+            skip_ui=skip_ui,
+        )
+
+    # example: s3-bucket: my bucket!@switch to another profile
     if len(query.split("!@", 1)) > 1:
         line_input, aws_profile_query = query.split("!@", 1)
         return search_aws_profile_handler(
