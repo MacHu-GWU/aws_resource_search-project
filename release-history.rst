@@ -18,7 +18,7 @@ Backlog (TODO)
 **Miscellaneous**
 
 
-0.5.1 (TODO)
+0.5.1 (2024-01-14)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
@@ -28,13 +28,14 @@ Backlog (TODO)
     - ecs-cluster
     - ecs-task-run
     - ecs-task-definition-family
+- Allow user to use ``!@`` to switch between aws profile without leaving the interactive session.
+- Allow user to use ``!?`` to show AWS account info for the current profile.
+
 
 0.4.1 (2023-11-07)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
-- Add a JSON config system for this app.
-- Add ``ars config`` command to view and edit the json file.
 - Add support for:
     - lambda-alias
     - rds-dbinstance
