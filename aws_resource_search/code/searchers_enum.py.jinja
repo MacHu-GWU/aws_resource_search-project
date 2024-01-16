@@ -2,6 +2,7 @@
 
 from .vendor.better_enum import BetterStrEnum
 
+
 class SearcherEnum(BetterStrEnum):
     {%- for sr_meta in sr_meta_list %}
     {{ sr_meta.id_snake }} = "{{ sr_meta.id }}"

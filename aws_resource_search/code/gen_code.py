@@ -30,7 +30,7 @@ def load_searchers_enum_json() -> T.List[SearcherMetadata]:
 
 def sort_searcher_metadata_list(sr_meta_list: T.List[SearcherMetadata]):
     """
-    Sort searcher_metadata by id
+    Sort searcher_metadata by id.
     """
     sr_meta_list = list(sorted(sr_meta_list, key=lambda x: x.id))
     return sr_meta_list
@@ -38,7 +38,8 @@ def sort_searcher_metadata_list(sr_meta_list: T.List[SearcherMetadata]):
 
 def dump_searchers_enum_json(sr_meta_list: T.List[SearcherMetadata]):
     """
-    Dump searcher metadata list to ``aws_resource_search/code/searchers_enum.json`` file.
+    Dump searcher metadata list to the
+    ``aws_resource_search/code/searchers_enum.json`` file.
     """
     data = {}
     for sr_meta in sr_meta_list:
@@ -60,6 +61,11 @@ def generate_searchers_enum_py_module(sr_meta_list: T.List[SearcherMetadata]):
 
 
 def enrich_searcher_metadata(sr_meta_list: T.List[SearcherMetadata]):
+    """
+    Recursively scan all modules in ``aws_resource_search.res`` package,
+    try to locate all subclass of the :class:`Searcher` to extract
+    all searcher metadata.
+    """
     sr_meta_dct_view: T.Dict[str, SearcherMetadata] = {
         sr_meta.id: sr_meta for sr_meta in sr_meta_list
     }
@@ -77,7 +83,8 @@ def enrich_searcher_metadata(sr_meta_list: T.List[SearcherMetadata]):
 
 def dump_searchers_json(sr_meta_list: T.List[SearcherMetadata]):
     """
-    Dump enriched searcer metadata list to ``aws_resource_search/searchers.json`` file.
+    Dump enriched searcher metadata list to the
+    ``aws_resource_search/searchers.json`` file.
     """
     data = {}
     for sr_meta in sr_meta_list:

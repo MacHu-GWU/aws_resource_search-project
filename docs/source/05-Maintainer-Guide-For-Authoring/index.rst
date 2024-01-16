@@ -43,3 +43,11 @@ UI Handler
 .. literalinclude:: ../../../aws_resource_search/ui/search_patterns.py
    :language: python
    :linenos:
+
+
+.. _what-is-searcher:
+
+What is Searcher
+------------------------------------------------------------------------------
+我们这个 App 的核心功能就是搜索 AWS Resource. 而 AWS Resource 有很多种不同的类型, 例如 EC2 Instance, S3 Bucket, IAM Role. 搜索每种类型的资源的 API 都不一样. 而 ``Searcher`` 就是对搜索特定 AWS 资源的逻辑的一个封装. 我们有一个 Searcher Base Class, 然后让负责搜索特定 AWS 资源的 Search 继承这个 Base Class, 并且实现对应的一些方法.
+

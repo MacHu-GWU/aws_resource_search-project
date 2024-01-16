@@ -2,6 +2,7 @@
 
 from .vendor.better_enum import BetterStrEnum
 
+
 class SearcherEnum(BetterStrEnum):
     cloudformation_stack = "cloudformation-stack"
     codebuild_job_run = "codebuild-job-run"
