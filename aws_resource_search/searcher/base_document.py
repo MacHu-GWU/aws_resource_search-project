@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
+"""
+This module defines the base class for searchable document class for all AWS resource type.
+Also, it provides some utility functions to help with writing the concrete document class
+for a specific AWS resource type.
+"""
+
 import typing as T
 import uuid
 import json
-import copy
 import dataclasses
 import contextlib
-from pathlib import Path
 from datetime import datetime, timezone
 
 import jmespath
@@ -14,7 +18,6 @@ import botocore.exceptions
 import aws_console_url.api as acu
 import sayt.api as sayt
 import zelfred.api as zf
-from iterproxy import IterProxy
 
 try:
     import pyperclip

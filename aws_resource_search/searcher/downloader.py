@@ -152,3 +152,38 @@ def list_resources(
             yield from result_path.extract(response)
 
     return ResourceIterproxy(func())
+
+
+def extract_tags(data: dict) -> T.Dict[str, str]:
+    """
+    Extract tags key value pair from boto3 API call response data.
+
+    :param data: it is the dictionary representation of one AWS resource,
+        it could be the original boto3 API response, it also could be
+        a nested dictionary. For example: in ``s3.list_buckets`` response,
+        the original response is the data, because it has a ``TagSet`` field.
+        in ``iam.list_roles`` response, the dict in the ``Roles`` list is the data.
+    """
+    if "tags" in data:
+        tag_data = data["tags"]
+    elif "Tags" in data:
+        tag_data = data["Tags"]
+    elif "TagSet" in data:
+        tag_data = data["TagSet"]
+    else:
+        return {}
+
+    if isinstance(tag_data, dict):
+        return tag_data
+    elif isinstance(tag_data, list):
+        tags = {}
+        for dct in tag_data:
+            if "Key" in dct:
+                tags[dct["Key"]] = dct["Value"]
+            elif "key" in dct:
+                tags[dct["key"]] = dct["value"]
+            else:
+                raise ValueError(f"unable to extract tags from {data}")
+        return tags
+    else:
+        raise TypeError(f"unable to extract tags from {data}")

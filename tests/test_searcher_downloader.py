@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import pytest
 import moto
 
 from aws_resource_search.searcher.downloader import (
@@ -7,6 +8,7 @@ from aws_resource_search.searcher.downloader import (
     ResourceIterproxy,
     ResultPath,
     list_resources,
+    extract_tags,
 )
 from aws_resource_search.tests.mock_test import BaseMockTest
 
@@ -50,6 +52,27 @@ class Test(BaseMockTest):
             result_path=ResultPath(path="Groups"),
         )
         assert [dct["GroupName"] for dct in res.all()] == ["Group1", "Group2"]
+
+
+def test_extract_tags():
+    tag_data_1 = {"k1": "v1"}
+    tag_data_2 = [{"Key": "k1", "Value": "v1"}]
+    tag_data_3 = [{"key": "k1", "value": "v1"}]
+    fields = [
+        "tags",
+        "Tags",
+        "TagSet",
+    ]
+    for field in fields:
+        for tag_data in [tag_data_1, tag_data_2, tag_data_3]:
+            data = {field: tag_data}
+            assert extract_tags(data) == {"k1": "v1"}
+
+    with pytest.raises(ValueError):
+        extract_tags({"tags": [{"KeyName": 1}]})
+
+    with pytest.raises(TypeError):
+        extract_tags({"tags": 1})
 
 
 if __name__ == "__main__":
