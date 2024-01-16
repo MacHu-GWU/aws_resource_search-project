@@ -16,7 +16,6 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager import BotoSesManager
     import sayt.api as sayt
 
-
 T_RESULT_DATA = T.Union["sayt.T_DOCUMENT", str]
 """
 Type hint for boto3 API result data. Each one represents a single AWS resource.
