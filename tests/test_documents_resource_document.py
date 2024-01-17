@@ -125,18 +125,6 @@ class TestDocument:
         _ = s3_bucket.uid
         _ = s3_bucket.arn
 
-    def _test_enrich_details(self):
-        detail_items = []
-        with ResourceDocument.enrich_details(detail_items):
-            detail_items.append("hello")
-            raise botocore.exceptions.ClientError(
-                error_response={}, operation_name="test"
-            )
-            detail_items.append("word")
-        assert len(detail_items) == 2
-        assert detail_items[0] == "hello"
-        assert "❗" in detail_items[1].title
-
     def _test_one_line(self):
         assert ResourceDocument.one_line("hello") == "hello"
         assert ResourceDocument.one_line("hello\nword") == "hello ..."
@@ -155,7 +143,7 @@ class TestDocument:
                 metadata={"field": sayt.StoredField(name="arn")}
             )
 
-        search_fields = DummyS3Bucket.to_searcher_fields()
+        search_fields = DummyS3Bucket.get_dataset_fields()
         assert search_fields[3].name == "arn"
         assert isinstance(search_fields[3], sayt.StoredField)
 
@@ -164,14 +152,14 @@ class TestDocument:
             arn: str = dataclasses.field()
 
         with pytest.raises(KeyError):
-            WrongResource1.to_searcher_fields()
+            WrongResource1.get_dataset_fields()
 
         @dataclasses.dataclass
         class WrongResource2(ResourceDocument):
             arn: str = dataclasses.field(metadata={"field": 123})
 
         with pytest.raises(TypeError):
-            WrongResource2.to_searcher_fields()
+            WrongResource2.get_dataset_fields()
 
         @dataclasses.dataclass
         class WrongResource3(ResourceDocument):
@@ -180,11 +168,10 @@ class TestDocument:
             )
 
         with pytest.raises(ValueError):
-            WrongResource3.to_searcher_fields()
+            WrongResource3.get_dataset_fields()
 
     def test(self):
         self._test_properties_methods()
-        # self._test_enrich_details()
         self._test_one_line()
         self._test_to_searcher_fields()
 
@@ -192,4 +179,6 @@ class TestDocument:
 if __name__ == "__main__":
     from aws_resource_search.tests.helper import run_cov_test
 
-    run_cov_test(__file__, "aws_resource_search.documents.base_document", preview=False)
+    run_cov_test(
+        __file__, "aws_resource_search.documents.resource_document", preview=False
+    )

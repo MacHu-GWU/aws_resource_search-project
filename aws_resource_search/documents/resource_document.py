@@ -474,7 +474,7 @@ class ResourceDocument(BaseArsDocument):
         raise NotImplementedError(msg)
 
     @classmethod
-    def to_searcher_fields(
+    def get_dataset_fields(
         cls,
         id_field_boost: float = 5.0,
         name_minsize: int = 2,
