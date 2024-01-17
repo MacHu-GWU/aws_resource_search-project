@@ -8,11 +8,11 @@ import jinja2
 from pathlib import Path
 
 from ..paths import dir_project_root, dir_python_lib, path_searchers_json
-from ..res_lib import Searcher
+from ..base_searcher import BaseSearcher
 from ..model import SearcherMetadata
 
 dir_here = Path(__file__).absolute().parent
-path_searchers_enum_json = dir_here.joinpath("searchers_enum.json")
+path_searchers_enum_json = dir_here.joinpath("searcher_enum.json")
 
 
 def load_searchers_enum_json() -> T.List[SearcherMetadata]:
@@ -54,8 +54,8 @@ def generate_searchers_enum_py_module(sr_meta_list: T.List[SearcherMetadata]):
     """
     Create the ``aws_resource_search/searchers_enum.py``
     """
-    path_tpl = dir_here.joinpath("searchers_enum.py.jinja")
-    path_py = dir_python_lib.joinpath("searchers_enum.py")
+    path_tpl = dir_here.joinpath("searcher_enum.py.jinja")
+    path_py = dir_python_lib.joinpath("searcher_enum.py")
     tpl = jinja2.Template(path_tpl.read_text())
     path_py.write_text(tpl.render(sr_meta_list=sr_meta_list))
 
@@ -75,7 +75,7 @@ def enrich_searcher_metadata(sr_meta_list: T.List[SearcherMetadata]):
         module_name = p.stem
         module = importlib.import_module(f"aws_resource_search.res.{module_name}")
         for var_name, value in module.__dict__.items():
-            if isinstance(value, Searcher):
+            if isinstance(value, BaseSearcher):
                 sr_meta_dct_view[value.resource_type].module = module_name
                 sr_meta_dct_view[value.resource_type].klass = value.__class__.__name__
                 sr_meta_dct_view[value.resource_type].var = var_name
@@ -102,7 +102,7 @@ def generate_implemented_resource_types(sr_meta_list: T.List[SearcherMetadata]):
     dir_folder = dir_project_root.joinpath(
         "docs", "source", "03-User-Guide-Implemented-AWS-Resource-Types",
     )
-    path_tpl = dir_here.joinpath("searchers_index.rst.jinja")
+    path_tpl = dir_here.joinpath("implemented_aws_resource_types.rst.jinja")
     path_index = dir_folder.joinpath("index.rst")
     tpl = jinja2.Template(path_tpl.read_text())
     path_index.write_text(tpl.render(sr_meta_list=sr_meta_list))

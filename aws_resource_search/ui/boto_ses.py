@@ -6,13 +6,14 @@ the default url. You could use the `awscli_mate <https://github.com/MacHu-GWU/aw
 tool to set any given profile as default.
 """
 
+import aws_console_url.api as aws_console_url
 from boto_session_manager import BotoSesManager
 
 from ..ars import ARS
 from ..exc import MalformedBotoSessionError
 
 bsm = BotoSesManager()
-ars = ARS(bsm=bsm)
+ars = ARS(bsm=bsm, aws_console=aws_console_url.AWSConsole.from_bsm(bsm))
 
 
 def validate_boto_session():

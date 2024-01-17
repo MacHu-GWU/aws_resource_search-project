@@ -38,4 +38,5 @@ from .items.api import ExceptionItem
 from .items.api import FileItem
 from .items.api import InfoItem
 from .base_searcher import BaseSearcher
+from .base_searcher import T_SEARCHER
 from .conf.init import config

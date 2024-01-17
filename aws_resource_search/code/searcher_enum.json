@@ -1,0 +1,22 @@
+{
+    "iam-group": {
+        "desc": "An IAM user group is a collection of IAM users.",
+        "ngram": ""
+    },
+    "iam-policy": {
+        "desc": "IAM policies define permissions for an action regardless of the method that you use to perform the operation.",
+        "ngram": ""
+    },
+    "iam-role": {
+        "desc": "An IAM role is an IAM identity that you can create in your account that has specific permissions.",
+        "ngram": ""
+    },
+    "iam-user": {
+        "desc": "IAM user is an entity that you create in AWS.",
+        "ngram": ""
+    },
+    "s3-bucket": {
+        "desc": "A bucket is a container for objects.",
+        "ngram": "simple storage service"
+    }
+}

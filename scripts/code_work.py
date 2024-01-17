@@ -23,4 +23,4 @@ generate_searchers_enum_py_module(sr_meta_list) # create aws_resource_search/sea
 enrich_searcher_metadata(sr_meta_list)
 dump_searchers_json(sr_meta_list) # create aws_resource_search/searchers.json
 generate_implemented_resource_types(sr_meta_list)
-generate_ars_py_module(sr_meta_list)
+generate_ars_py_module(sr_meta_list) # create aws_resource_search/ars.py

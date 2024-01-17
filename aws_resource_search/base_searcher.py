@@ -222,3 +222,6 @@ class BaseSearcher(BaseModel, T.Generic[T_ARS_RESOURCE_DOCUMENT]):
             return [self.doc_class.from_dict(dct["_source"]) for dct in result["hits"]]
         else:
             return result
+
+
+T_SEARCHER = T.TypeVar("T_SEARCHER", bound=BaseSearcher)
