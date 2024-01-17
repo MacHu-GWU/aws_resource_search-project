@@ -7,15 +7,12 @@ todo: docstring
 import typing as T
 import dataclasses
 
-from ..terminal import ShortcutEnum, format_resource_type
 from ..compat import TypedDict
-from ..searcher_finder import searcher_finder
 
 from .base_item import BaseArsItem
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from ..documents.resource_document import T_ARS_RESOURCE_DOCUMENT
-    from ..ars import ARS
     from ..ui.main import UI
 
 
@@ -24,6 +21,7 @@ class T_AWS_RESOURCE_ITEM_VARIABLES(TypedDict):
     """
     Type hint for the "variables" field in :class:`AwsResourceItem`.
     """
+
     doc: T_ARS_RESOURCE_DOCUMENT
     resource_type: str
     partitioner_resource_type: T.Optional[str]
@@ -152,7 +150,7 @@ class AwsResourceItem(BaseArsItem):
         View details in a sub session. You can tap 'F1' to exit the sub session.
         """
         doc: "T_ARS_RESOURCE_DOCUMENT" = self.variables["doc"]
-        items = doc.get_details(ars=ars)
+        items = doc.get_details(ars=ui.ars)
         ui.run_handler(items=items)
 
         # enter the main event loop of the sub query

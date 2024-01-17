@@ -14,7 +14,8 @@ try:
 except ImportError:
     pass
 
-from ..searcher_finder import searcher_finder
+from ..ars import ARS
+from ..searcher_finder import SearcherFinder, searcher_finder
 from ..terminal import terminal
 from ..res_lib import DetailItem, InfoItem, OpenUrlItem, OpenFileItem
 
@@ -39,7 +40,7 @@ from .search_resource import (
 
 def handler(
     query: str,
-    ui: zf.UI,
+    ui: "UI",
     skip_ui: bool = False,
 ) -> T.List[
     T.Union[
@@ -126,7 +127,7 @@ def handler(
             resource_query = query.split(":")[1].strip()
 
             # example: "s3-bucket"
-            if finder.is_valid_resource_type(service_query):
+            if ui.searcher_finder.is_valid_resource_type(service_query):
                 return search_resource_handler(
                     ui=ui,
                     resource_type=service_query,
@@ -149,7 +150,7 @@ def handler(
         # use "resource query" to search
         service_query = q.trimmed_parts[0]
         resource_query = query.split(":")[1].strip()
-        if finder.is_valid_resource_type(service_query):
+        if ui.searcher_finder.is_valid_resource_type(service_query):
             return search_resource_handler(
                 ui=ui,
                 resource_type=service_query,
@@ -170,6 +171,9 @@ class UI(zf.UI):
     """
     todo: doc string here
     """
+    def __init__(self, **kwargs):
+        self.ars: "ARS" = ars
+        self.searcher_finder: "SearcherFinder" = searcher_finder
 
     def process_ctrl_b(self: "UI"):
         """
