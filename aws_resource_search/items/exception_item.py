@@ -13,22 +13,18 @@ import zelfred.api as zf
 from ..terminal import ShortcutEnum
 from ..compat import TypedDict
 from ..paths import path_exception_item_txt
-from .base_item import ArsBaseItem
+from .base_item import BaseArsItem
 
 
 class T_EXCEPTION_ITEM_VARIABLES(TypedDict):
-    """ """
-
     error: Exception
     traceback: str
 
 
 @dataclasses.dataclass
-class ExceptionItem(ArsBaseItem):
+class ExceptionItem(BaseArsItem):
     """
     Represent a Python exception detail in the dropdown menu.
-
-    **Why this class**
     """
 
     variables: T_EXCEPTION_ITEM_VARIABLES = dataclasses.field(default_factory=dict)
@@ -42,8 +38,10 @@ class ExceptionItem(ArsBaseItem):
         - If not, nothing happens (most likely NOT)
         """
         if self.variables.get("error") is not None:
-            path_exception_item_txt.write_text(traceback.format_exc(limit=50))
-        self.open_file_or_print(ui, path_exception_item_txt)
+            path_exception_item_txt.write_text(self.variables["traceback"])
+            self.open_file_or_print(ui, path_exception_item_txt)
+        else:
+            pass
 
     @classmethod
     def from_error(

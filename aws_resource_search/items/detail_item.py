@@ -6,7 +6,9 @@ todo: docstring
 
 import typing as T
 import dataclasses
+import contextlib
 
+import botocore.exceptions
 import zelfred.api as zf
 
 try:
@@ -16,7 +18,12 @@ except ImportError:  # pragma: no cover
 
 from ..terminal import ShortcutEnum, format_key_value
 from ..compat import TypedDict
-from .base_item import ArsBaseItem
+from .base_item import BaseArsItem, T_ARS_ITEM
+from .exception_item import ExceptionItem
+
+if T.TYPE_CHECKING:  # pragma: no cover
+    from ..ars import ARS
+    from ..documents.resource_document import ResourceDocument
 
 
 class T_DETAIL_ITEM_VARIABLES(TypedDict):
@@ -30,7 +37,7 @@ class T_DETAIL_ITEM_VARIABLES(TypedDict):
 
 
 @dataclasses.dataclass
-class DetailItem(ArsBaseItem):
+class DetailItem(BaseArsItem):
     """
     Represent a detail information of an AWS resource in the dropdown menu.
 
@@ -86,9 +93,11 @@ class DetailItem(ArsBaseItem):
         # fmt: off
         if subtitle is None:
             if url is not None and copy is not None:
-                kwargs["subtitle"] = f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy value, 🔗 {ShortcutEnum.CTRL_U} to copy url."
+                kwargs[
+                    "subtitle"] = f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy value, 🔗 {ShortcutEnum.CTRL_U} to copy url."
             elif url is not None:
-                kwargs["subtitle"] = f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} or 🔗 {ShortcutEnum.CTRL_U} to copy url."
+                kwargs[
+                    "subtitle"] = f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} or 🔗 {ShortcutEnum.CTRL_U} to copy url."
             elif copy is not None:
                 kwargs["subtitle"] = f"📋 {ShortcutEnum.CTRL_A} or 🔗 {ShortcutEnum.CTRL_U} to copy value"
             elif autocomplete:
@@ -210,14 +219,9 @@ class DetailItem(ArsBaseItem):
                 for k, v in env_vars.items()
             ]
         else:
-            if url is None:
-                subtitle = "No environment variables found."
-            else:
-                subtitle = None # auto create it
             return [
                 cls.new(
                     title=f"🏷 env var: 🔴 No environment variable found.",
-                    subtitle=subtitle,
                     uid=f"no-environment-variable-found",
                     url=url,
                 )
@@ -243,15 +247,75 @@ class DetailItem(ArsBaseItem):
                 for k, v in tags.items()
             ]
         else:
-            if url is None:
-                subtitle = "No tag found."
-            else:
-                subtitle = None # auto create it
             return [
                 cls.new(
                     title=f"🏷 tag: 🔴 No tag found.",
-                    subtitle=subtitle,
                     uid=f"no-tag-found",
                     url=url,
                 )
             ]
+
+    @classmethod
+    def get_initial_detail_items(
+        cls,
+        doc: "ResourceDocument",
+        ars: "ARS",
+        arn_key: str = "arn",
+    ) -> T.List["DetailItem"]:  # pragma: no cover
+        """
+        Most AWS resource detail should have one ARN item that user can tap
+        "Ctrl A" to copy and tap "Enter" to open url. Only a few AWS resource
+        doesn't support ARN (for example, glue job run).
+
+        .. note::
+
+            This method is to simplify the authoring of the
+            :meth:`aws_resource_search.documents.resource_document.ResourceDocument.get_details` method.
+
+        Usage example:
+
+            >>> class S3BucketDocument(ResourceDocument):
+            ...     def get_details(self, ars: ARS):
+            ...         detail_items = DetailItem.get_initial_detail_items(self, ars)
+            ...         ...
+        """
+        try:
+            return [
+                DetailItem.from_detail(
+                    key=arn_key,
+                    value=doc.arn,
+                    url=doc.get_console_url(ars.aws_console),
+                ),
+            ]
+        # the ResourceDocument.arn and ResourceDocument.get_console_url
+        # may raise NotImplementedError
+        except NotImplementedError:
+            return []
+
+    @staticmethod
+    @contextlib.contextmanager
+    def error_handling(detail_items: T.List["T_ARS_ITEM"]):
+        """
+        A context manager to add additional detail items to the list.
+        It automatically captures exception and creates
+        :class:`~aws_resource_search.items.exception_item.ExceptionItem`
+        to explain what went wrong.
+
+        Usage example:
+
+            >>> class S3BucketDocument(ResourceDocument):
+            ...     def get_details(self, ars: ARS):
+            ...         detail_items = DetailItem.get_initial_detail_items(self, ars)
+            ...         with DetailItem.error_handling(detail_items):
+            ...             res = ars.bsm.s3_client.get_bucket_policy(...)
+            ...             detail_items.append(DetailItem.from_detail(...))
+
+        .. note::
+
+            This method is to simplify the authoring of the
+            :meth:`aws_resource_search.documents.resource_document.ResourceDocument.get_details` method.
+        """
+        try:
+            yield None
+        except Exception as e:
+            detail_items.append(ExceptionItem.from_error(error=e))

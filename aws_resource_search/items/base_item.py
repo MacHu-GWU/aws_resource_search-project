@@ -1,22 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-[CN] maintainer note
 
-UI 交互的核心是根据 query 展示 item. 我们有以下几种 item 类型:
-
-- search aws resource type result
-- search aws resource
-- view aws resource details
-- system information like hint, error message, etc.
-- system action like view config, view AWS account information.
-
-这些 Item 的 user action 互动方式是不一样的. 在代码设计上, 我们可以为每一种 Item 都设计
-一个类. 互相之间完全不干扰. 但是这样会导致代码量过大, 也不利于维护. 所以我们会精心设计一个
-:class:`ArsBaseItem` 基类. 里面提供了各种各样的 utility 方法, 便于我们为每一种 use case
-实现对应的 Item.
 """
 
+import typing as T
 import dataclasses
 from pathlib import Path
 
@@ -29,7 +17,7 @@ except ImportError:  # pragma: no cover
 
 
 @dataclasses.dataclass
-class ArsBaseItem(zf.Item):
+class BaseArsItem(zf.Item):
     """
     Base class for all ``zelfred.Item`` subclasses in ``aws_resource_search`` project.
     """
@@ -129,3 +117,6 @@ class ArsBaseItem(zf.Item):
 
     def post_ctrl_p_handler(self, ui: zf.UI):  # pragma: no cover
         ui.wait_next_user_input()
+
+
+T_ARS_ITEM = T.TypeVar("T_ARS_ITEM", bound=BaseArsItem)

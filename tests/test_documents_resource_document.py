@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import botocore.exceptions
 
 import sayt.api as sayt
-from aws_resource_search.documents.base_document import (
+from aws_resource_search.documents.resource_document import (
     get_utc_now,
     to_human_readable_elapsed,
     to_utc_dt,
@@ -20,7 +20,7 @@ from aws_resource_search.documents.base_document import (
     get_description,
     get_datetime_iso_fmt,
     get_datetime_simple_fmt,
-    BaseDocument,
+    ResourceDocument,
 )
 
 
@@ -71,7 +71,7 @@ def test_get_datetime_iso_fmt():
 
 
 @dataclasses.dataclass
-class S3Bucket(BaseDocument):
+class S3Bucket(ResourceDocument):
     @classmethod
     def from_resource(
         cls,
@@ -99,7 +99,7 @@ class S3Bucket(BaseDocument):
 
 class TestDocument:
     def _test_properties_methods(self):
-        doc = BaseDocument(raw_data={}, id="test", name="test")
+        doc = ResourceDocument(raw_data={}, id="test", name="test")
         with pytest.raises(NotImplementedError):
             _ = doc.title
         _ = doc.subtitle
@@ -127,7 +127,7 @@ class TestDocument:
 
     def _test_enrich_details(self):
         detail_items = []
-        with BaseDocument.enrich_details(detail_items):
+        with ResourceDocument.enrich_details(detail_items):
             detail_items.append("hello")
             raise botocore.exceptions.ClientError(
                 error_response={}, operation_name="test"
@@ -138,19 +138,19 @@ class TestDocument:
         assert "❗" in detail_items[1].title
 
     def _test_one_line(self):
-        assert BaseDocument.one_line("hello") == "hello"
-        assert BaseDocument.one_line("hello\nword") == "hello ..."
+        assert ResourceDocument.one_line("hello") == "hello"
+        assert ResourceDocument.one_line("hello\nword") == "hello ..."
         assert (
-            BaseDocument.one_line(json.dumps(dict(a=1, b=2), indent=4))
+            ResourceDocument.one_line(json.dumps(dict(a=1, b=2), indent=4))
             == '{"a": 1, "b": 2}'
         )
-        assert BaseDocument.one_line("") == "NA"
-        assert BaseDocument.one_line(None, "Not available") == "Not available"
-        assert BaseDocument.one_line(dict(a=1, b=2)) == '{"a": 1, "b": 2}'
+        assert ResourceDocument.one_line("") == "NA"
+        assert ResourceDocument.one_line(None, "Not available") == "Not available"
+        assert ResourceDocument.one_line(dict(a=1, b=2)) == '{"a": 1, "b": 2}'
 
     def _test_to_searcher_fields(self):
         @dataclasses.dataclass
-        class DummyS3Bucket(BaseDocument):
+        class DummyS3Bucket(ResourceDocument):
             arn: str = dataclasses.field(
                 metadata={"field": sayt.StoredField(name="arn")}
             )
@@ -160,21 +160,21 @@ class TestDocument:
         assert isinstance(search_fields[3], sayt.StoredField)
 
         @dataclasses.dataclass
-        class WrongResource1(BaseDocument):
+        class WrongResource1(ResourceDocument):
             arn: str = dataclasses.field()
 
         with pytest.raises(KeyError):
             WrongResource1.to_searcher_fields()
 
         @dataclasses.dataclass
-        class WrongResource2(BaseDocument):
+        class WrongResource2(ResourceDocument):
             arn: str = dataclasses.field(metadata={"field": 123})
 
         with pytest.raises(TypeError):
             WrongResource2.to_searcher_fields()
 
         @dataclasses.dataclass
-        class WrongResource3(BaseDocument):
+        class WrongResource3(ResourceDocument):
             arn: str = dataclasses.field(
                 metadata={"field": sayt.StoredField(name="bucket_arn")}
             )
