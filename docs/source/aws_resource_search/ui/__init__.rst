@@ -17,4 +17,5 @@ sub packages and modules
     search_patterns <search_patterns>
     search_resource <search_resource>
     search_resource_type <search_resource_type>
+    show_aws_info <show_aws_info>
     

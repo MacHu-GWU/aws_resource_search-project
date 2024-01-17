@@ -14,6 +14,7 @@ sub packages and modules
     code <code/__init__>
     conf <conf/__init__>
     res <res/__init__>
+    searcher <searcher/__init__>
     ui <ui/__init__>
     api <api>
     ars <ars>

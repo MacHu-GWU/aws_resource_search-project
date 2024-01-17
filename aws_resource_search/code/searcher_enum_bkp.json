@@ -1,0 +1,150 @@
+{
+    "cloudformation-stack": {
+        "desc": "A stack is a collection of AWS resources that you can manage as a single unit.",
+        "ngram": "cfn cft"
+    },
+    "codebuild-job-run": {
+        "desc": "Codebuild job run, it is not a batch job run.",
+        "ngram": "jobrun"
+    },
+    "codebuild-project": {
+        "desc": "A build project includes information about how to run a build.",
+        "ngram": ""
+    },
+    "codecommit-repository": {
+        "desc": "A repository is where you store code and files for your project.",
+        "ngram": ""
+    },
+    "codepipeline-pipeline": {
+        "desc": "Code pipeline is a workflow construct that describes how software changes go through a release process.",
+        "ngram": ""
+    },
+    "dynamodb-table": {
+        "desc": "A table is a collection of data.",
+        "ngram": ""
+    },
+    "ec2-instance": {
+        "desc": "An EC2 instance is simply a virtual server in AWS",
+        "ngram": "aws elastic compute cloud"
+    },
+    "ec2-security-group": {
+        "desc": "A security group acts as a firewall that controls the traffic allowed to and from the resources in your VPC.",
+        "ngram": "sg securitygroup"
+    },
+    "ec2-subnet": {
+        "desc": "A subnet is a range of IP addresses in your VPC.",
+        "ngram": ""
+    },
+    "ec2-vpc": {
+        "desc": "A virtual private cloud (VPC) is a virtual network dedicated to your AWS account.",
+        "ngram": "virtual private cloud"
+    },
+    "ecr-repository": {
+        "desc": "AWS managed container image registry service that is secure, scalable, and reliable.",
+        "ngram": "ecr private repository container"
+    },
+    "ecr-repository-image": {
+        "desc": "An container image in ECR repository.",
+        "ngram": "ecr private repository container"
+    },
+    "ecs-cluster": {
+        "desc": "An Amazon ECS cluster is a logical grouping of tasks or services.",
+        "ngram": ""
+    },
+    "ecs-task-run": {
+        "desc": "A task run is the instantiation of a task definition within a cluster.",
+        "ngram": ""
+    },
+    "ecs_task_definition_family": {
+        "desc": "A name of the task definition, without revision id.",
+        "ngram": ""
+    },
+    "glue-crawler": {
+        "desc": "You can use a crawler to populate the AWS Glue Data Catalog with tables.",
+        "ngram": ""
+    },
+    "glue-database": {
+        "desc": "Databases are used to organize metadata tables in the AWS Glue. ",
+        "ngram": "db"
+    },
+    "glue-database-table": {
+        "desc": "The metadata definition that represents your data.",
+        "ngram": "db tb"
+    },
+    "glue-job": {
+        "desc": "The business logic that is required to perform ETL work.",
+        "ngram": ""
+    },
+    "glue-job-run": {
+        "desc": "A job run is the execution of an ETL job.",
+        "ngram": ""
+    },
+    "iam-group": {
+        "desc": "An IAM user group is a collection of IAM users.",
+        "ngram": ""
+    },
+    "iam-policy": {
+        "desc": "IAM policies define permissions for an action regardless of the method that you use to perform the operation.",
+        "ngram": ""
+    },
+    "iam-role": {
+        "desc": "An IAM role is an IAM identity that you can create in your account that has specific permissions.",
+        "ngram": ""
+    },
+    "iam-user": {
+        "desc": "IAM user is an entity that you create in AWS.",
+        "ngram": ""
+    },
+    "kms-key-alias": {
+        "desc": "A human friendly name for KMS keys.",
+        "ngram": "key management service"
+    },
+    "lambda-function": {
+        "desc": "A function is a resource that you can invoke to run your code in Lambda.",
+        "ngram": "lbd"
+    },
+    "lambda-function-alias": {
+        "desc": "A Lambda alias is a pointer to a function version that you can update.",
+        "ngram": "lbd"
+    },
+    "lambda-layer": {
+        "desc": "A Lambda layer is a .zip file archive that can contain additional code or other content.",
+        "ngram": ""
+    },
+    "rds-db-cluster": {
+        "desc": "A DB cluster deployment is a semi-synchronous, high availability deployment mode of Amazon RDS with two readable standby DB instances.",
+        "ngram": "relational database service"
+    },
+    "rds-db-instance": {
+        "desc": "A DB instance is an isolated database environment running in the cloud.",
+        "ngram": "relational database service"
+    },
+    "s3-bucket": {
+        "desc": "A bucket is a container for objects.",
+        "ngram": "simple storage service"
+    },
+    "secretsmanager-secret": {
+        "desc": "A secret consists of secret information, the secret value, plus metadata about the secret.",
+        "ngram": "sm"
+    },
+    "sfn-state-machine": {
+        "desc": "A series of event-driven steps",
+        "ngram": "step functions stepfunctions"
+    },
+    "sfn-state-machine-execution": {
+        "desc": "A execution of a state machine.",
+        "ngram": "step functions stepfunctions"
+    },
+    "sns-topic": {
+        "desc": "An Amazon SNS topic is a logical access point that acts as a communication channel.",
+        "ngram": "simple notification service"
+    },
+    "sqs-queue": {
+        "desc": "A form of asynchronous service-to-service communication used in serverless and microservices architectures",
+        "ngram": "simple queue service"
+    },
+    "ssm-parameter": {
+        "desc": "Provides secure, hierarchical storage for configuration data management and secrets management. ",
+        "ngram": "system manager parameter store"
+    }
+}

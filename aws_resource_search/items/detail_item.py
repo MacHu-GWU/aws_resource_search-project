@@ -22,8 +22,8 @@ from .base_item import BaseArsItem, T_ARS_ITEM
 from .exception_item import ExceptionItem
 
 if T.TYPE_CHECKING:  # pragma: no cover
-    from ..ars import ARS
     from ..documents.resource_document import ResourceDocument
+    from ..ars import ARS
 
 
 class T_DETAIL_ITEM_VARIABLES(TypedDict):
@@ -101,7 +101,7 @@ class DetailItem(BaseArsItem):
             elif copy is not None:
                 kwargs["subtitle"] = f"📋 {ShortcutEnum.CTRL_A} or 🔗 {ShortcutEnum.CTRL_U} to copy value"
             elif autocomplete:
-                kwargs["subtitle"] = f"Hit{ShortcutEnum.TAB} to auto complete."
+                kwargs["subtitle"] = f"{ShortcutEnum.TAB} to auto complete."
             else:
                 kwargs["subtitle"] = "No subtitle"
         # fmt: on

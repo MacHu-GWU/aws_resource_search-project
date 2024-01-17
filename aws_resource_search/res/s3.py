@@ -118,6 +118,12 @@ class S3Bucket(rl.ResourceDocument):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.s3.get_console_url(bucket=self.name)
 
+    # most of the AWS resource support list all resources of this type in AWS console,
+    # you have to define a method to calculate the console url.
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.s3.buckets
+
     # the get_details method returns a list of items to be displayed in the
     # resource details view when user tap 'Ctrl P'.
     # you may call some boto3 API to get more details about the resource.

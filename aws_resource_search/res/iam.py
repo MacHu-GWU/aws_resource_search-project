@@ -51,6 +51,10 @@ class IamGroup(IamMixin, rl.ResourceDocument):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_user_group(name_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.groups
+
 
 class IamGroupSearcher(rl.BaseSearcher[IamGroup]):
     pass
@@ -101,6 +105,10 @@ class IamUser(IamMixin, rl.ResourceDocument):
 
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_user(name_or_arn=self.arn)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.users
 
 
 class IamUserSearcher(rl.BaseSearcher[IamUser]):
@@ -158,6 +166,10 @@ class IamRole(IamMixin, rl.ResourceDocument):
 
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_role(name_or_arn=self.arn)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.roles
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
@@ -271,6 +283,10 @@ class IamPolicy(IamMixin, rl.ResourceDocument):
 
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_policy(name_or_arn=self.arn)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.policies
 
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:

@@ -10,4 +10,6 @@ sub packages and modules
 .. toctree::
     :maxdepth: 1
 
+    define <define>
+    init <init>
     

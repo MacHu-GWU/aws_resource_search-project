@@ -421,7 +421,8 @@ class ResourceDocument(BaseArsDocument):
 
     def get_console_url(self, console: acu.AWSConsole) -> str:
         """
-        AWS Console URL, if applicable, User can tap 'Enter' to open in browser.
+        AWS Console URL to view this AWS resource in the console.
+        If applicable, User can tap 'Enter' to open in browser.
 
         .. important::
 
@@ -442,6 +443,19 @@ class ResourceDocument(BaseArsDocument):
             ``aws_resource_search.res.${service}`` modules.
         """
         return self.get_console_url(ars.aws_console)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        """
+        AWS Console URL to view list all AWS resources of this type in the console.
+        If applicable, User can tap 'Enter' to open in browser.
+
+        .. important::
+
+            You have to implement this method for each AWS Resource Type.
+        """
+        msg = f"{cls.__name__} doesn't support list resources AWS Console url"
+        raise NotImplementedError(msg)
 
     @staticmethod
     def one_line(obj, na: str = "NA") -> str:

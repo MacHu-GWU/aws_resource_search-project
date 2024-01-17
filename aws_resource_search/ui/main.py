@@ -14,9 +14,11 @@ try:
 except ImportError:
     pass
 
-from ..searchers import finder
+from ..searcher_finder import searcher_finder
 from ..terminal import terminal
 from ..res_lib import DetailItem, InfoItem, OpenUrlItem, OpenFileItem
+
+from .boto_ses import ars
 from .show_aws_info import (
     ShowAwsInfoItem,
     show_aws_info_handler,
