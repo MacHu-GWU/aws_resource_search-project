@@ -3,7 +3,7 @@
 import pytest
 import moto
 
-from aws_resource_search.searcher.downloader import (
+from aws_resource_search.downloader import (
     T_RESULT_DATA,
     ResourceIterproxy,
     ResultPath,
@@ -78,4 +78,4 @@ def test_extract_tags():
 if __name__ == "__main__":
     from aws_resource_search.tests.helper import run_cov_test
 
-    run_cov_test(__file__, "aws_resource_search.searcher.downloader", preview=False)
+    run_cov_test(__file__, "aws_resource_search.downloader", preview=False)

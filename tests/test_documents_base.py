@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import botocore.exceptions
 
 import sayt.api as sayt
-from aws_resource_search.searcher.base_document import (
+from aws_resource_search.documents.base_document import (
     get_utc_now,
     to_human_readable_elapsed,
     to_utc_dt,
@@ -185,11 +185,11 @@ class TestDocument:
     def test(self):
         self._test_properties_methods()
         # self._test_enrich_details()
-        # self._test_one_line()
+        self._test_one_line()
         self._test_to_searcher_fields()
 
 
 if __name__ == "__main__":
     from aws_resource_search.tests.helper import run_cov_test
 
-    run_cov_test(__file__, "aws_resource_search.searcher.base_document", preview=False)
+    run_cov_test(__file__, "aws_resource_search.documents.base_document", preview=False)

@@ -25,13 +25,15 @@ except ImportError:  # pragma: no cover
     pass
 
 from ..model import BaseModel
-from ..terminal import ShortcutEnum
+from ..terminal import ShortcutEnum, SUBTITLE, SHORT_SUBTITLE
+
+# from .zelfred_item import DetailItem
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager import BotoSesManager
     from ..ars import ARS
-    from .downloader import T_RESULT_DATA, ResourceIterproxy
+    # from .downloader import T_RESULT_DATA, ResourceIterproxy
 
 
 def get_utc_now() -> datetime:
@@ -351,7 +353,7 @@ class BaseDocument(BaseModel):
             ...     def title(self) -> str:
             ...         return f"bucket name = {self.name}"
 
-        .. note::
+        .. important::
 
             You have to implement this method for each AWS Resource Type.
         """
@@ -362,26 +364,22 @@ class BaseDocument(BaseModel):
         """
         The subtitle in the zelfred UI.
 
-        The default subtitle is the help text to show the user how to interact with the UI.
+        .. seealso::
+
+            :const:`~aws_resource_search.terminal.SUBTITLE`
         """
-        return (
-            f"🌐 {ShortcutEnum.ENTER} to open url, "
-            f"📋 {ShortcutEnum.CTRL_A} to copy arn, "
-            f"🔗 {ShortcutEnum.CTRL_U} to copy url, "
-            f"👀 {ShortcutEnum.CTRL_P} to view details."
-        )
+        return SUBTITLE
 
     @property
     def short_subtitle(self) -> str:
         """
         A shorter version of subtitle.
+
+        .. seealso::
+
+            :const:`~aws_resource_search.terminal.SHORT_SUBTITLE`
         """
-        return (
-            f"🌐 {ShortcutEnum.ENTER}, "
-            f"📋 {ShortcutEnum.CTRL_A}, "
-            f"🔗 {ShortcutEnum.CTRL_U}, "
-            f"👀 {ShortcutEnum.CTRL_P}."
-        )
+        return SHORT_SUBTITLE
 
     @property
     def uid(self) -> str:
@@ -407,7 +405,7 @@ class BaseDocument(BaseModel):
         in the :meth:`~BaseDocument.from_resource` method. Then you can just
         reference it here.
 
-        .. note::
+        .. important::
 
             You have to implement this method for each AWS Resource Type.
         """
@@ -418,7 +416,7 @@ class BaseDocument(BaseModel):
         """
         AWS Console URL, if applicable, User can tap 'Enter' to open in browser.
 
-        .. note::
+        .. important::
 
             You have to implement this method for each AWS Resource Type.
         """
@@ -448,6 +446,10 @@ class BaseDocument(BaseModel):
         else:
             return na
 
+
+    # --------------------------------------------------------------------------
+    #
+    # --------------------------------------------------------------------------
     def get_initial_detail_items(
         self,
         ars: "ARS",
@@ -456,7 +458,12 @@ class BaseDocument(BaseModel):
         """
         Most AWS resource detail should have one ARN item that user can tap
         "Ctrl A" to copy and tap "Enter" to open url. Only a few AWS resource
-        doesn't support ARN (for example glue job run).
+        doesn't support ARN (for example, glue job run).
+
+        .. note::
+
+            This method is to simplify the implementation of the
+            :meth:`~BaseDocument.get_details` method.
         """
         try:
             return [
@@ -466,6 +473,7 @@ class BaseDocument(BaseModel):
                     url=self.get_console_url(ars.aws_console),
                 ),
             ]
+        # the self.arn and self.get_console_url may raise NotImplementedError
         except NotImplementedError:
             return []
 
@@ -474,7 +482,19 @@ class BaseDocument(BaseModel):
     def enrich_details(detail_items: list):
         """
         A context manager to add additional detail items. It automatically
-        captures boto3 exception and creates debug item.
+        captures exception and creates debug item to explain what went wrong.
+
+        Usage:
+
+            >>> doc = BaseDocument(...)
+            >>> detail_items = []
+            >>> with doc.enrich_details(detail_items):
+            ...     detail_items.append(...)
+
+        .. note::
+
+            This method is to simplify the implementation of the
+            :meth:`~BaseDocument.get_details` method.
         """
         try:
             yield None
@@ -485,12 +505,37 @@ class BaseDocument(BaseModel):
                     msg=str(e),
                 )
             )
+        except Exception as e:
+            detail_items.append(
+                DetailItem.from_error(
+                    type=f"{e.operation_name} failed",
+                    msg=str(e),
+                )
+            )
+
 
     def get_details(self, ars: "ARS") -> T.List[zf.T_ITEM]:
         """
-        Additional details for the resource, it will be rendered in the
-        dropdown menu. User can tap tab 'Ctrl + P' to view the details,
-        and tap 'F1' to go back to the previous view.
+        Call boto3 API to get additional details for this resource. The detailed
+        information will be rendered in the dropdown menu. It allows user to tap
+        'Ctrl + P' to enter a sub-session to view the details. User can tap
+        'F1' to go back to the previous session.
+
+        .. important::
+
+            You have to implement this method for each AWS Resource Type.
+
+        .. note::
+
+            Here's some tips to implement this method correctly:
+
+            1. For immutable attributes, such as resource id, name, you can
+                extract them from the ``raw_data``. For example, the Ec2 instance id.
+            2. For mutable attributes, such as tags, you have to call boto3 API,
+                because the ``raw_data`` is from the index and could be outdated.
+            3. Use :meth:`~BaseDocument.enrich_details` context manager when you
+                need to call boto3 API. Because it may fail due to permission issue,
+                or resource not exists issue.
         """
         msg = f"{self.__class__.__name__} doesn't support get details"
         raise NotImplementedError(msg)
