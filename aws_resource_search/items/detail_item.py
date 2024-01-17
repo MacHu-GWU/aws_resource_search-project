@@ -164,6 +164,7 @@ class DetailItem(BaseArsItem):
         key_text: T.Optional[str] = None,
         value_text: T.Optional[str] = None,
         url: T.Optional[str] = None,
+        copy: T.Optional[str] = None,
         uid: T.Optional[str] = None,
     ):
         """
@@ -191,10 +192,12 @@ class DetailItem(BaseArsItem):
             key_text = key
         if value_text is None:
             value_text = value
+        if copy is None:
+            copy = value
         return cls.new(
             title=format_key_value(key_text, value_text),
             uid=uid,
-            copy=str(value),
+            copy=str(copy),
             url=url,
         )
 

@@ -136,7 +136,7 @@ class TestDocument:
         assert ResourceDocument.one_line(None, "Not available") == "Not available"
         assert ResourceDocument.one_line(dict(a=1, b=2)) == '{"a": 1, "b": 2}'
 
-    def _test_to_searcher_fields(self):
+    def _test_get_dataset_fields(self):
         @dataclasses.dataclass
         class DummyS3Bucket(ResourceDocument):
             arn: str = dataclasses.field(
@@ -173,7 +173,7 @@ class TestDocument:
     def test(self):
         self._test_properties_methods()
         self._test_one_line()
-        self._test_to_searcher_fields()
+        self._test_get_dataset_fields()
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ class SearcherEnum(BetterStrEnum):
     codebuild_project = "codebuild-project"
     codecommit_repository = "codecommit-repository"
     codepipeline_pipeline = "codepipeline-pipeline"
-    dynamodb_table = "dynamodb-table"
+    dynamodb_table = "dynamodb-tablSearcherEnume"
     ec2_instance = "ec2-instance"
     ec2_security_group = "ec2-security-group"
     ec2_subnet = "ec2-subnet"

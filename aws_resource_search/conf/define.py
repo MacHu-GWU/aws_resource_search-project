@@ -14,7 +14,7 @@ from ..vendor.better_dataclasses import DataClass
 from ..vendor.hierarchy_config import SHARED, apply_shared_value
 
 from ..paths import path_config_json
-from ..searchers_enum import SearcherEnum
+# from ..searcher_enum import SearcherEnum
 
 
 @dataclasses.dataclass

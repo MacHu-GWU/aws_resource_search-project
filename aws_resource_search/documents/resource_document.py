@@ -24,6 +24,10 @@ except ImportError:  # pragma: no cover
 from ..terminal import SUBTITLE, SHORT_SUBTITLE
 from .base_document import BaseArsDocument
 
+try:
+    from ..ui.boto_ses import ars
+except ImportError:  # pragma: no cover
+    pass
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager import BotoSesManager
@@ -276,9 +280,11 @@ class ResourceDocument(BaseArsDocument):
             to the original ``BotoSesManager`` object.
     """
 
-    raw_data: "T_RESULT_DATA" = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
+    # fmt: off
+    raw_data: "T_RESULT_DATA" = dataclasses.field(metadata={"field": sayt.StoredField(name="raw_data")})
+    id: str = dataclasses.field(metadata={"field": sayt.IdField(name="id", field_boost=5.0, stored=True)})
+    name: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True, sortable=True, ascending=True)})
+    # fmt: on
 
     @classmethod
     def from_resource(
@@ -424,6 +430,19 @@ class ResourceDocument(BaseArsDocument):
         msg = f"{self.__class__.__name__} doesn't support AWS Console url"
         raise NotImplementedError(msg)
 
+    @property
+    def console_url(self) -> str:
+        """
+        Zero argument version of :meth:`~ResourceDocument.get_console_url`.
+        It uses the project default ``acu.AWSConsole`` object under the hood,
+
+        .. note::
+
+            This property method is only used in
+            ``aws_resource_search.res.${service}`` modules.
+        """
+        return self.get_console_url(ars.aws_console)
+
     @staticmethod
     def one_line(obj, na: str = "NA") -> str:
         """
@@ -506,43 +525,55 @@ class ResourceDocument(BaseArsDocument):
         :param name_sortable: parameter for the name fields.
         :param name_ascending: parameter for the name fields.
         """
-        search_fields = [
-            sayt.StoredField(name="raw_data"),
-            sayt.IdField(name="id", field_boost=id_field_boost, stored=True),
-            sayt.NgramWordsField(
-                name="name",
-                minsize=name_minsize,
-                maxsize=name_maxsize,
-                stored=True,
-                sortable=name_sortable,
-                ascending=name_ascending,
-            ),
-        ]
-        _set = {"raw_data", "id", "name"}
+        # search_fields = [
+        #     sayt.StoredField(name="raw_data"),
+        #     sayt.IdField(name="id", field_boost=id_field_boost, stored=True),
+        #     sayt.NgramWordsField(
+        #         name="name",
+        #         minsize=name_minsize,
+        #         maxsize=name_maxsize,
+        #         stored=True,
+        #         sortable=name_sortable,
+        #         ascending=name_ascending,
+        #     ),
+        # ]
+        # _set = {"raw_data", "id", "name"}
+        search_field_mapper = {}
         for field in dataclasses.fields(cls):
-            if field.name not in _set:
-                try:
-                    search_field = field.metadata["field"]
-                except KeyError:
-                    raise KeyError(
-                        "you forget to define "
-                        '``dataclasses.field(..., metadata={"field": sayt.SomeField(name="...")})`` '
-                        f"for ``{cls.__name__}.{field.name}`` field"
-                    )
+            try:
+                search_field = field.metadata["field"]
+            except KeyError:
+                raise KeyError(
+                    "you forget to define "
+                    '``dataclasses.field(..., metadata={"field": sayt.SomeField(name="...")})`` '
+                    f"for ``{cls.__name__}.{field.name}`` field"
+                )
 
-                if not isinstance(search_field, sayt.BaseField):
-                    raise TypeError(
-                        f"the search field in ``{cls.__name__}.{field.name}`` "
-                        f"is not a ``sayt.BaseField`` instance"
-                    )
+            if not isinstance(search_field, sayt.BaseField):
+                raise TypeError(
+                    f"the search field in ``{cls.__name__}.{field.name}`` "
+                    f"is not a ``sayt.BaseField`` instance"
+                )
 
-                if search_field.name != field.name:
-                    raise ValueError(
-                        f"dataclass field name {field.name!r} doesn't match "
-                        f"search field name {search_field.name!r}"
-                    )
-                search_fields.append(search_field)
-        return search_fields
+            if search_field.name != field.name:
+                raise ValueError(
+                    f"dataclass field name {field.name!r} doesn't match "
+                    f"search field name {search_field.name!r}"
+                )
+            search_field_mapper[search_field.name] = search_field
+
+        search_field_mapper["id"] = dataclasses.replace(
+            search_field_mapper["id"],
+            field_boost=id_field_boost,
+        )
+        search_field_mapper["name"] = dataclasses.replace(
+            search_field_mapper["name"],
+            minsize=name_minsize,
+            maxsize=name_maxsize,
+            sortable=name_sortable,
+            ascending=name_ascending,
+        )
+        return list(search_field_mapper.values())
 
 
 T_ARS_RESOURCE_DOCUMENT = T.TypeVar("T_ARS_RESOURCE_DOCUMENT", bound=ResourceDocument)
