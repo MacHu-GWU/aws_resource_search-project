@@ -8,6 +8,11 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``codebuild-project``
 - ``codecommit-repository``
 - ``codepipeline-pipeline``
+- ``dynamodb-table``
+- ``ec2-instance``
+- ``ec2-security-group``
+- ``ec2-subnet``
+- ``ec2-vpc``
 - ``iam-group``
 - ``iam-policy``
 - ``iam-role``

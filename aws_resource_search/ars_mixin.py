@@ -15,6 +15,11 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.codebuild import CodeBuildProjectSearcher
     from .res.codecommit import CodeCommitRepositorySearcher
     from .res.codepipeline import CodePipelinePipelineSearcher
+    from .res.dynamodb import DynamodbTableSearcher
+    from .res.ec2 import Ec2InstanceSearcher
+    from .res.ec2 import Ec2SecurityGroupSearcher
+    from .res.ec2 import Ec2SubnetSearcher
+    from .res.ec2 import Ec2VpcSearcher
     from .res.iam import IamGroupSearcher
     from .res.iam import IamPolicySearcher
     from .res.iam import IamRoleSearcher
@@ -47,6 +52,26 @@ class ARSMixin:  # pragma: no cover
     @cached_property
     def codepipeline_pipeline(self: "ARS") -> "CodePipelinePipelineSearcher":
         return self.get_searcher("codepipeline-pipeline")
+    
+    @cached_property
+    def dynamodb_table(self: "ARS") -> "DynamodbTableSearcher":
+        return self.get_searcher("dynamodb-table")
+    
+    @cached_property
+    def ec2_instance(self: "ARS") -> "Ec2InstanceSearcher":
+        return self.get_searcher("ec2-instance")
+    
+    @cached_property
+    def ec2_security_group(self: "ARS") -> "Ec2SecurityGroupSearcher":
+        return self.get_searcher("ec2-security-group")
+    
+    @cached_property
+    def ec2_subnet(self: "ARS") -> "Ec2SubnetSearcher":
+        return self.get_searcher("ec2-subnet")
+    
+    @cached_property
+    def ec2_vpc(self: "ARS") -> "Ec2VpcSearcher":
+        return self.get_searcher("ec2-vpc")
     
     @cached_property
     def iam_group(self: "ARS") -> "IamGroupSearcher":

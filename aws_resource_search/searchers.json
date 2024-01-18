@@ -34,6 +34,41 @@
         "ngram": "",
         "var": "codepipeline_pipeline_searcher"
     },
+    "dynamodb-table": {
+        "desc": "A table is a collection of data.",
+        "klass": "DynamodbTableSearcher",
+        "module": "dynamodb",
+        "ngram": "",
+        "var": "dynamodb_table_searcher"
+    },
+    "ec2-instance": {
+        "desc": "An EC2 instance is simply a virtual server in AWS",
+        "klass": "Ec2InstanceSearcher",
+        "module": "ec2",
+        "ngram": "aws elastic compute cloud",
+        "var": "ec2_instance_searcher"
+    },
+    "ec2-security-group": {
+        "desc": "A security group acts as a firewall that controls the traffic allowed to and from the resources in your VPC.",
+        "klass": "Ec2SecurityGroupSearcher",
+        "module": "ec2",
+        "ngram": "sg securitygroup",
+        "var": "ec2_securitygroup_searcher"
+    },
+    "ec2-subnet": {
+        "desc": "A subnet is a range of IP addresses in your VPC.",
+        "klass": "Ec2SubnetSearcher",
+        "module": "ec2",
+        "ngram": "",
+        "var": "ec2_subnet_searcher"
+    },
+    "ec2-vpc": {
+        "desc": "A virtual private cloud (VPC) is a virtual network dedicated to your AWS account.",
+        "klass": "Ec2VpcSearcher",
+        "module": "ec2",
+        "ngram": "virtual private cloud",
+        "var": "ec2_vpc_searcher"
+    },
     "iam-group": {
         "desc": "An IAM user group is a collection of IAM users.",
         "klass": "IamGroupSearcher",
