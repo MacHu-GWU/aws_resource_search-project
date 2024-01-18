@@ -8,6 +8,7 @@ from . import res_lib_v1 as rl
 from .handlers.api import (
     search_aws_profile_handler,
     search_resource_type_handler,
+    search_resource_handler,
     show_aws_info_handler,
 )
 from .ars_init import ars
@@ -114,7 +115,7 @@ def handler(
 
             # example: "ec2 inst"
             else:
-                return select_resource_type_handler(
+                return search_resource_type_handler(
                     ui=ui,
                     query=service_query,
                     skip_ui=skip_ui,

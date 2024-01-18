@@ -52,8 +52,7 @@ def preprocess_query(query: T.Optional[str]) -> str:
 @dataclasses.dataclass
 class BaseSearcher(BaseModel, T.Generic[T_ARS_RESOURCE_DOCUMENT]):
     """
-    This is the base
-
+    todo: docstring
 
     :param service:
     :param method:

@@ -8,6 +8,7 @@ import typing as T
 import dataclasses
 
 from ..compat import TypedDict
+from ..terminal import remove_text_format
 
 from .base_item import BaseArsItem
 
@@ -166,6 +167,6 @@ class AwsResourceItem(BaseArsItem):
         ui.run_sub_session(
             handler=handler,
             initial_query=(
-                f"{ui.remove_text_format(self.title)}, " f"press F1 to go back."
+                f"{remove_text_format(self.title)}, " f"press F1 to go back."
             ),
         )
