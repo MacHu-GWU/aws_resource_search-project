@@ -14,7 +14,6 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.iam import IamUserSearcher
     from .res.s3 import S3BucketSearcher
 
-
 @dataclasses.dataclass
 class ARS(ARSBase):  # pragma: no cover
     @cached_property

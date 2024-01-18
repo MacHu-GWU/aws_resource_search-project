@@ -14,12 +14,13 @@ try:
 except ImportError:
     pass
 
+from .. import res_lib_v1 as rl
+from ..terminal import terminal
 from ..ars import ARS
 from ..searcher_finder import SearcherFinder, searcher_finder
-from ..terminal import terminal
-from ..res_lib import DetailItem, InfoItem, OpenUrlItem, OpenFileItem
 
 from .boto_ses import ars
+
 from .show_aws_info import (
     ShowAwsInfoItem,
     show_aws_info_handler,
@@ -28,10 +29,7 @@ from .search_aws_profile import (
     SetAwsProfileItem,
     search_aws_profile_handler,
 )
-from .search_resource_type import (
-    AwsResourceTypeItem,
-    select_resource_type_handler,
-)
+from .search_resource_type import select_resource_type_handler
 from .search_resource import (
     AwsResourceItem,
     search_resource_handler,
@@ -46,12 +44,13 @@ def handler(
     T.Union[
         ShowAwsInfoItem,
         SetAwsProfileItem,
-        AwsResourceTypeItem,
-        AwsResourceItem,
-        DetailItem,
-        InfoItem,
-        OpenUrlItem,
-        OpenFileItem,
+        rl.AwsResourceTypeItem,
+        rl.AwsResourceItem,
+        rl.DetailItem,
+        rl.ExceptionItem,
+        rl.FileItem,
+        rl.InfoItem,
+        rl.UrlItem,
     ]
 ]:
     """
@@ -171,9 +170,15 @@ class UI(zf.UI):
     """
     todo: doc string here
     """
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        ars: "ARS",
+        searcher_finder: "SearcherFinder",
+        **kwargs
+    ):
         self.ars: "ARS" = ars
         self.searcher_finder: "SearcherFinder" = searcher_finder
+        super().__init__(**kwargs)
 
     def process_ctrl_b(self: "UI"):
         """
@@ -251,6 +256,8 @@ def run_ui():
     zf.debugger.reset()
     zf.debugger.enable()
     ui = UI(
+        ars=ars,
+        searcher_finder=searcher_finder,
         handler=handler,
         capture_error=False,
         terminal=terminal,

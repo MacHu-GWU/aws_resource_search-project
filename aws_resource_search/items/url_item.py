@@ -6,7 +6,6 @@ todo: docstring
 
 import typing as T
 import dataclasses
-from pathlib import Path
 
 import zelfred.api as zf
 
@@ -15,27 +14,27 @@ from ..compat import TypedDict
 from .base_item import BaseArsItem
 
 
-class T_FILE_ITEM_VARIABLES(TypedDict):
-    path: Path
+class T_URL_ITEM_VARIABLES(TypedDict):
+    url: str
 
 
 @dataclasses.dataclass
-class FileItem(BaseArsItem):
+class UrlItem(BaseArsItem):
     """
-    Represent a file item in the dropdown menu.
+    Represent a url item in the dropdown menu.
     """
 
-    variables: T_FILE_ITEM_VARIABLES = dataclasses.field(default_factory=dict)
+    variables: T_URL_ITEM_VARIABLES = dataclasses.field(default_factory=dict)
 
     def enter_handler(self, ui: "zf.UI"):  # pragma: no cover
         """
         Behavior:
 
-        - If we have a path, open it in the default app.
+        - If we have an url, open it in the default browser.
         - If not, nothing happens (most likely NOT)
         """
-        if self.variables.get("path") is not None:
-            self.open_file_or_print(ui, self.variables["path"])
+        if self.variables.get("url") is not None:
+            self.open_url_or_print(ui, self.variables["url"])
         else:
             pass
 
@@ -43,25 +42,25 @@ class FileItem(BaseArsItem):
         """
         Behavior:
 
-        - Copy the path to clipboard
+        - Copy the url to clipboard
         """
-        if self.variables.get("path") is not None:
-            self.copy_or_print(ui, str(self.variables["path"]))
-        else:
-            pass
+        self.ctrl_u_handler(ui)
 
     def ctrl_u_handler(self, ui: "zf.UI"):  # pragma: no cover
         """
         Behavior:
 
-        - Copy the path to clipboard
+        - Copy the url to clipboard
         """
-        self.ctrl_a_handler(ui)
+        if self.variables.get("url") is not None:
+            self.copy_or_print(ui, str(self.variables["url"]))
+        else:
+            pass
 
     @classmethod
-    def from_file(
+    def from_url(
         cls,
-        path: Path,
+        url: str,
         title: T.Optional[str] = None,
         subtitle: T.Optional[str] = None,
         uid: T.Optional[str] = None,
@@ -72,15 +71,15 @@ class FileItem(BaseArsItem):
         Create one :class:`FileItem` from an ``pathlib.Path`` object.
         """
         if title is None:
-            title = f"📄 {path}"
+            title = f"🌐 {url}"
         if subtitle is None:
-            subtitle = f"📄 {ShortcutEnum.ENTER} to open file, 📋 {ShortcutEnum.CTRL_A} to copy path"
+            subtitle = f"🌐 {ShortcutEnum.ENTER} to  {ShortcutEnum.CTRL_A} or {ShortcutEnum.CTRL_U} to copy url"
         kwargs = dict(
             title=title,
             subtitle=subtitle,
             arg=arg,
             autocomplete=autocomplete,
-            variables={"path": path},
+            variables={"url": url},
         )
         if uid:
             kwargs["uid"] = uid

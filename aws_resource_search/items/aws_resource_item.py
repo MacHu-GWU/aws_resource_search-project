@@ -22,7 +22,7 @@ class T_AWS_RESOURCE_ITEM_VARIABLES(TypedDict):
     Type hint for the "variables" field in :class:`AwsResourceItem`.
     """
 
-    doc: T_ARS_RESOURCE_DOCUMENT
+    doc: "T_ARS_RESOURCE_DOCUMENT"
     resource_type: str
     partitioner_resource_type: T.Optional[str]
 

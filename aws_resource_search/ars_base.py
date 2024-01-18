@@ -23,9 +23,13 @@ if T.TYPE_CHECKING:
 @dataclasses.dataclass
 class ARSBase:
     """
+    This class is a singleton object that holds all context data such as
+    ``boto_session_manager.BotoSesManager``, ``aws_console_url.api.AwsConsole``.
+
     If you use ``aws_resource_search`` as a Python library (not CLI),
-    then :class:`ARSBase` is the entry point.
+    This is the first object you should import.
     """
+
     bsm: "BotoSesManager" = dataclasses.field()
     aws_console: "aws_console_url.AWSConsole" = dataclasses.field()
     searcher_finder: "SearcherFinder" = dataclasses.field(default=searcher_finder)

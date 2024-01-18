@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+This module is an import namespace for everything related to the search.
+"""
+
 from .terminal import format_shortcut
 from .terminal import highlight_text
 from .terminal import format_resource_type
@@ -37,8 +41,12 @@ from .items.api import DetailItem
 from .items.api import ExceptionItem
 from .items.api import FileItem
 from .items.api import InfoItem
+from .items.api import UrlItem
 from .items.api import AwsResourceTypeItem
 from .items.api import AwsResourceItem
+from .items.api import SetAwsProfileItem
+from .items.api import ShowAwsInfoItem
+from .base_searcher import preprocess_query
 from .base_searcher import BaseSearcher
 from .base_searcher import T_SEARCHER
 from .conf.init import config
