@@ -38,13 +38,13 @@ class ArsCli:
         """
         Serve for the ``ars`` command without any arguments.
         """
-        from ..ui.boto_ses import validate_boto_session
-        from ..ui.main import run_ui as run_ars_ui
+        from ..ars_base import validate_bsm
+        from ..ui_init import ui, run_ui as run_ars_ui
 
         if version:
             print(__version__)
         else:
-            validate_boto_session()
+            validate_bsm(ui.ars.bsm)
             run_ars_ui()
 
     def which(self):

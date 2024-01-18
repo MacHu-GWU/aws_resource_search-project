@@ -4,6 +4,7 @@
 This module is an import namespace for everything related to the search.
 """
 
+from .terminal import terminal
 from .terminal import format_shortcut
 from .terminal import highlight_text
 from .terminal import format_resource_type

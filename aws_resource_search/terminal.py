@@ -82,6 +82,23 @@ def format_key_value(key: str, value: T.Any) -> str:
     return f"{format_key(key)} = {format_value(value)}"
 
 
+def remove_text_format(text: str) -> str:
+    """
+    Remove the terminal format from the given text.
+    """
+    formats = [
+        term.cyan,
+        term.yellow,
+        term.magenta,
+        term.blue,
+        term.green,
+        term.normal,
+    ]
+    for c in formats:
+        text = text.replace(c, "")
+    return text
+
+
 class ShortcutEnum:
     """
     Formatted keyboard shortcuts::

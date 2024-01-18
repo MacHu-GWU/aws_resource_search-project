@@ -2,7 +2,7 @@
 
 import botocore.exceptions
 
-from ..ui.boto_ses import bsm
+from ..ars_init import bsm
 
 
 def main():
