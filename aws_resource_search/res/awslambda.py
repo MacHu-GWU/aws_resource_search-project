@@ -113,7 +113,7 @@ class LambdaFunction(rl.ResourceDocument):
             env_vars = func_config.get("Environment", {}).get("Variables", {})
             detail_items.extend(rl.DetailItem.from_env_vars(env_vars, url))
 
-            tags: dict = res.get("Tags", {})
+            tags = rl.extract_tags(res)
             detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         with rl.DetailItem.error_handling(detail_items):

@@ -4,6 +4,7 @@ from .vendor.better_enum import BetterStrEnum
 
 
 class SearcherEnum(BetterStrEnum):
+    cloudformation_stack = "cloudformation-stack"
     iam_group = "iam-group"
     iam_policy = "iam-policy"
     iam_role = "iam-role"

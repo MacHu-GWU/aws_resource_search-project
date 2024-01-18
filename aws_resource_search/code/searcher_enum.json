@@ -1,4 +1,8 @@
 {
+    "cloudformation-stack": {
+        "desc": "A stack is a collection of AWS resources that you can manage as a single unit.",
+        "ngram": "cfn cft"
+    },
     "iam-group": {
         "desc": "An IAM user group is a collection of IAM users.",
         "ngram": ""
