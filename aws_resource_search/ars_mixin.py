@@ -35,6 +35,8 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.s3 import S3BucketSearcher
     from .res.sfn import SfnStateMachineSearcher
     from .res.sfn import SfnExecutionSearcher
+    from .res.sns import SnsTopicSearcher
+    from .res.sqs import SqsQueueSearcher
 
 
 class ARSMixin:  # pragma: no cover
@@ -137,4 +139,12 @@ class ARSMixin:  # pragma: no cover
     @cached_property
     def sfn_state_machine_execution(self: "ARS") -> "SfnExecutionSearcher":
         return self.get_searcher("sfn-state-machine-execution")
+    
+    @cached_property
+    def sns_topic(self: "ARS") -> "SnsTopicSearcher":
+        return self.get_searcher("sns-topic")
+    
+    @cached_property
+    def sqs_queue(self: "ARS") -> "SqsQueueSearcher":
+        return self.get_searcher("sqs-queue")
     

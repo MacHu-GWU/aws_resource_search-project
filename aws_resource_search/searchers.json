@@ -173,5 +173,19 @@
         "module": "sfn",
         "ngram": "step functions stepfunctions",
         "var": "sfn_execution_searcher"
+    },
+    "sns-topic": {
+        "desc": "An Amazon SNS topic is a logical access point that acts as a communication channel.",
+        "klass": "SnsTopicSearcher",
+        "module": "sns",
+        "ngram": "simple notification service",
+        "var": "sns_topic_searcher"
+    },
+    "sqs-queue": {
+        "desc": "A form of asynchronous service-to-service communication used in serverless and microservices architectures",
+        "klass": "SqsQueueSearcher",
+        "module": "sqs",
+        "ngram": "simple queue service",
+        "var": "sqs_queue_searcher"
     }
 }

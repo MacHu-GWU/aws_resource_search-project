@@ -28,3 +28,5 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``s3-bucket``
 - ``sfn-state-machine``
 - ``sfn-state-machine-execution``
+- ``sns-topic``
+- ``sqs-queue``
