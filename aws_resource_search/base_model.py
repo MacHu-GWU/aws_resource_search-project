@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Base model data class.
+See :class:`BaseModel`.
 """
 
 import typing as T
@@ -11,7 +11,7 @@ import dataclasses
 @dataclasses.dataclass
 class BaseModel:
     """
-    The base class for all AWS Resource data model.
+    The base class for all AWS Resource Search data model.
 
     .. note::
 
