@@ -4,6 +4,8 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 
 
 - ``cloudformation-stack``
+- ``codebuild-job-run``
+- ``codebuild-project``
 - ``iam-group``
 - ``iam-policy``
 - ``iam-role``

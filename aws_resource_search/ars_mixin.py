@@ -11,6 +11,8 @@ from .compat import cached_property
 if T.TYPE_CHECKING:  # pragma: no cover
     from .ars_def import ARS
     from .res.cloudformation import CloudFormationStackSearcher
+    from .res.codebuild import CodeBuildJobRunSearcher
+    from .res.codebuild import CodeBuildProjectSearcher
     from .res.iam import IamGroupSearcher
     from .res.iam import IamPolicySearcher
     from .res.iam import IamRoleSearcher
@@ -27,6 +29,14 @@ class ARSMixin:  # pragma: no cover
     @cached_property
     def cloudformation_stack(self: "ARS") -> "CloudFormationStackSearcher":
         return self.get_searcher("cloudformation-stack")
+    
+    @cached_property
+    def codebuild_job_run(self: "ARS") -> "CodeBuildJobRunSearcher":
+        return self.get_searcher("codebuild-job-run")
+    
+    @cached_property
+    def codebuild_project(self: "ARS") -> "CodeBuildProjectSearcher":
+        return self.get_searcher("codebuild-project")
     
     @cached_property
     def iam_group(self: "ARS") -> "IamGroupSearcher":

@@ -6,6 +6,20 @@
         "ngram": "cfn cft",
         "var": "cloudformation_stack_searcher"
     },
+    "codebuild-job-run": {
+        "desc": "Codebuild job run, it is not a batch job run.",
+        "klass": "CodeBuildJobRunSearcher",
+        "module": "codebuild",
+        "ngram": "jobrun",
+        "var": "codebuild_job_run_searcher"
+    },
+    "codebuild-project": {
+        "desc": "A build project includes information about how to run a build.",
+        "klass": "CodeBuildProjectSearcher",
+        "module": "codebuild",
+        "ngram": "",
+        "var": "codebuild_project_searcher"
+    },
     "iam-group": {
         "desc": "An IAM user group is a collection of IAM users.",
         "klass": "IamGroupSearcher",
