@@ -31,7 +31,7 @@ def handler(
         rl.InfoItem,
         rl.UrlItem,
     ]
-]:
+]:  # pragma: no cover
     """
     Main query handler. It parses the query and route the query to
     the corresponding sub handler.

@@ -97,7 +97,7 @@ class ARS(ARSMixin):
             self.dir_cache = Path(self.cache.directory)
 
     @classmethod
-    def from_profile(cls, profile: T.Optional[str]):
+    def from_profile(cls, profile: T.Optional[str] = NOTHING):
         """
         Create a new :class:`ARSBase` object by an AWS profile. If None, then
         use the default AWS profile.

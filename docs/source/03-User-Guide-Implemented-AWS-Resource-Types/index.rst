@@ -7,6 +7,9 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``iam-policy``
 - ``iam-role``
 - ``iam-user``
+- ``lambda-function``
+- ``lambda-function-alias``
+- ``lambda-layer``
 - ``s3-bucket``
 - ``sfn-state-machine``
 - ``sfn-state-machine-execution``

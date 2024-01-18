@@ -50,12 +50,12 @@ has_partitioner_search_patterns = {
     #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.codebuild_project.value,
     #     K_GET_BOTO_KWARGS: lambda partitioner_query: {"projectName": partitioner_query},
     # },
-    # SearcherEnum.lambda_function_alias.value: {
-    #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.lambda_function.value,
-    #     K_GET_BOTO_KWARGS: lambda partitioner_query: {
-    #         "FunctionName": partitioner_query
-    #     },
-    # },
+    SearcherEnum.lambda_function_alias.value: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.lambda_function.value,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {
+            "FunctionName": partitioner_query
+        },
+    },
 }
 
 

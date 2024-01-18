@@ -27,6 +27,27 @@
         "ngram": "",
         "var": "iam_user_searcher"
     },
+    "lambda-function": {
+        "desc": "A function is a resource that you can invoke to run your code in Lambda.",
+        "klass": "LambdaFunctionSearcher",
+        "module": "awslambda",
+        "ngram": "lbd",
+        "var": "lambda_function_searcher"
+    },
+    "lambda-function-alias": {
+        "desc": "A Lambda alias is a pointer to a function version that you can update.",
+        "klass": "LambdaFunctionAliasSearcher",
+        "module": "awslambda",
+        "ngram": "lbd",
+        "var": "lambda_function_alias_searcher"
+    },
+    "lambda-layer": {
+        "desc": "A Lambda layer is a .zip file archive that can contain additional code or other content.",
+        "klass": "LambdaLayerSearcher",
+        "module": "awslambda",
+        "ngram": "",
+        "var": "lambda_layer_searcher"
+    },
     "s3-bucket": {
         "desc": "A bucket is a container for objects.",
         "klass": "S3BucketSearcher",

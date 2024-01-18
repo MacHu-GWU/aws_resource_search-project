@@ -8,5 +8,5 @@ functionality.
 
 from .ars_def import ARS
 
-ars = ARS.from_profile(profile=None)
+ars = ARS.from_profile()
 bsm = ars.bsm

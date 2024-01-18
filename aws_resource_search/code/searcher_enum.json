@@ -15,6 +15,18 @@
         "desc": "IAM user is an entity that you create in AWS.",
         "ngram": ""
     },
+    "lambda-function": {
+        "desc": "A function is a resource that you can invoke to run your code in Lambda.",
+        "ngram": "lbd"
+    },
+    "lambda-function-alias": {
+        "desc": "A Lambda alias is a pointer to a function version that you can update.",
+        "ngram": "lbd"
+    },
+    "lambda-layer": {
+        "desc": "A Lambda layer is a .zip file archive that can contain additional code or other content.",
+        "ngram": ""
+    },
     "s3-bucket": {
         "desc": "A bucket is a container for objects.",
         "ngram": "simple storage service"

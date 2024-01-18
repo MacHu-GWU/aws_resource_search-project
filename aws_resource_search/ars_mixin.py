@@ -14,6 +14,9 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.iam import IamPolicySearcher
     from .res.iam import IamRoleSearcher
     from .res.iam import IamUserSearcher
+    from .res.awslambda import LambdaFunctionSearcher
+    from .res.awslambda import LambdaFunctionAliasSearcher
+    from .res.awslambda import LambdaLayerSearcher
     from .res.s3 import S3BucketSearcher
     from .res.sfn import SfnStateMachineSearcher
     from .res.sfn import SfnExecutionSearcher
@@ -35,6 +38,18 @@ class ARSMixin:  # pragma: no cover
     @cached_property
     def iam_user(self: "ARS") -> "IamUserSearcher":
         return self.get_searcher("iam-user")
+
+    @cached_property
+    def lambda_function(self: "ARS") -> "LambdaFunctionSearcher":
+        return self.get_searcher("lambda-function")
+
+    @cached_property
+    def lambda_function_alias(self: "ARS") -> "LambdaFunctionAliasSearcher":
+        return self.get_searcher("lambda-function-alias")
+
+    @cached_property
+    def lambda_layer(self: "ARS") -> "LambdaLayerSearcher":
+        return self.get_searcher("lambda-layer")
 
     @cached_property
     def s3_bucket(self: "ARS") -> "S3BucketSearcher":
