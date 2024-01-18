@@ -64,7 +64,10 @@ def search_resource_type_and_return_items(
         refresh_data=refresh_data,
     )
     if len(docs):
-        return rl.AwsResourceTypeItem.from_many_document(docs, ui.ars)
+        return rl.AwsResourceTypeItem.from_many_document(
+            docs=[rl.ResourceTypeDocument.from_dict(doc) for doc in docs],
+            ars=ui.ars,
+        )
     else:
         return [
             rl.UrlItem.from_url(
@@ -121,5 +124,7 @@ def search_resource_type_handler(
         refresh_data=False,
     )
     zf.debugger.log(f"end of search_resource_type_handler")
-    zf.debugger.log(f"ui.dropdown.selected_item_index = {ui.dropdown.selected_item_index}")
+    zf.debugger.log(
+        f"ui.dropdown.selected_item_index = {ui.dropdown.selected_item_index}"
+    )
     return items

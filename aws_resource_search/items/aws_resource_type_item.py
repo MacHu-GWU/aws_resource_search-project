@@ -9,12 +9,11 @@ import dataclasses
 
 from ..terminal import ShortcutEnum, format_resource_type
 from ..compat import TypedDict
-from ..searcher_finder import searcher_finder
 
 from .base_item import BaseArsItem
 
 if T.TYPE_CHECKING:  # pragma: no cover
-    from ..documents.resource_type_document import RESOURCE_TYPE_DOCUMENT
+    from ..documents.resource_type_document import ResourceTypeDocument
     from ..ars_def import ARS
     from ..ui_def import UI
 
@@ -24,7 +23,7 @@ class T_AWS_RESOURCE_TYPE_ITEM_VARIABLES(TypedDict):
     Type hint for the "variables" field in :class:`AwsResourceTypeItem`.
     """
 
-    doc: "RESOURCE_TYPE_DOCUMENT"
+    doc: "ResourceTypeDocument"
     resource_type: str
     console_url: T.Optional[str]
 
@@ -42,7 +41,7 @@ class AwsResourceTypeItem(BaseArsItem):
     @classmethod
     def from_document(
         cls,
-        doc: "RESOURCE_TYPE_DOCUMENT",
+        doc: "ResourceTypeDocument",
         ars: "ARS",
     ):
         """
@@ -60,9 +59,9 @@ class AwsResourceTypeItem(BaseArsItem):
                 "autocomplete": "s3-bucket: ",
             }
         """
-        resource_type = doc["name"]
-        desc = doc["desc"]
-        searcher = searcher_finder.import_searcher(resource_type)
+        resource_type = doc.name
+        desc = doc.desc
+        searcher = ars.searcher_finder.import_searcher(resource_type)
         try:
             console_url = searcher.doc_class.get_list_resources_console_url(
                 console=ars.aws_console
@@ -77,9 +76,9 @@ class AwsResourceTypeItem(BaseArsItem):
         return cls(
             title=f"{format_resource_type(resource_type)}: {desc}",
             subtitle=subtitle,
-            uid=doc["id"],
-            arg=doc["name"],
-            autocomplete=doc["name"] + ": ",
+            uid=doc.id,
+            arg=resource_type,
+            autocomplete=resource_type + ": ",
             variables={
                 "doc": doc,
                 "resource_type": resource_type,
@@ -90,12 +89,12 @@ class AwsResourceTypeItem(BaseArsItem):
     @classmethod
     def from_many_document(
         cls,
-        docs: T.Iterable["RESOURCE_TYPE_DOCUMENT"],
+        docs: T.Iterable["ResourceTypeDocument"],
         ars: "ARS",
     ):
         return [cls.from_document(doc, ars) for doc in docs]
 
-    def enter_handler(self, ui: "UI"):
+    def enter_handler(self, ui: "UI"):  # pragma: no cover
         """
         Behavior:
 

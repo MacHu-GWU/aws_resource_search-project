@@ -13,7 +13,7 @@ import aws_console_url.api as aws_console_url
 from ..terminal import ShortcutEnum, format_key_value, highlight_text
 from .base_item import BaseArsItem
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from ..ars_def import ARS
     from ..ui.main import UI
 
@@ -40,6 +40,17 @@ class SetAwsProfileItem(BaseArsItem):
     """
     Represent an item in the aws profile search result.
     """
+
+    def enter_handler(self, ui: "UI"):  # pragma: no cover
+        awscli_mate.AWSCliConfig().set_profile_as_default(profile=self.arg)
+        set_profile_in_bsm(self.arg, ui.ars)
+
+    def post_enter_handler(self, ui: "UI"):  # pragma: no cover
+        """
+        When exiting the switch profile session, recover the original query input.
+        """
+        ui.line_editor.clear_line()
+        ui.line_editor.enter_text(self.autocomplete)
 
     @classmethod
     def from_profile_region(
@@ -78,14 +89,3 @@ class SetAwsProfileItem(BaseArsItem):
             cls.from_profile_region(profile, region, autocomplete)
             for profile, region in pairs
         ]
-
-    def enter_handler(self, ui: "UI"):
-        awscli_mate.AWSCliConfig().set_profile_as_default(profile=self.arg)
-        set_profile_in_bsm(self.arg, ui.ars)
-
-    def post_enter_handler(self, ui: "UI"):
-        """
-        When exiting the switch profile session, recover the original query input.
-        """
-        ui.line_editor.clear_line()
-        ui.line_editor.enter_text(self.autocomplete)

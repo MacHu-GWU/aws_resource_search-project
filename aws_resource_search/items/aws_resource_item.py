@@ -122,7 +122,7 @@ class AwsResourceItem(BaseArsItem):
         """
         return self.variables["doc"].arn
 
-    def enter_handler(self, ui: "UI"):
+    def enter_handler(self, ui: "UI"):  # pragma: no cover
         """
         Default behavior:
 
@@ -130,7 +130,7 @@ class AwsResourceItem(BaseArsItem):
         """
         self.open_url_or_print(ui, self.get_console_url())
 
-    def ctrl_a_handler(self, ui: "UI"):
+    def ctrl_a_handler(self, ui: "UI"):  # pragma: no cover
         """
         Default behavior:
 
@@ -138,7 +138,7 @@ class AwsResourceItem(BaseArsItem):
         """
         self.copy_or_print(ui, self.get_arn())
 
-    def ctrl_u_handler(self, ui: "UI"):
+    def ctrl_u_handler(self, ui: "UI"):  # pragma: no cover
         """
         Default behavior:
 
@@ -146,7 +146,7 @@ class AwsResourceItem(BaseArsItem):
         """
         self.copy_or_print(ui, self.get_console_url())
 
-    def ctrl_p_handler(self, ui: "UI"):
+    def ctrl_p_handler(self, ui: "UI"):  # pragma: no cover
         """
         View details in a sub session. You can tap 'F1' to exit the sub session.
         """

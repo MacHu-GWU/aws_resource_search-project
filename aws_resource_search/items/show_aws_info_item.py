@@ -10,7 +10,7 @@ import dataclasses
 from ..terminal import format_key_value, ShortcutEnum
 from .base_item import BaseArsItem
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from ..ui_def import UI
 
 
@@ -19,6 +19,27 @@ class ShowAwsInfoItem(BaseArsItem):
     """
     Represent an item to display current AWS Account information
     """
+
+    def enter_handler(self, ui: "UI"):  # pragma: no cover
+        pass
+
+    def post_enter_handler(self, ui: "UI"):  # pragma: no cover
+        """
+        Do "autocomplete".
+        """
+        ui.line_editor.clear_line()
+        ui.line_editor.enter_text(self.autocomplete)
+
+    def ctrl_w_handler(self, ui: "UI"):  # pragma: no cover
+        pass
+
+    def post_ctrl_w_handler(self, ui: "UI"):  # pragma: no cover
+        """
+        Do "autocomplete".
+        """
+        ui.line_editor.clear_line()
+        ui.line_editor.enter_text(self.autocomplete + "!@")
+
     @classmethod
     def from_key_value(
         cls,
@@ -42,23 +63,3 @@ class ShowAwsInfoItem(BaseArsItem):
             uid=f"aws-account-info-{key}",
             autocomplete=autocomplete,
         )
-
-    def enter_handler(self, ui: "UI"):
-        pass
-
-    def post_enter_handler(self, ui: "UI"):
-        """
-        Do "autocomplete".
-        """
-        ui.line_editor.clear_line()
-        ui.line_editor.enter_text(self.autocomplete)
-
-    def ctrl_w_handler(self, ui: "UI"):
-        pass
-
-    def post_ctrl_w_handler(self, ui: "UI"):
-        """
-        Do "autocomplete".
-        """
-        ui.line_editor.clear_line()
-        ui.line_editor.enter_text(self.autocomplete + "!@")
