@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: docstring
+See :class:`ExceptionItem`.
 """
 
 import typing as T

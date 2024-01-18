@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: docstring
+See :class:`AwsResourceTypeItem`.
 """
 
 import typing as T
@@ -15,8 +15,8 @@ from .base_item import BaseArsItem
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from ..documents.resource_type_document import RESOURCE_TYPE_DOCUMENT
-    from ..ars import ARS
-    from ..ui.main import UI
+    from ..ars_def import ARS
+    from ..ui_def import UI
 
 
 class T_AWS_RESOURCE_TYPE_ITEM_VARIABLES(TypedDict):

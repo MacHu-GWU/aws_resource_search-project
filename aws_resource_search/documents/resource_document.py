@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-This module defines the base class for searchable document class for all AWS resource type.
-Also, it provides some utility functions to help with writing the concrete document class
-for a specific AWS resource type.
+See :class:`ResourceDocument`.
 """
 
 import typing as T
@@ -224,9 +222,12 @@ def get_datetime_iso_fmt(
 @dataclasses.dataclass
 class ResourceDocument(BaseArsDocument):
     """
-    This is the base class for AWS resource document. A 'document' is
-    a searchable object stored in the index, representing the detailed data
-    of an AWS resource.
+    This is the base class for searchable AWS resource document for all
+    AWS resource type. Also, it provides some utility functions to help with
+    writing the concrete document class for a specific AWS resource type.
+
+    A 'document' is a searchable object stored in the index, representing
+    the detailed data of an AWS resource.
 
     In the ``aws_resource_search.res.${service}.py`` module, we need to inherit
     this class to create a document class for each AWS resource type. For example,

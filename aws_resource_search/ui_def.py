@@ -9,7 +9,7 @@ import typing as T
 import zelfred.api as zf
 
 if T.TYPE_CHECKING:  # pragma: no cover
-    from .ars import ARS
+    from .ars_def import ARS
 
 
 class UI(zf.UI):

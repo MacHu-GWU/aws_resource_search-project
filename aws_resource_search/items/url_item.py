@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: docstring
+See :class:`UrlItem`.
 """
 
 import typing as T
@@ -21,7 +21,7 @@ class T_URL_ITEM_VARIABLES(TypedDict):
 @dataclasses.dataclass
 class UrlItem(BaseArsItem):
     """
-    Represent a url item in the dropdown menu.
+    Represent an url item in the dropdown menu.
     """
 
     variables: T_URL_ITEM_VARIABLES = dataclasses.field(default_factory=dict)

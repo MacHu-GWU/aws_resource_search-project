@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: docstring
+See :class:`DetailItem`.
 """
 
 import typing as T
 import dataclasses
 import contextlib
 
-import botocore.exceptions
 import zelfred.api as zf
 
 try:
@@ -23,7 +22,7 @@ from .exception_item import ExceptionItem
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from ..documents.resource_document import ResourceDocument
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 class T_DETAIL_ITEM_VARIABLES(TypedDict):

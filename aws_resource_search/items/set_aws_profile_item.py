@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: docstring
+See :class:`SetAwsProfileItem`.
 """
 
 import typing as T
@@ -14,7 +14,7 @@ from ..terminal import ShortcutEnum, format_key_value, highlight_text
 from .base_item import BaseArsItem
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
     from ..ui.main import UI
 
 

@@ -7,8 +7,6 @@ import pytest
 import json
 from datetime import datetime, timezone
 
-import botocore.exceptions
-
 import sayt.api as sayt
 from aws_resource_search.documents.resource_document import (
     get_utc_now,
@@ -97,7 +95,7 @@ class S3Bucket(ResourceDocument):
         return console.s3.get_console_url(bucket=self.name)
 
 
-class TestDocument:
+class TestResourceDocument:
     def _test_properties_methods(self):
         doc = ResourceDocument(raw_data={}, id="test", name="test")
         with pytest.raises(NotImplementedError):
@@ -180,5 +178,7 @@ if __name__ == "__main__":
     from aws_resource_search.tests.helper import run_cov_test
 
     run_cov_test(
-        __file__, "aws_resource_search.documents.resource_document", preview=False
+        __file__,
+        "aws_resource_search.documents.resource_document",
+        preview=False,
     )

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: add docstring
+See :class:`BaseArsDocument`.
 """
 
 import typing as T
@@ -12,7 +12,8 @@ from ..model import BaseModel
 
 @dataclasses.dataclass
 class BaseArsDocument(BaseModel):
-    """ """
+    """
+    """
 
 
 T_ARS_DOCUMENT = T.TypeVar("T_ARS_DOCUMENT", bound=BaseArsDocument)

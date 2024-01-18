@@ -1,35 +1,24 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: docstring
+See :class:`ShowAwsInfoItem`.
 """
 
 import typing as T
 import dataclasses
 
-from ..compat import TypedDict
 from ..terminal import format_key_value, ShortcutEnum
 from .base_item import BaseArsItem
 
 if T.TYPE_CHECKING:
-    from ..ui.main import UI
-
-
-class ShowAwsInfoItemVariables(TypedDict):
-    n_backspace: int
+    from ..ui_def import UI
 
 
 @dataclasses.dataclass
 class ShowAwsInfoItem(BaseArsItem):
     """
     Represent an item to display current AWS Account information
-
-    :param variables: in AwsResourceItem, the variable is a dictionary including
-        the original document object (not dict).
     """
-
-    variables: ShowAwsInfoItemVariables = dataclasses.field(default_factory=dict)
-
     @classmethod
     def from_key_value(
         cls,
