@@ -8,8 +8,11 @@ Backlog (TODO)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
-- add a JSON config system for this app.
-- add ``ars config`` command to view and edit the json file.
+- add config system so that user can configure ARS by editing the ``~/.aws_resource_search/config.json`` file.
+- add ``!*`` command to view and edit the json file.
+- allow user to jump to list aws resources by tapping 'Enter' key in aws resource type search view.
+- refactor the entire code base, make it more modular and testable.
+- fix a bug that when switch to another aws profile, the ``AWSConsole`` object didn't get updated.
 
 **Minor Improvements**
 
