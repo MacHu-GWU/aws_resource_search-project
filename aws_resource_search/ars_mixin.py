@@ -25,18 +25,28 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.ecs import EcsClusterSearcher
     from .res.ecs import EcsTaskRunSearcher
     from .res.ecs import EcsTaskDefinitionFamilySearcher
+    from .res.glue import GlueCrawlerSearcher
+    from .res.glue import GlueDatabaseSearcher
+    from .res.glue import GlueTableSearcher
+    from .res.glue import GlueJobSearcher
+    from .res.glue import GlueJobRunSearcher
     from .res.iam import IamGroupSearcher
     from .res.iam import IamPolicySearcher
     from .res.iam import IamRoleSearcher
     from .res.iam import IamUserSearcher
+    from .res.kms import KmsKeyAliasSearcher
     from .res.awslambda import LambdaFunctionSearcher
     from .res.awslambda import LambdaFunctionAliasSearcher
     from .res.awslambda import LambdaLayerSearcher
+    from .res.rds import BaseSearcher
+    from .res.rds import RdsDbInstanceSearcher
     from .res.s3 import S3BucketSearcher
+    from .res.secretmanager import SecretsManagerSecretSearcher
     from .res.sfn import SfnStateMachineSearcher
     from .res.sfn import SfnExecutionSearcher
     from .res.sns import SnsTopicSearcher
     from .res.sqs import SqsQueueSearcher
+    from .res.ssm import SsmParameterSearcher
 
 
 class ARSMixin:  # pragma: no cover
@@ -101,6 +111,26 @@ class ARSMixin:  # pragma: no cover
         return self.get_searcher("ecs_task_definition_family")
     
     @cached_property
+    def glue_crawler(self: "ARS") -> "GlueCrawlerSearcher":
+        return self.get_searcher("glue-crawler")
+    
+    @cached_property
+    def glue_database(self: "ARS") -> "GlueDatabaseSearcher":
+        return self.get_searcher("glue-database")
+    
+    @cached_property
+    def glue_database_table(self: "ARS") -> "GlueTableSearcher":
+        return self.get_searcher("glue-database-table")
+    
+    @cached_property
+    def glue_job(self: "ARS") -> "GlueJobSearcher":
+        return self.get_searcher("glue-job")
+    
+    @cached_property
+    def glue_job_run(self: "ARS") -> "GlueJobRunSearcher":
+        return self.get_searcher("glue-job-run")
+    
+    @cached_property
     def iam_group(self: "ARS") -> "IamGroupSearcher":
         return self.get_searcher("iam-group")
     
@@ -117,6 +147,10 @@ class ARSMixin:  # pragma: no cover
         return self.get_searcher("iam-user")
     
     @cached_property
+    def kms_key_alias(self: "ARS") -> "KmsKeyAliasSearcher":
+        return self.get_searcher("kms-key-alias")
+    
+    @cached_property
     def lambda_function(self: "ARS") -> "LambdaFunctionSearcher":
         return self.get_searcher("lambda-function")
     
@@ -129,8 +163,20 @@ class ARSMixin:  # pragma: no cover
         return self.get_searcher("lambda-layer")
     
     @cached_property
+    def rds_db_cluster(self: "ARS") -> "BaseSearcher":
+        return self.get_searcher("rds-db-cluster")
+    
+    @cached_property
+    def rds_db_instance(self: "ARS") -> "RdsDbInstanceSearcher":
+        return self.get_searcher("rds-db-instance")
+    
+    @cached_property
     def s3_bucket(self: "ARS") -> "S3BucketSearcher":
         return self.get_searcher("s3-bucket")
+    
+    @cached_property
+    def secretsmanager_secret(self: "ARS") -> "SecretsManagerSecretSearcher":
+        return self.get_searcher("secretsmanager-secret")
     
     @cached_property
     def sfn_state_machine(self: "ARS") -> "SfnStateMachineSearcher":
@@ -147,4 +193,8 @@ class ARSMixin:  # pragma: no cover
     @cached_property
     def sqs_queue(self: "ARS") -> "SqsQueueSearcher":
         return self.get_searcher("sqs-queue")
+    
+    @cached_property
+    def ssm_parameter(self: "ARS") -> "SsmParameterSearcher":
+        return self.get_searcher("ssm-parameter")
     

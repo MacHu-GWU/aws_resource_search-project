@@ -104,6 +104,41 @@
         "ngram": "",
         "var": "ecs_task_definition_family_searcher"
     },
+    "glue-crawler": {
+        "desc": "You can use a crawler to populate the AWS Glue Data Catalog with tables.",
+        "klass": "GlueCrawlerSearcher",
+        "module": "glue",
+        "ngram": "",
+        "var": "glue_crawler_searcher"
+    },
+    "glue-database": {
+        "desc": "Databases are used to organize metadata tables in the AWS Glue. ",
+        "klass": "GlueDatabaseSearcher",
+        "module": "glue",
+        "ngram": "db",
+        "var": "glue_database_searcher"
+    },
+    "glue-database-table": {
+        "desc": "The metadata definition that represents your data.",
+        "klass": "GlueTableSearcher",
+        "module": "glue",
+        "ngram": "db tb",
+        "var": "glue_table_searcher"
+    },
+    "glue-job": {
+        "desc": "The business logic that is required to perform ETL work.",
+        "klass": "GlueJobSearcher",
+        "module": "glue",
+        "ngram": "",
+        "var": "glue_job_searcher"
+    },
+    "glue-job-run": {
+        "desc": "A job run is the execution of an ETL job.",
+        "klass": "GlueJobRunSearcher",
+        "module": "glue",
+        "ngram": "",
+        "var": "glue_job_run_searcher"
+    },
     "iam-group": {
         "desc": "An IAM user group is a collection of IAM users.",
         "klass": "IamGroupSearcher",
@@ -132,6 +167,13 @@
         "ngram": "",
         "var": "iam_user_searcher"
     },
+    "kms-key-alias": {
+        "desc": "A human friendly name for KMS keys.",
+        "klass": "KmsKeyAliasSearcher",
+        "module": "kms",
+        "ngram": "key management service",
+        "var": "kms_key_alias_searcher"
+    },
     "lambda-function": {
         "desc": "A function is a resource that you can invoke to run your code in Lambda.",
         "klass": "LambdaFunctionSearcher",
@@ -153,12 +195,33 @@
         "ngram": "",
         "var": "lambda_layer_searcher"
     },
+    "rds-db-cluster": {
+        "desc": "A DB cluster deployment is a semi-synchronous, high availability deployment mode of Amazon RDS with two readable standby DB instances.",
+        "klass": "BaseSearcher",
+        "module": "rds",
+        "ngram": "relational database service",
+        "var": "rds_db_cluster_searcher"
+    },
+    "rds-db-instance": {
+        "desc": "A DB instance is an isolated database environment running in the cloud.",
+        "klass": "RdsDbInstanceSearcher",
+        "module": "rds",
+        "ngram": "relational database service",
+        "var": "rds_db_instance_searcher"
+    },
     "s3-bucket": {
         "desc": "A bucket is a container for objects.",
         "klass": "S3BucketSearcher",
         "module": "s3",
         "ngram": "simple storage service",
         "var": "s3_bucket_searcher"
+    },
+    "secretsmanager-secret": {
+        "desc": "A secret consists of secret information, the secret value, plus metadata about the secret.",
+        "klass": "SecretsManagerSecretSearcher",
+        "module": "secretmanager",
+        "ngram": "sm",
+        "var": "secretsmanager_secret_searcher"
     },
     "sfn-state-machine": {
         "desc": "A series of event-driven steps",
@@ -187,5 +250,12 @@
         "module": "sqs",
         "ngram": "simple queue service",
         "var": "sqs_queue_searcher"
+    },
+    "ssm-parameter": {
+        "desc": "Provides secure, hierarchical storage for configuration data management and secrets management. ",
+        "klass": "SsmParameterSearcher",
+        "module": "ssm",
+        "ngram": "system manager parameter store",
+        "var": "ssm_parameter_searcher"
     }
 }

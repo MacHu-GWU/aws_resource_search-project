@@ -170,6 +170,8 @@ def extract_tags(data: dict) -> T.Dict[str, str]:
         tag_data = data["Tags"]
     elif "TagSet" in data:
         tag_data = data["TagSet"]
+    elif "TagList" in data:
+        tag_data = data["TagList"]
     else:
         return {}
 
@@ -182,6 +184,8 @@ def extract_tags(data: dict) -> T.Dict[str, str]:
                 tags[dct["Key"]] = dct["Value"]
             elif "key" in dct:
                 tags[dct["key"]] = dct["value"]
+            elif "TagKey" in dct:
+                tags[dct["TagKey"]] = dct["TagValue"]
             else:
                 raise ValueError(f"unable to extract tags from {data}")
         return tags
