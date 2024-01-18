@@ -12,7 +12,8 @@ from .base_model import BaseModel
 @dataclasses.dataclass
 class SearcherMetadata(BaseModel):
     """
-    This class is a data container for the metadata of a :class:`Searcher` (todo fix this reference path).
+    This class is a data container for the metadata of a
+    :class:`~aws_resource_search.base_searcher.BaseSearcher``.
     It describes the searcher's ID, description, and the path to the
     corresponding searcher module. It doesn't contain any data about
     the searcher's logic.

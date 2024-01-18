@@ -15,7 +15,7 @@ from ..search_patterns import (
     get_partitioner_resource_type,
     get_partitioner_boto_kwargs,
 )
-from .. import res_lib_v1 as rl
+from .. import res_lib as rl
 
 
 if T.TYPE_CHECKING:

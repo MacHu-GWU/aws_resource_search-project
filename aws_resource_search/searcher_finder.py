@@ -12,8 +12,8 @@ import json
 import importlib
 import dataclasses
 
-from .model import SearcherMetadata
 from .paths import path_searchers_json
+from .searcher_metadata import SearcherMetadata
 
 if T.TYPE_CHECKING:
     from .base_searcher import T_SEARCHER

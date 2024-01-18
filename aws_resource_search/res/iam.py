@@ -6,7 +6,7 @@ import dataclasses
 import aws_arns.api as arns
 import aws_console_url.api as acu
 
-from .. import res_lib_v1 as rl
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
     from ..ars_def import ARS

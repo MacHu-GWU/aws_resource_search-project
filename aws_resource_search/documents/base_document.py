@@ -7,7 +7,7 @@ See :class:`BaseArsDocument`.
 import typing as T
 import dataclasses
 
-from ..model import BaseModel
+from ..base_model import BaseModel
 
 
 @dataclasses.dataclass

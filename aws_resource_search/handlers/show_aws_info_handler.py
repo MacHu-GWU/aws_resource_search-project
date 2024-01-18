@@ -6,7 +6,7 @@ See :func:`show_aws_info_handler`.
 
 import typing as T
 
-from .. import res_lib_v1 as rl
+from .. import res_lib as rl
 from ..terminal import ShortcutEnum
 
 if T.TYPE_CHECKING:

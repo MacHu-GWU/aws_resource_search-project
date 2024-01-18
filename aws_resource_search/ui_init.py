@@ -4,7 +4,7 @@ import typing as T
 
 import zelfred.api as zf
 
-from . import res_lib_v1 as rl
+from . import res_lib as rl
 from .handlers.api import (
     search_aws_profile_handler,
     search_resource_type_handler,

@@ -11,7 +11,7 @@ import zelfred.api as zf
 import sayt.api as sayt
 
 from ..paths import dir_index, dir_cache, path_searchers_json
-from .. import res_lib_v1 as rl
+from .. import res_lib as rl
 
 
 if T.TYPE_CHECKING:

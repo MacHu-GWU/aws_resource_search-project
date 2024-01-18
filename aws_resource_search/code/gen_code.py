@@ -9,7 +9,7 @@ from pathlib import Path
 
 from ..paths import dir_project_root, dir_python_lib, path_searchers_json
 from ..base_searcher import BaseSearcher
-from ..model import SearcherMetadata
+from ..searcher_metadata import SearcherMetadata
 
 dir_here = Path(__file__).absolute().parent
 path_searchers_enum_json = dir_here.joinpath("searcher_enum.json")
@@ -100,7 +100,9 @@ def dump_searchers_json(sr_meta_list: T.List[SearcherMetadata]):
 
 def generate_implemented_resource_types(sr_meta_list: T.List[SearcherMetadata]):
     dir_folder = dir_project_root.joinpath(
-        "docs", "source", "03-User-Guide-Implemented-AWS-Resource-Types",
+        "docs",
+        "source",
+        "03-User-Guide-Implemented-AWS-Resource-Types",
     )
     path_tpl = dir_here.joinpath("implemented_aws_resource_types.rst.jinja")
     path_index = dir_folder.joinpath("index.rst")

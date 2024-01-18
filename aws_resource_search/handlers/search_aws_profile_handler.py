@@ -10,7 +10,7 @@ import sayt.api as sayt
 import awscli_mate.api as awscli_mate
 
 from ..paths import dir_index, dir_cache, path_aws_config
-from .. import res_lib_v1 as rl
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
     from ..ui_def import UI

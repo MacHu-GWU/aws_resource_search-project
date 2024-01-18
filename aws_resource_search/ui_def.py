@@ -25,7 +25,7 @@ class UI(zf.UI):
         self.ars: "ARS" = ars
         super().__init__(**kwargs)
 
-    def process_ctrl_b(self):
+    def process_ctrl_b(self):  # pragma: no cover
         """
         If you are searching an AWS resource, it will remove the query but keep
         the resource type, so you can enter a new query. For example

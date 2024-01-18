@@ -19,7 +19,7 @@ from .searcher_finder import SearcherFinder, searcher_finder
 from .ars_mixin import ARSMixin
 
 if T.TYPE_CHECKING:  # pragma: no cover
-    from .res_lib_v1 import T_SEARCHER
+    from .res_lib import T_SEARCHER
 
 
 def validate_bsm(bsm: "BotoSesManager"):

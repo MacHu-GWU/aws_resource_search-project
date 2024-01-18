@@ -14,7 +14,7 @@ try:
 except ImportError:
     pass
 
-from .. import res_lib_v1 as rl
+from .. import res_lib as rl
 from ..terminal import terminal
 from ..ars import ARS
 from ..searcher_finder import SearcherFinder, searcher_finder
