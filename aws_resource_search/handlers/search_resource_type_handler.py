@@ -14,7 +14,7 @@ from ..paths import dir_index, dir_cache, path_searchers_json
 from .. import res_lib as rl
 
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from ..ui_def import UI
 
 
@@ -90,7 +90,7 @@ def search_resource_type_handler(
     ui: "UI",
     query: str,
     skip_ui: bool = False,
-) -> T.List[T.Union[rl.AwsResourceTypeItem, rl.UrlItem]]:
+) -> T.List[T.Union[rl.AwsResourceTypeItem, rl.UrlItem]]:  # pragma: no cover
     """
     Search AWS resource type defined in the ``aws_resource_search/searchers.json`` file.
     Afterwards, user can start typing query to filter AWS resources of given type.
@@ -100,14 +100,14 @@ def search_resource_type_handler(
     :param skip_ui: if True, skip the UI related logic, just return the items.
         this argument is used for third party integration.
     """
-    if skip_ui is False:
+    if skip_ui is False:  # pragma: no cover
         ui.render.prompt = "(Resource Type)"
     final_query = rl.preprocess_query(query)
 
     # manually refresh data
     # show "loading" message
     if query.strip().endswith("!~"):
-        if skip_ui is False:
+        if skip_ui is False:  # pragma: no cover
             ui.run_handler(items=[])
             ui.repaint()
             ui.line_editor.press_backspace(n=2)

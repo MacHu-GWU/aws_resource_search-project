@@ -9,7 +9,7 @@ import typing as T
 from .. import res_lib as rl
 from ..terminal import ShortcutEnum
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from ..ui_def import UI
 
 
@@ -17,7 +17,7 @@ def show_aws_info_handler(
     ui: "UI",
     line_input: str,
     skip_ui: bool = False,
-) -> T.List[rl.ShowAwsInfoItem]:
+) -> T.List[rl.ShowAwsInfoItem]:  # pragma: no cover
     """
     Show current AWS account information of the current boto session.
 

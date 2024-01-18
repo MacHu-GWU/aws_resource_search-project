@@ -8,3 +8,5 @@ include *.txt
 include *.rst
 exclude *.pyc
 exclude *.pyo
+exclude aws_resource_search/tests/**.*
+exclude aws_resource_search/code/**.*

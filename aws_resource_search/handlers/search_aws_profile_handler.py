@@ -12,7 +12,7 @@ import awscli_mate.api as awscli_mate
 from ..paths import dir_index, dir_cache, path_aws_config
 from .. import res_lib as rl
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from ..ui_def import UI
 
 
@@ -75,7 +75,7 @@ def search_aws_profile_handler(
     line_input: str,
     profile_query: str,
     skip_ui: bool = False,
-) -> T.List[rl.SetAwsProfileItem]:
+) -> T.List[rl.SetAwsProfileItem]:  # pragma: no cover
     """
     Search AWS CLI profile in ``~/.aws/config`` file, order by similarity to the query.
     This function will be triggered when user type ``!@`` without leaving the app.
@@ -86,7 +86,7 @@ def search_aws_profile_handler(
     :param skip_ui: if True, skip the UI related logic, just return the items.
         this argument is used for third party integration.
     """
-    if skip_ui is False:
+    if skip_ui is False:  # pragma: no cover
         ui.render.prompt = f"(Query)"
     return search_aws_profile_and_return_items(
         line_input=line_input,

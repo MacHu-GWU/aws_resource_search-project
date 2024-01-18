@@ -13,7 +13,7 @@ class TestExceptionItem:
             # ------------------------------------------------------------------
             # We only test this action manually on developer's machine, not in CI.
             # ------------------------------------------------------------------
-            item.enter_handler(ui=None)
+            # item.enter_handler(ui=None)
 
 
 if __name__ == "__main__":

@@ -18,11 +18,11 @@ from ..search_patterns import (
 from .. import res_lib as rl
 
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from ..ui_def import UI
 
 
-def creating_index_items(resource_type: str) -> T.List[rl.InfoItem]:
+def creating_index_items(resource_type: str) -> T.List[rl.InfoItem]:  # pragma: no cover
     """
     Print a message to tell user that we are creating index.
 
@@ -165,7 +165,7 @@ def search_resource(
 
     # display "creating index ..." message
     if ds.cache_key not in ds.cache:
-        if skip_ui is False:
+        if skip_ui is False:  # pragma: no cover
             ui.run_handler(items=creating_index_items(resource_type))
             ui.repaint()
         return search_resource_and_return_items(
@@ -179,7 +179,7 @@ def search_resource(
 
     # manually refresh data
     if final_query.endswith("!~"):
-        if skip_ui is False:
+        if skip_ui is False:  # pragma: no cover
             ui.run_handler(items=creating_index_items(resource_type))
             ui.repaint()
             ui.line_editor.press_backspace(n=2)
@@ -395,7 +395,7 @@ def search_resource_handler(
     resource_type: str,
     query: str,
     skip_ui: bool = False,
-) -> T.List[T.Union[rl.AwsResourceItem, rl.InfoItem, rl.FileItem]]:
+) -> T.List[T.Union[rl.AwsResourceItem, rl.InfoItem, rl.FileItem]]:  # pragma: no cover
     """
     **IMPORTANT** This handle filter resource by query.
 

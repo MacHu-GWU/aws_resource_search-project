@@ -11,6 +11,7 @@ from pathlib import Path
 
 from diskcache import Cache
 from boto_session_manager import BotoSesManager
+from boto_session_manager.manager import NOTHING
 import aws_console_url.api as aws_console_url
 
 from .exc import MalformedBotoSessionError
@@ -102,6 +103,12 @@ class ARS(ARSMixin):
         use the default AWS profile.
         """
         bsm = BotoSesManager(profile_name=profile)
+        return cls.from_bsm(bsm=bsm)
+
+    @classmethod
+    def from_bsm(cls, bsm: T.Optional["BotoSesManager"] = None):
+        if bsm is None:
+            bsm = BotoSesManager()
         return cls(bsm=bsm, aws_console=aws_console_url.AWSConsole.from_bsm(bsm))
 
     def get_searcher(self, resource_type: str) -> "T_SEARCHER":
@@ -132,7 +139,7 @@ class ARS(ARSMixin):
         """
         return searcher_finder.is_valid_resource_type(resource_type)
 
-    def set_profile(self, profile: str):
+    def set_profile(self, profile: T.Optional[str] = NOTHING):
         """
         Set all boto session related attributes (``bsm``, ``aws_console``)
         to use a new AWS profile.
@@ -144,11 +151,11 @@ class ARS(ARSMixin):
         3. Since we updated the ``bsm``, we also need to reset the ``searcher_finder``
             cache to recreate all ``Searcher`` objects.
         """
-        self.bsm.aws_access_key_id = None
-        self.bsm.aws_secret_access_key = None
-        self.bsm.aws_session_token = None
-        self.bsm.region_name = None
-        self.bsm.botocore_session = None
+        self.bsm.aws_access_key_id = NOTHING
+        self.bsm.aws_secret_access_key = NOTHING
+        self.bsm.aws_session_token = NOTHING
+        self.bsm.region_name = NOTHING
+        self.bsm.botocore_session = NOTHING
         self.bsm.profile_name = profile
         self.bsm.clear_cache()
         validate_bsm(self.bsm)

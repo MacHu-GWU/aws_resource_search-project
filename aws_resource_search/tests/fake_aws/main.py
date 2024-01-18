@@ -6,8 +6,7 @@ Set up a fake AWS account with a lot of resources using moto for testing.
 
 import moto
 
-from ...paths import dir_unit_test
-from ...ars import ARS
+from ...ars_def import ARS
 from ..mock_test import BaseMockTest
 
 from .awslambda import LambdaMixin
@@ -93,8 +92,4 @@ class FakeAws(
 
     @classmethod
     def setup_ars(cls):
-        cls.ars = ARS(
-            bsm=cls.bsm,
-            dir_index=dir_unit_test.joinpath(".index"),
-            dir_cache=dir_unit_test.joinpath(".cache"),
-        )
+        cls.ars = ARS.from_bsm(bsm=cls.bsm)
