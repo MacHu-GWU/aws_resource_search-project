@@ -20,6 +20,20 @@
         "ngram": "",
         "var": "codebuild_project_searcher"
     },
+    "codecommit-repository": {
+        "desc": "A repository is where you store code and files for your project.",
+        "klass": "CodeCommitRepositorySearcher",
+        "module": "codecommit",
+        "ngram": "",
+        "var": "codecommit_repository_searcher"
+    },
+    "codepipeline-pipeline": {
+        "desc": "Code pipeline is a workflow construct that describes how software changes go through a release process.",
+        "klass": "CodePipelinePipelineSearcher",
+        "module": "codepipeline",
+        "ngram": "",
+        "var": "codepipeline_pipeline_searcher"
+    },
     "iam-group": {
         "desc": "An IAM user group is a collection of IAM users.",
         "klass": "IamGroupSearcher",
