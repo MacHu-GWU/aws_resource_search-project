@@ -45,6 +45,10 @@ class EcsCluster(rl.ResourceDocument):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ecs.get_cluster_services(name_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ecs.clusters
+
     @property
     def cluster_name(self) -> str:
         return self.name
@@ -265,6 +269,10 @@ class EcsTaskDefinitionFamily(rl.ResourceDocument):
 
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ecs.get_task_definition_revisions(name_or_arn=self.v1_arn)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ecs.task_definitions
 
     @property
     def task_name(self) -> str:
