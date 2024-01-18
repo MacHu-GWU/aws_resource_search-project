@@ -25,13 +25,13 @@ from ..terminal import SUBTITLE, SHORT_SUBTITLE
 from .base_document import BaseArsDocument
 
 try:
-    from ..ui.boto_ses import ars
+    from ..ars_init import ars
 except ImportError:  # pragma: no cover
     pass
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager import BotoSesManager
-    from ..ars import ARS
+    from ..ars_def import ARS
     from ..downloader import T_RESULT_DATA, ResourceIterproxy
     from ..items.api import T_ARS_ITEM
 

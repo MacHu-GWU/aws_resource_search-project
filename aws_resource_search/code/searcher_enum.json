@@ -18,5 +18,13 @@
     "s3-bucket": {
         "desc": "A bucket is a container for objects.",
         "ngram": "simple storage service"
+    },
+    "sfn-state-machine": {
+        "desc": "A series of event-driven steps",
+        "ngram": "step functions stepfunctions"
+    },
+    "sfn-state-machine-execution": {
+        "desc": "A execution of a state machine.",
+        "ngram": "step functions stepfunctions"
     }
 }

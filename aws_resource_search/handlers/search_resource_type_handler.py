@@ -7,6 +7,7 @@ See :func:`select_resource_type_handler`.
 import typing as T
 import json
 
+import zelfred.api as zf
 import sayt.api as sayt
 
 from ..paths import dir_index, dir_cache, path_searchers_json
@@ -114,8 +115,11 @@ def search_resource_type_handler(
         )
 
     # example: "ec2 inst"
-    return search_resource_type_and_return_items(
+    items = search_resource_type_and_return_items(
         ui=ui,
         query=final_query,
         refresh_data=False,
     )
+    zf.debugger.log(f"end of search_resource_type_handler")
+    zf.debugger.log(f"ui.dropdown.selected_item_index = {ui.dropdown.selected_item_index}")
+    return items

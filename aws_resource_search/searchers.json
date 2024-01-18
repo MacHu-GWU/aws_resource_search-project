@@ -33,5 +33,19 @@
         "module": "s3",
         "ngram": "simple storage service",
         "var": "s3_bucket_searcher"
+    },
+    "sfn-state-machine": {
+        "desc": "A series of event-driven steps",
+        "klass": "SfnStateMachineSearcher",
+        "module": "sfn",
+        "ngram": "step functions stepfunctions",
+        "var": "sfn_state_machine_searcher"
+    },
+    "sfn-state-machine-execution": {
+        "desc": "A execution of a state machine.",
+        "klass": "SfnExecutionSearcher",
+        "module": "sfn",
+        "ngram": "step functions stepfunctions",
+        "var": "sfn_execution_searcher"
     }
 }

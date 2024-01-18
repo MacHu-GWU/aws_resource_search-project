@@ -103,6 +103,8 @@ class BaseArsItem(zf.Item):
         #     raise KeyboardInterrupt
 
     # by default, we don't quit the app when user press any action key
+    # ``ui.wait_next_user_input()`` will wait for another user input and
+    # skip repainting the UI in the next event loop
     def post_enter_handler(self, ui: zf.UI):  # pragma: no cover
         ui.wait_next_user_input()
 

@@ -26,7 +26,7 @@ class T_AWS_RESOURCE_TYPE_ITEM_VARIABLES(TypedDict):
 
     doc: "RESOURCE_TYPE_DOCUMENT"
     resource_type: str
-    console_url: str
+    console_url: T.Optional[str]
 
 
 @dataclasses.dataclass
@@ -63,23 +63,27 @@ class AwsResourceTypeItem(BaseArsItem):
         resource_type = doc["name"]
         desc = doc["desc"]
         searcher = searcher_finder.import_searcher(resource_type)
-        return cls(
-            title=f"{format_resource_type(resource_type)}: {desc}",
-            subtitle=(
+        try:
+            console_url = searcher.doc_class.get_list_resources_console_url(
+                console=ars.aws_console
+            )
+            subtitle = (
                 f"hit {ShortcutEnum.TAB} to search, "
                 f"hit {ShortcutEnum.ENTER} to list resources in AWS console."
-            ),
+            )
+        except NotImplementedError:
+            console_url = None
+            subtitle = f"hit {ShortcutEnum.TAB} to search"
+        return cls(
+            title=f"{format_resource_type(resource_type)}: {desc}",
+            subtitle=subtitle,
             uid=doc["id"],
             arg=doc["name"],
             autocomplete=doc["name"] + ": ",
             variables={
                 "doc": doc,
                 "resource_type": resource_type,
-                "console_url": (
-                    searcher.doc_class.get_list_resources_console_url(
-                        console=ars.aws_console
-                    )
-                ),
+                "console_url": console_url,
             },
         )
 
@@ -98,7 +102,5 @@ class AwsResourceTypeItem(BaseArsItem):
         For resource type search, when user hit "Enter", it opens the
         AWS console to list resources of this type.
         """
-        self.open_url_or_print(ui, self.variables["console_url"])
-
-    def post_enter_handler(self, ui: "UI"):
-        pass
+        if self.variables.get("console_url"):
+            self.open_url_or_print(ui, self.variables["console_url"])

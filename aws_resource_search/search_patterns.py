@@ -38,14 +38,14 @@ has_partitioner_search_patterns = {
     #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_job.value,
     #     K_GET_BOTO_KWARGS: lambda partitioner_query: {"JobName": partitioner_query},
     # },
-    # SearcherEnum.sfn_state_machine_execution: {
-    #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.sfn_state_machine.value,
-    #     K_GET_BOTO_KWARGS: lambda partitioner_query: {
-    #         "stateMachineArn": ars.aws_console.step_function.get_state_machine_arn(
-    #             partitioner_query
-    #         )
-    #     },
-    # },
+    SearcherEnum.sfn_state_machine_execution: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.sfn_state_machine.value,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {
+            "stateMachineArn": ars.aws_console.step_function.get_state_machine_arn(
+                partitioner_query
+            )
+        },
+    },
     # SearcherEnum.codebuild_job_run.value: {
     #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.codebuild_project.value,
     #     K_GET_BOTO_KWARGS: lambda partitioner_query: {"projectName": partitioner_query},

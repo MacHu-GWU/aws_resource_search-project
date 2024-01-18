@@ -9,3 +9,5 @@ class SearcherEnum(BetterStrEnum):
     iam_role = "iam-role"
     iam_user = "iam-user"
     s3_bucket = "s3-bucket"
+    sfn_state_machine = "sfn-state-machine"
+    sfn_state_machine_execution = "sfn-state-machine-execution"

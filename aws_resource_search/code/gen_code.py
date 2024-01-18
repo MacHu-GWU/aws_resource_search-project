@@ -112,7 +112,7 @@ def generate_ars_py_module(sr_meta_list: T.List[SearcherMetadata]):
     """
     Generate ``aws_resource_search/ars_v2.py`` module.
     """
-    path_tpl = dir_here.joinpath("ars.py.jinja")
-    path_py = dir_python_lib.joinpath("ars.py")
+    path_tpl = dir_here.joinpath("ars_mixin.py.jinja")
+    path_py = dir_python_lib.joinpath("ars_mixin.py")
     tpl = jinja2.Template(path_tpl.read_text())
     path_py.write_text(tpl.render(sr_meta_list=sr_meta_list))

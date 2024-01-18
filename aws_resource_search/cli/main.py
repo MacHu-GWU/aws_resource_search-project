@@ -38,7 +38,7 @@ class ArsCli:
         """
         Serve for the ``ars`` command without any arguments.
         """
-        from ..ars_base import validate_bsm
+        from ..ars_def import validate_bsm
         from ..ui_init import ui, run_ui as run_ars_ui
 
         if version:
