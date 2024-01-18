@@ -13,19 +13,28 @@ sub packages and modules
     cli <cli/__init__>
     code <code/__init__>
     conf <conf/__init__>
+    documents <documents/__init__>
+    handlers <handlers/__init__>
+    items <items/__init__>
     res <res/__init__>
-    searcher <searcher/__init__>
     ui <ui/__init__>
     api <api>
-    ars <ars>
-    ars_base <ars_base>
+    ars_def <ars_def>
+    ars_init <ars_init>
+    ars_mixin <ars_mixin>
+    base_model <base_model>
+    base_searcher <base_searcher>
     compat <compat>
+    downloader <downloader>
     exc <exc>
     logger <logger>
-    model <model>
     res_lib <res_lib>
-    searchers <searchers>
-    searchers_enum <searchers_enum>
+    search_patterns <search_patterns>
+    searcher_enum <searcher_enum>
+    searcher_finder <searcher_finder>
+    searcher_metadata <searcher_metadata>
     terminal <terminal>
+    ui_def <ui_def>
+    ui_init <ui_init>
     utils <utils>
     

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Searcher meta data class.
+See :class:`SearcherMetadata`.
 """
 
 import dataclasses

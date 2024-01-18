@@ -54,30 +54,38 @@ What is Searcher
 
 Code Architecture
 ------------------------------------------------------------------------------
-Low level modules:
+**Low level modules**
 
-- :mod:`aws_resource_search.base_model`
-- :mod:`aws_resource_search.base_searcher`
-- :mod:`aws_resource_search.downloader`
-- :mod:`aws_resource_search.searcher_enum`
-- :mod:`aws_resource_search.terminal`
+    底层模块主要是实现一些抽象的基类, 使得我们实现实体类 (就是不会再被继承的类) 的时候能更轻松.
+
+    - :mod:`aws_resource_search.base_model`: 所有 dataclasses 类的基类.
+    - :mod:`aws_resource_search.base_searcher`: 所有特定 AWS Resource 的 Searcher 类的基类.
+    - :mod:`aws_resource_search.downloader`: 一些帮助我们用 boto3 来下载数据的 utility 函数.
+    - :mod:`aws_resource_search.searcher_enum`: 我们已实现的 searcher (也就是 resource type) 的枚举.
+    - :mod:`aws_resource_search.terminal`: terminal 对象的单例.
 
 Middle level modules:
 
-- :mod:`aws_resource_search.documents`
-- :mod:`aws_resource_search.items`
-- :mod:`aws_resource_search.conf`
-- :mod:`aws_resource_search.res_lib_v1.py`
+    中层模块主要是一些跟业务逻辑相关的实体类.
+
+    - :mod:`aws_resource_search.documents`: 所有的可以被搜索的文档的实体类.
+    - :mod:`aws_resource_search.items`: 所有在 UI 中展示的 item 的实体类.
+    - :mod:`aws_resource_search.conf`: 配置管理系统.
+    - :mod:`aws_resource_search.res_lib_v1.py`: 把所有底层, 中层模块的方法都注册到这个模块中, 以便于其他模块可以直接 import 这个模块, 而不用 import 太多的模块.
 
 Per AWS Resource Type Searcher modules:
 
-- :mod:`aws_resource_search.res`
-- :mod:`aws_resource_search.ars_base`
-- :mod:`aws_resource_search.ars`
-- :mod:`aws_resource_search.ars_init`
+    这一层主要是实现对应的 AWS Resource 的 Searcher 类. 以及把他们汇总到一个 ``ARS`` 单例对象中, 便于 import 和调用 search 的 API.
+
+    - :mod:`aws_resource_search.res`
+    - :mod:`aws_resource_search.ars_base`: ARS 类的基类.
+    - :mod:`aws_resource_search.ars_def`: 用 code 来写 code, 自动生成这个模块.
+    - :mod:`aws_resource_search.ars_init`: ARS 单例的创建.
 
 UI modules:
 
-- :mod:`aws_resource_search.handlers`
-- :mod:`aws_resource_search.ui_def`
-- :mod:`aws_resource_search.ui_init`
+    这一层主要是实现 UI.
+
+    - :mod:`aws_resource_search.handlers`: 所有 UI 中会用到的 handler 的实现.
+    - :mod:`aws_resource_search.ui_def`: UI 类的定义.
+    - :mod:`aws_resource_search.ui_init`: UI 单例的创建.

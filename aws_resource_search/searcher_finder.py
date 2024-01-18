@@ -15,7 +15,7 @@ import dataclasses
 from .paths import path_searchers_json
 from .searcher_metadata import SearcherMetadata
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     from .base_searcher import T_SEARCHER
 
 

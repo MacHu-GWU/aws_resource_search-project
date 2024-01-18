@@ -8,3 +8,5 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``iam-role``
 - ``iam-user``
 - ``s3-bucket``
+- ``sfn-state-machine``
+- ``sfn-state-machine-execution``
