@@ -150,7 +150,11 @@ def get_description(
     path: str,
     default: T.Optional[str] = "No description",
 ) -> str:
-    return get_none_or_default(data, path, default)
+    desc = get_none_or_default(data, path)
+    if desc:
+        return desc
+    else:
+        return default
 
 
 def get_datetime(

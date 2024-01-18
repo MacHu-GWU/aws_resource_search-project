@@ -18,26 +18,26 @@ K_GET_BOTO_KWARGS = "get_boto_kwargs"
 # - in order to search glue table, you need to specify glue database
 # - in order to search glue job run, you need to specify glue job
 has_partitioner_search_patterns = {
-    # SearcherEnum.ecr_repository_image.value: {
-    #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.ecr_repository.value,
-    #     K_GET_BOTO_KWARGS: lambda partitioner_query: {
-    #         "repositoryName": partitioner_query
-    #     },
-    # },
-    # SearcherEnum.ecs_task_run.value: {
-    #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.ecs_cluster.value,
-    #     K_GET_BOTO_KWARGS: lambda partitioner_query: {"cluster": partitioner_query},
-    # },
-    # SearcherEnum.glue_database_table.value: {
-    #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_database.value,
-    #     K_GET_BOTO_KWARGS: lambda partitioner_query: {
-    #         "DatabaseName": partitioner_query
-    #     },
-    # },
-    # SearcherEnum.glue_job_run.value: {
-    #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_job.value,
-    #     K_GET_BOTO_KWARGS: lambda partitioner_query: {"JobName": partitioner_query},
-    # },
+    SearcherEnum.ecr_repository_image.value: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.ecr_repository.value,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {
+            "repositoryName": partitioner_query
+        },
+    },
+    SearcherEnum.ecs_task_run.value: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.ecs_cluster.value,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {"cluster": partitioner_query},
+    },
+    SearcherEnum.glue_database_table.value: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_database.value,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {
+            "DatabaseName": partitioner_query
+        },
+    },
+    SearcherEnum.glue_job_run.value: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.glue_job.value,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {"JobName": partitioner_query},
+    },
     SearcherEnum.sfn_state_machine_execution: {
         K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.sfn_state_machine.value,
         K_GET_BOTO_KWARGS: lambda partitioner_query: {
@@ -46,10 +46,10 @@ has_partitioner_search_patterns = {
             )
         },
     },
-    # SearcherEnum.codebuild_job_run.value: {
-    #     K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.codebuild_project.value,
-    #     K_GET_BOTO_KWARGS: lambda partitioner_query: {"projectName": partitioner_query},
-    # },
+    SearcherEnum.codebuild_job_run.value: {
+        K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.codebuild_project.value,
+        K_GET_BOTO_KWARGS: lambda partitioner_query: {"projectName": partitioner_query},
+    },
     SearcherEnum.lambda_function_alias.value: {
         K_PARTITIONER_RESOURCE_TYPE: SearcherEnum.lambda_function.value,
         K_GET_BOTO_KWARGS: lambda partitioner_query: {

@@ -60,11 +60,17 @@ def generate_searchers_enum_py_module(sr_meta_list: T.List[SearcherMetadata]):
     path_py.write_text(tpl.render(sr_meta_list=sr_meta_list))
 
 
-def enrich_searcher_metadata(sr_meta_list: T.List[SearcherMetadata]):
+def enrich_searcher_metadata(
+    sr_meta_list: T.List[SearcherMetadata],
+) -> T.List[SearcherMetadata]:
     """
     Recursively scan all modules in ``aws_resource_search.res`` package,
     try to locate all subclass of the :class:`Searcher` to extract
     all searcher metadata.
+
+    Also if the searcher is defined in the ``searcher_enum.json`` but not
+    implemented in the ``aws_resource_search.res`` module, then it will
+    be removed from the ``sr_meta_list``.
     """
     sr_meta_dct_view: T.Dict[str, SearcherMetadata] = {
         sr_meta.id: sr_meta for sr_meta in sr_meta_list
@@ -79,6 +85,11 @@ def enrich_searcher_metadata(sr_meta_list: T.List[SearcherMetadata]):
                 sr_meta_dct_view[value.resource_type].module = module_name
                 sr_meta_dct_view[value.resource_type].klass = value.__class__.__name__
                 sr_meta_dct_view[value.resource_type].var = var_name
+
+    valid_sr_meta_list = [
+        sr_meta for sr_meta in sr_meta_dct_view.values() if sr_meta.klass is not None
+    ]
+    return valid_sr_meta_list
 
 
 def dump_searchers_json(sr_meta_list: T.List[SearcherMetadata]):
