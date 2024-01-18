@@ -40,5 +40,6 @@ path_exception_item_txt = dir_aws_resource_search.joinpath("exception_item.txt")
 # ------------------------------------------------------------------------------
 # ${HOME}/.aws/ dir
 # ------------------------------------------------------------------------------
-path_aws_config = dir_home.joinpath(".aws", "config")
-path_aws_credentials = dir_home.joinpath(".aws", "credentials")
+dir_aws = dir_home.joinpath(".aws")
+path_aws_config = dir_aws.joinpath("config")
+path_aws_credentials = dir_aws.joinpath("credentials")

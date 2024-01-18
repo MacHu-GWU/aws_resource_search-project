@@ -65,6 +65,20 @@ class SetAwsProfileItem(BaseArsItem):
             autocomplete=autocomplete,
         )
 
+    @classmethod
+    def from_many_profile_region_pairs(
+        cls,
+        pairs: T.List[T.Tuple[str, str]],
+        autocomplete: str,
+    ):
+        """
+        Another factory method to create many :class:`SetAwsProfileItem` at once.
+        """
+        return [
+            cls.from_profile_region(profile, region, autocomplete)
+            for profile, region in pairs
+        ]
+
     def enter_handler(self, ui: "UI"):
         awscli_mate.AWSCliConfig().set_profile_as_default(profile=self.arg)
         set_profile_in_bsm(self.arg, ui.ars)
