@@ -13,6 +13,11 @@ Below is the list of implemented AWS resource types. If you don't see the resour
 - ``ec2-security-group``
 - ``ec2-subnet``
 - ``ec2-vpc``
+- ``ecr-repository``
+- ``ecr-repository-image``
+- ``ecs-cluster``
+- ``ecs-task-run``
+- ``ecs_task_definition_family``
 - ``iam-group``
 - ``iam-policy``
 - ``iam-role``

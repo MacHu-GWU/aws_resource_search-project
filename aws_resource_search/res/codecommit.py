@@ -47,6 +47,10 @@ class CodeCommitRepository(rl.ResourceDocument):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.codecommit.get_repo(repo_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.codecommit.repositories
+
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail

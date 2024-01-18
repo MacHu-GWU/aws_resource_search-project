@@ -20,6 +20,11 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from .res.ec2 import Ec2SecurityGroupSearcher
     from .res.ec2 import Ec2SubnetSearcher
     from .res.ec2 import Ec2VpcSearcher
+    from .res.ecr import EcrRepositorySearcher
+    from .res.ecr import EcrRepositoryImageSearcher
+    from .res.ecs import EcsClusterSearcher
+    from .res.ecs import EcsTaskRunSearcher
+    from .res.ecs import EcsTaskDefinitionFamilySearcher
     from .res.iam import IamGroupSearcher
     from .res.iam import IamPolicySearcher
     from .res.iam import IamRoleSearcher
@@ -72,6 +77,26 @@ class ARSMixin:  # pragma: no cover
     @cached_property
     def ec2_vpc(self: "ARS") -> "Ec2VpcSearcher":
         return self.get_searcher("ec2-vpc")
+    
+    @cached_property
+    def ecr_repository(self: "ARS") -> "EcrRepositorySearcher":
+        return self.get_searcher("ecr-repository")
+    
+    @cached_property
+    def ecr_repository_image(self: "ARS") -> "EcrRepositoryImageSearcher":
+        return self.get_searcher("ecr-repository-image")
+    
+    @cached_property
+    def ecs_cluster(self: "ARS") -> "EcsClusterSearcher":
+        return self.get_searcher("ecs-cluster")
+    
+    @cached_property
+    def ecs_task_run(self: "ARS") -> "EcsTaskRunSearcher":
+        return self.get_searcher("ecs-task-run")
+    
+    @cached_property
+    def ecs_task_definition_family(self: "ARS") -> "EcsTaskDefinitionFamilySearcher":
+        return self.get_searcher("ecs_task_definition_family")
     
     @cached_property
     def iam_group(self: "ARS") -> "IamGroupSearcher":

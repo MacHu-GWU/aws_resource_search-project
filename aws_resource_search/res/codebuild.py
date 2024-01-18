@@ -66,6 +66,10 @@ class CodeBuildProject(rl.ResourceDocument):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.codebuild.get_project(project_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.codebuild.build_projects
+
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail

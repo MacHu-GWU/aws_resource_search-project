@@ -109,6 +109,10 @@ class Ec2Instance(rl.ResourceDocument, Ec2Mixin):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ec2.get_instance(instance_id_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ec2.instances
+
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
@@ -255,6 +259,10 @@ class Ec2Vpc(rl.ResourceDocument, Ec2Mixin):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.vpc.get_vpc(vpc_id=self.id)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.vpc.vpcs
+
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         get_detail = rl.DetailItem.from_detail
         url = self.console_url
@@ -371,6 +379,10 @@ class Ec2Subnet(rl.ResourceDocument, Ec2Mixin):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.vpc.get_subnet(subnet_id=self.id)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.vpc.subnets
+
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
         url = self.console_url
@@ -474,6 +486,10 @@ class Ec2SecurityGroup(rl.ResourceDocument, Ec2Mixin):
 
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.vpc.get_security_group(sg_id=self.id)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.vpc.security_groups
 
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail

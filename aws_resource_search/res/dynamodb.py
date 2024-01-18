@@ -57,6 +57,10 @@ class DynamodbTable(rl.ResourceDocument):
     def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.dynamodb.get_table(table_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.dynamodb.tables
+
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
