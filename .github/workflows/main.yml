@@ -5,10 +5,10 @@ name: CI
 
 on:
   push: # any push event to master will trigger this
-    branches: ["main"]
+    branches: ["main", "dev/**"]
 #    branches: ["unknown"]
   pull_request: # any pull request to master will trigger this
-    branches: ["main"]
+    branches: ["main", "dev/**"]
 #    branches: ["unknown"]
   workflow_dispatch: # allows you to manually trigger run
 
