@@ -22,10 +22,10 @@ except ImportError:  # pragma: no cover
 from ..terminal import SUBTITLE, SHORT_SUBTITLE
 from .base_document import BaseArsDocument
 
-try:
-    from ..ars_init import ars
-except ImportError:  # pragma: no cover
-    pass
+# try:
+#     from ..ars_init import ars
+# except ImportError:  # pragma: no cover
+#     pass
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager import BotoSesManager
@@ -447,6 +447,7 @@ class ResourceDocument(BaseArsDocument):
             This property method is only used in
             ``aws_resource_search.res.${service}`` modules.
         """
+        from ..ars_init import ars
         return self.get_console_url(ars.aws_console)
 
     @classmethod

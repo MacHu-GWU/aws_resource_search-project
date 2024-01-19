@@ -5,7 +5,6 @@ See :class:`ARSBase`.
 """
 
 import typing as T
-import os
 import shutil
 import dataclasses
 from pathlib import Path
@@ -29,9 +28,6 @@ def validate_bsm(bsm: "BotoSesManager"):
     validate the boto session manager. It has to have ``sts.get_caller_identity()``
     permission because we need to get aws_account_id, and be able to get ``aws_region``.
     """
-    if "CI" in os.environ:
-        return
-
     try:
         _ = bsm.aws_account_id
     except Exception as e:  # pragma: no cover
