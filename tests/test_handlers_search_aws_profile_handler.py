@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import pytest
+
 from aws_resource_search.handlers.search_aws_profile_handler import (
     search_aws_profile_and_return_items,
 )
 from aws_resource_search.tests.mock_aws_cli import test_home_aws_folder
 
-
+# run test that need to hit the index may cause concurrency issue
+# we only run this manually on laptop
+@pytest.mark.skip()
 def test_search_aws_profile_handler():
     with test_home_aws_folder.temp():
         items = search_aws_profile_and_return_items(

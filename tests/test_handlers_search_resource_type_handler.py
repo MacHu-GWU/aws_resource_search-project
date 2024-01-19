@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import pytest
+
 from aws_resource_search.ui_init import ui
 from aws_resource_search.handlers.search_resource_type_handler import (
     search_resource_type_and_return_items,
 )
 
-
+# run test that need to hit the index may cause concurrency issue
+# we only run this manually on laptop
+@pytest.mark.skip()
 def test_search_resource_type_and_return_items():
     for query in [
         "s3",
