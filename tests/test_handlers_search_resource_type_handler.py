@@ -2,7 +2,6 @@
 
 import pytest
 
-from aws_resource_search.ui_init import ui
 from aws_resource_search.handlers.search_resource_type_handler import (
     search_resource_type_and_return_items,
 )
@@ -11,6 +10,8 @@ from aws_resource_search.handlers.search_resource_type_handler import (
 # we only run this manually on laptop
 @pytest.mark.skip()
 def test_search_resource_type_and_return_items():
+    from aws_resource_search.ui_init import ui
+
     for query in [
         "s3",
         "iam",

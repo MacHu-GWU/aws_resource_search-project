@@ -5,7 +5,6 @@ import typing as T
 import pytest
 
 from aws_resource_search.ui_def import UI
-from aws_resource_search.ui_init import handler, rl
 from aws_resource_search.handlers.search_resource_handler import (
     search_resource,
     search_resource_under_partitioner,
@@ -21,6 +20,8 @@ class Test(FakeAws):
 
     @classmethod
     def setup_class_post_hook(cls):
+        from aws_resource_search.ui_init import handler, rl
+
         cls.setup_ars()
         cls.ars.set_profile()
         cls.ars.clear_all_cache()
