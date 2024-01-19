@@ -82,7 +82,7 @@ class ARS(ARSMixin):
 
     bsm: "BotoSesManager" = dataclasses.field()
     aws_console: "aws_console_url.AWSConsole" = dataclasses.field()
-    searcher_finder: "SearcherFinder" = dataclasses.field(default=searcher_finder)
+    searcher_finder: "SearcherFinder" = dataclasses.field(default_factory=lambda: searcher_finder)
     dir_index: Path = dataclasses.field(default=dir_index)
     dir_cache: Path = dataclasses.field(default=dir_cache)
     cache: Cache = dataclasses.field(default=None)
