@@ -65,6 +65,8 @@ class BaseMockTest:
                 mocker.start()
                 cls._mocked[cls].append(mocker)
         cls.bsm = BotoSesManager(region_name=cls.region_name)
+        if cls.bsm.aws_account_id != "123456789012":
+            raise ValueError("This test only works with fake AWS account 123456789012")
 
     @classmethod
     def teardown_moto(cls):

@@ -48,7 +48,6 @@ from .res_lib import T_SEARCHER
 from .res_lib import config
 
 from .ars_def import ARS
-from .ars_init import ars
 
 from .handlers.api import search_aws_profile_handler
 from .handlers.api import search_resource_type_handler
@@ -56,4 +55,4 @@ from .handlers.api import search_resource_handler
 from .handlers.api import show_aws_info_handler
 
 from .ui_def import UI
-from .ui_init import handler
+from .ui_def import handler

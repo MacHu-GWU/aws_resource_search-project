@@ -7,10 +7,6 @@ class TestARS(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
         cls.setup_ars()
-        cls.ars.clear_all_cache()
-
-        if cls.bsm.aws_account_id != "123456789012":
-            raise ValueError("This test only works with fake AWS account 123456789012")
 
     def _test_all_resource_types(self):
         _ = self.ars.all_resource_types()

@@ -4,38 +4,22 @@ import typing as T
 
 import pytest
 
-from aws_resource_search.ui_def import UI
 from aws_resource_search.handlers.search_resource_handler import (
     search_resource,
     search_resource_under_partitioner,
 )
+from aws_resource_search.ui_def import UI
 from aws_resource_search.tests.fake_aws.utils import guid
 from aws_resource_search.tests.fake_aws.main import FakeAws
 
 # this test will break ``test_handlers_search_resource_type_handler.py``
 # we only test it manually on local laptop, don't test it in CI
-@pytest.mark.skip()
+# @pytest.mark.skip()
 class Test(FakeAws):
-    ui: T.Optional[UI] = None
-
     @classmethod
     def setup_class_post_hook(cls):
-        from aws_resource_search.ui_init import handler, rl
-
         cls.setup_ars()
-        cls.ars.set_profile()
-        cls.ars.clear_all_cache()
-        cls.ui = UI(
-            ars=cls.ars,
-            handler=handler,
-            hello_message="Welcome to AWS Resource Search!",
-            capture_error=False,
-            terminal=rl.terminal,
-        )
-
-        if cls.bsm.aws_account_id != "123456789012":
-            raise ValueError("This test only works with fake AWS account 123456789012")
-
+        cls.setup_ui()
         cls.create_all()
 
     def test_search_resource(self):
