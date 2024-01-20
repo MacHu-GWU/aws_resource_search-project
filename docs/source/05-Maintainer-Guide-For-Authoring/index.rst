@@ -25,25 +25,33 @@ UI 的入口函数 :func:`aws_resource_search.ui_init.run_ui` 里面的内容和
 
 UI Handler
 ------------------------------------------------------------------------------
-
+UI 的函数是用来处理
 
 如何支持更多的 AWS 服务和资源
 ------------------------------------------------------------------------------
 本节主要介绍如果你发现这个项目不支持你想要的 AWS 服务或者资源, 你应该如何去添加它.
 
-1. 首先到 ``aws_resource_search/code/searchers_enum.json`` 中添加你要支持的 AWS 资源的类型. 其中 ``description`` 是给人类看的一句话介绍, 一般是 AWS Document 官网首页的第一句话. 而 ``ngram`` 则是额外的用于搜索 ngram 搜索的关键字, 你可以把人类在想搜这个资源时能联想到的各种词汇的全称和缩写都放在这里.
+1. 首先到 `aws_resource_search/code/searcher_enum.json <https://github.com/MacHu-GWU/aws_resource_search-project/blob/main/aws_resource_search/code/searcher_enum.json>`_ 仿照已经支持的 AWS Resource, 添加你要支持的 AWS Resource 的类型. 其中 ``description`` 是给人类看的一句话介绍, 一般是 AWS Document 官网首页的第一句话. 而 ``ngram`` 则是额外的用于搜索 ngram 搜索的关键字, 你可以把人类在想搜这个资源时能联想到的各种词汇的全称和缩写都放在这里.
 
-.. literalinclude:: ../../../aws_resource_search/code/searchers_enum.json
-   :language: python
-   :linenos:
+.. dropdown:: aws_resource_search/code/searcher_enum.json
 
-2. 到 ``aws_resource_search/res/`` 下, 找一个跟你要支持的服务比较相近的服务作为模版, copy paste 创建一个新的模块. 模块的名字要跟 AWS Service 对应上. 然后参考其他的模块实现这个搜索器.
-3. 运行 ``scripts/code_work.py``, 自动更新其他的 enum 模块, 数据, 和代码.
-4. 如果你这个 resource 是一个先要搜索 parent resource, 然后才能搜的 sub resource, 你还要到 ``aws_resource_search/ui/search_patterns.py`` 下更新 ``has_partitioner_search_patterns`` 这个映射关系.
+    .. literalinclude:: ../../../aws_resource_search/code/searcher_enum.json
+       :language: python
+       :linenos:
 
-.. literalinclude:: ../../../aws_resource_search/ui/search_patterns.py
-   :language: python
-   :linenos:
+2. 然后到 `aws_resource_search/res/ <https://github.com/MacHu-GWU/aws_resource_search-project/tree/main/aws_resource_search/res>`_ 下, 找一个跟你要支持的服务比较相近的服务作为模版, copy paste 创建一个新的模块. 模块的名字要跟 AWS Service 对应上. 然后参考其他的模块实现这个搜索器.
+3. 运行 `scripts/code_work.py <https://github.com/MacHu-GWU/aws_resource_search-project/blob/main/scripts/code_work.py>`_, 自动更新其他的 enum 模块, 数据, 和代码.
+4. 如果你这个 resource 是一个先要搜索 parent resource, 然后才能搜的 sub resource, 你还要到 `aws_resource_search/ui/search_patterns.py <https://github.com/MacHu-GWU/aws_resource_search-project/blob/main/aws_resource_search/ars_search_patterns.py#L38>`_ 模块中更新 `ArsSearchPatternsMixin.get_search_patterns` 这个函数中定义的映射关系.
+
+.. dropdown:: aws_resource_search/ars_search_patterns.py
+
+    .. literalinclude:: ../../../aws_resource_search/ars_search_patterns.py
+       :language: python
+       :linenos:
+
+5. 为了验证你的实现是否正确, 你需要到 `aws_resource_search/tests/fake_aws/ <https://github.com/MacHu-GWU/aws_resource_search-project/tree/main/aws_resource_search/tests/fake_aws>`_ 目录下创建 mock AWS resource 的模块, 你可以在里面找和你的 Resource 类似的模块作为参考.
+6. 然后到 `aws_resource_search/tests/fake_aws/main.py <https://github.com/MacHu-GWU/aws_resource_search-project/blob/main/aws_resource_search/tests/fake_aws/main.py#L24>`_ 模块中更新 ``mock_list`` 中你要 mock 的列表, 以及更新 ``def create_all(self)`` 中的逻辑, 把创建你刚实现的 Resource 的逻辑加进去.
+7. 然后你就可以用 ``pyops cov`` 命令, 或者手动运行 `tests/test_ars_init.py <https://github.com/MacHu-GWU/aws_resource_search-project/blob/main/tests/test_ars_init.py>`_ 单元测试来自动 mock 所有支持的 AWS 资源并尝试进行搜索了.
 
 
 .. _what-is-searcher:
@@ -72,15 +80,16 @@ Middle level modules:
     - :mod:`aws_resource_search.documents`: 所有的可以被搜索的文档的实体类.
     - :mod:`aws_resource_search.items`: 所有在 UI 中展示的 item 的实体类.
     - :mod:`aws_resource_search.conf`: 配置管理系统.
-    - :mod:`aws_resource_search.res_lib_v1.py`: 把所有底层, 中层模块的方法都注册到这个模块中, 以便于其他模块可以直接 import 这个模块, 而不用 import 太多的模块.
+    - :mod:`aws_resource_search.res_lib.py`: 把所有底层, 中层模块的方法都注册到这个模块中, 以便于其他模块可以直接 import 这个模块, 而不用 import 太多的模块.
 
 Per AWS Resource Type Searcher modules:
 
     这一层主要是实现对应的 AWS Resource 的 Searcher 类. 以及把他们汇总到一个 ``ARS`` 单例对象中, 便于 import 和调用 search 的 API.
 
     - :mod:`aws_resource_search.res`
-    - :mod:`aws_resource_search.ars_base`: ARS 类的基类.
-    - :mod:`aws_resource_search.ars_def`: 用 code 来写 code, 自动生成这个模块.
+    - :mod:`aws_resource_search.ars_def`: ARS 类的基类.
+    - :mod:`aws_resource_search.ars_mixin`: 用 code 来写 code, 自动生成这个模块.
+    - :mod:`aws_resource_search.ars_search_patterns.py`: 把一些 ``ars_def`` 中的方法放到其他 mixin 类中去, 以便于 ``ars_def`` 中的代码更简洁.
     - :mod:`aws_resource_search.ars_init`: ARS 单例的创建.
 
 UI modules:

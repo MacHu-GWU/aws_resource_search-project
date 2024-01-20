@@ -90,7 +90,6 @@ Search StepFunction execution, which is a child resource of StepFunction state m
 
 Install
 ------------------------------------------------------------------------------
-
 ``aws_resource_search`` is released on PyPI, so all you need is:
 
 .. code-block:: console

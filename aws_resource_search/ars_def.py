@@ -144,8 +144,8 @@ class ARS(
 
     def set_profile(self, profile: T.Optional[str] = NOTHING):
         """
-        Set all boto session related attributes (``bsm``, ``aws_console``)
-        to use a new AWS profile.
+        Set all boto session related attributes (``bsm``, ``aws_console``,
+        ``search_patterns``) to use a new AWS profile.
 
         Logics:
 
