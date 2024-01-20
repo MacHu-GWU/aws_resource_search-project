@@ -20,7 +20,8 @@ class Test(FakeAws):
     def setup_class_post_hook(cls):
         cls.setup_ars()
         cls.setup_ui()
-        cls.create_all()
+        cls.create_s3_bucket()
+        cls.create_state_machines()
 
     def test_search_resource(self):
         items = search_resource(

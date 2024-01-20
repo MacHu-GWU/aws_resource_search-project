@@ -8,7 +8,7 @@ from aws_resource_search.logger import logger
 from aws_resource_search.tests.fake_aws.api import FakeAws, guid, envs, rand_env
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 class TestARS(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
