@@ -246,10 +246,12 @@ class ResourceDocument(BaseArsDocument):
         same as the resource name. For example, AWS Lambda function name,
         S3 bucket name. But for some resources, it's not. For example,
         AWS EC2 instance id, AWS VPC id. This field is also used as a searchable
-        ``IdField`` in :class:`Searcher`.
+        ``IdField`` in :class:`aws_resource_search.base_searcher.BaseSearcher`.
     :param name: the human friendly name of the aws resource. For example,
         AWS Lambda function name, S3 bucket name. This field is also used as a
-        searchable ``NgramWordsField`` in :class:`Searcher`.
+        searchable ``NgramWordsField`` in :class:`aws_resource_search.base_searcher.BaseSearcher`.
+    :param name: similar to name, but this field is used as a searchable
+        ``TextField`` in :class:`aws_resource_search.base_searcher.BaseSearcher`.
 
     In your subclass, you must implement the following methods.
     Please read the docstrings to understand their functionality.
@@ -285,7 +287,15 @@ class ResourceDocument(BaseArsDocument):
     raw_data: "T_RESULT_DATA" = dataclasses.field(metadata={"field": sayt.StoredField(name="raw_data")})
     id: str = dataclasses.field(metadata={"field": sayt.IdField(name="id", field_boost=5.0, stored=True)})
     name: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="name", minsize=2, maxsize=4, stored=True, sortable=True, ascending=True)})
+    name_text: str = dataclasses.field(metadata={
+        "field": sayt.TextField(name="name_text", stored=False, sortable=True, ascending=True)}, init=False)
     # fmt: on
+
+    def __post_init__(self):
+        name_text = self.name
+        for char in "-_":
+            name_text = name_text.replace(char, " ")
+        self.name_text = name_text
 
     @classmethod
     def from_resource(

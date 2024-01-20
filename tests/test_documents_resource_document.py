@@ -142,8 +142,8 @@ class TestResourceDocument:
             )
 
         search_fields = DummyS3Bucket.get_dataset_fields()
-        assert search_fields[3].name == "arn"
-        assert isinstance(search_fields[3], sayt.StoredField)
+        assert search_fields[4].name == "arn"
+        assert isinstance(search_fields[4], sayt.StoredField)
 
         @dataclasses.dataclass
         class WrongResource1(ResourceDocument):

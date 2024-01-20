@@ -202,7 +202,7 @@ class BaseSearcher(BaseModel, T.Generic[T_ARS_RESOURCE_DOCUMENT]):
             objects, otherwise return the elasticsearch liked result.
         :param verbose: whether to print the log
         :param bsm: you can explicitly use a ``BotoSesManager`` object to override
-            the default one you defined when creating the :class:`Searcher`` object.
+            the default one you defined when creating the :class:`aws_resource_search.base_searcher.BaseSearcher`` object.
         """
         final_boto_kwargs = self._get_final_boto_kwargs(boto_kwargs=boto_kwargs)
         ds = self._get_ds(

@@ -22,6 +22,7 @@ Backlog (TODO)
 - add config system so that user can configure ARS by editing the ``~/.aws_resource_search/config.json`` file.
 - add ``!{`` command to view and edit the json file.
 - allow user to jump to list aws resources view in AWS console by tapping 'Enter' key in aws resource type search view.
+- allow fuzzy search with 1 character edit distance.
 
 **Minor Improvements**
 

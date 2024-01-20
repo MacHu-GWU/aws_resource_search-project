@@ -65,7 +65,7 @@ def enrich_searcher_metadata(
 ) -> T.List[SearcherMetadata]:
     """
     Recursively scan all modules in ``aws_resource_search.res`` package,
-    try to locate all subclass of the :class:`Searcher` to extract
+    try to locate all subclass of the :class:`aws_resource_search.base_searcher.BaseSearcher` to extract
     all searcher metadata.
 
     Also if the searcher is defined in the ``searcher_enum.json`` but not
