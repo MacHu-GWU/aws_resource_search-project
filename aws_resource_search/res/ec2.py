@@ -35,6 +35,9 @@ class Ec2Mixin:
 
 @dataclasses.dataclass
 class Ec2Instance(rl.ResourceDocument, Ec2Mixin):
+    """
+    todo: docstring
+    """
     # fmt: off
     state: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True)})
     vpc_id: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True)})
@@ -162,6 +165,9 @@ class Ec2Instance(rl.ResourceDocument, Ec2Mixin):
 
 
 class Ec2InstanceSearcher(rl.BaseSearcher[Ec2Instance]):
+    """
+    todo: docstring
+    """
     pass
 
 
