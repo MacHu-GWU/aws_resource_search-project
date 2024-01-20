@@ -1,15 +1,23 @@
 # -*- coding: utf-8 -*-
 
+from aws_resource_search.items.show_aws_info_item import ShowAwsInfoItem
 from aws_resource_search.handlers.show_aws_info_handler import (
     show_aws_info_handler,
 )
+from aws_resource_search.tests.fake_aws.main import FakeAws
 
 
-def test_show_aws_info_handler():
-    """
-    We don't test handler.
-    """
-    _ = show_aws_info_handler
+class Test(FakeAws):
+    @classmethod
+    def setup_class_post_hook(cls):
+        cls.setup_ars()
+        cls.setup_ui()
+
+    def test_show_aws_info_handler(self):
+        """
+        We don't test handler.
+        """
+        items = show_aws_info_handler(ui=self.ui, line_input="")
 
 
 if __name__ == "__main__":

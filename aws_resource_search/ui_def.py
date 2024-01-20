@@ -10,6 +10,7 @@ import zelfred.api as zf
 
 from . import res_lib as rl
 from .handlers.api import (
+    open_config_handler,
     search_aws_profile_handler,
     search_resource_type_handler,
     search_resource_handler,
@@ -74,6 +75,15 @@ def handler(
             ui=ui,
             line_input=line_input,
             profile_query=aws_profile_query,
+            skip_ui=skip_ui,
+        )
+
+    # example: s3-bucket: my bucket!{
+    if len(query.split("!{", 1)) > 1:
+        line_input, sub_query = query.split("!{", 1)
+        return open_config_handler(
+            ui=ui,
+            line_input=line_input,
             skip_ui=skip_ui,
         )
 

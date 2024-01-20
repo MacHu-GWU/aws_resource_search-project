@@ -87,7 +87,7 @@ def search_aws_profile_handler(
         this argument is used for third party integration.
     """
     if skip_ui is False:  # pragma: no cover
-        ui.render.prompt = f"(Query)"
+        ui.render.prompt = f"(AWS Profile Query)"
     return search_aws_profile_and_return_items(
         line_input=line_input,
         profile_query=rl.preprocess_query(profile_query),

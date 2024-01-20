@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import typing as T
-
-import pytest
-
 from aws_resource_search.handlers.search_resource_type_handler import (
     search_resource_type_and_return_items,
 )
-from aws_resource_search.ui_def import UI
 from aws_resource_search.tests.fake_aws.main import FakeAws
 
-# run test that need to hit the index may cause concurrency issue
-# we only run this manually on laptop
-# @pytest.mark.skip()
+
 class Test(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):

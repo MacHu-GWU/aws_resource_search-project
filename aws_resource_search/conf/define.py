@@ -39,15 +39,18 @@ class Config(DataClass):
                 SHARED: {
                     "res.*.cache_expire": default_cache_expire,
                 },
-                "res": {},
-            }
-
-            for k, v in SearcherEnum.__dict__.items():
-                if k.startswith("_") is False:
-                    default_data["res"][v] = {
+                "res": {
+                    res_type.value: {
                         "cache_expire": default_cache_expire,
                     }
-
+                    for res_type in SearcherEnum
+                },
+            }
+            res = default_data["res"]
+            res[SearcherEnum.codebuild_job_run.value]["cache_expire"] = 5 * 60
+            res[SearcherEnum.ecs_task_run.value]["cache_expire"] = 5 * 60
+            res[SearcherEnum.glue_job_run.value]["cache_expire"] = 5 * 60
+            res[SearcherEnum.sfn_state_machine_execution.value]["cache_expire"] = 5 * 60
             path_config_json.write_text(json.dumps(default_data, indent=4))
             return cls.load(path=path)
 

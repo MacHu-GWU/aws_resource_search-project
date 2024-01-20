@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import typing as T
-
-import pytest
-
 from aws_resource_search.handlers.search_resource_handler import (
     search_resource,
     search_resource_under_partitioner,
 )
-from aws_resource_search.ui_def import UI
 from aws_resource_search.tests.fake_aws.utils import guid
 from aws_resource_search.tests.fake_aws.main import FakeAws
 
-# this test will break ``test_handlers_search_resource_type_handler.py``
-# we only test it manually on local laptop, don't test it in CI
-# @pytest.mark.skip()
+
 class Test(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):

@@ -36,19 +36,19 @@ def show_aws_info_handler(
         )
     ]
     bsm = ui.ars.bsm
-    pairs = [
-        ("aws_account_alias", bsm.aws_account_alias),
-        ("aws_account_id", bsm.aws_account_id),
-        ("aws_region", bsm.aws_region),
-    ]
-    items.extend(
-        [
-            rl.ShowAwsInfoItem.from_key_value(
-                key=key,
-                value=value,
-                autocomplete=line_input,
-            )
-            for ith, (key, value) in enumerate(pairs, start=1)
-        ]
-    )
+    for key in [
+        "aws_account_alias",
+        "aws_account_id",
+        "aws_region",
+    ]:
+        try:
+            value = getattr(bsm, key)
+        except Exception as e:
+            value = f"Unable to get, error: {e}"
+        item = rl.ShowAwsInfoItem.from_key_value(
+            key=key,
+            value=value,
+            autocomplete=line_input,
+        )
+        items.append(item)
     return items
