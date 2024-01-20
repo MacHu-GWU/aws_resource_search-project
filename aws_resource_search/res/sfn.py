@@ -73,7 +73,7 @@ class SfnStateMachine(rl.ResourceDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
-        url = self.console_url
+        url = self.get_console_url(console=ars.aws_console)
         detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars, arn_key="statemachine_arn")
 
         with rl.DetailItem.error_handling(detail_items):
@@ -87,10 +87,10 @@ class SfnStateMachine(rl.ResourceDocument):
             status_icon = sfn_statemachine_status_icon_mapper[status]
             type_icon = sfn_statemachine_type_icon_mapper[type]
             detail_items.extend([
-                from_detail("status", status, f"{status_icon} {status}", url=url),
+                from_detail("status", status, value_text=f"{status_icon} {status}", url=url),
                 from_detail("🧢 role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
-                from_detail("definition", definition, self.one_line(definition), url=url),
-                from_detail("type", type, f"{type_icon} {type}", url=url),
+                from_detail("definition", definition, value_text=self.one_line(definition), url=url),
+                from_detail("type", type, value_text=f"{type_icon} {type}", url=url),
                 from_detail("creation_date", creation_date, url=url),
             ])
 
@@ -188,7 +188,7 @@ class SfnExecution(rl.ResourceDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
-        url = self.console_url
+        url = self.get_console_url(console=ars.aws_console)
         detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars, arn_key="exec_arn")
 
         with rl.DetailItem.error_handling(detail_items):

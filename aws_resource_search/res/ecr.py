@@ -65,7 +65,7 @@ class EcrRepository(rl.ResourceDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
-        url = self.console_url
+        url = self.get_console_url(console=ars.aws_console)
         detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
         with rl.DetailItem.error_handling(detail_items):
@@ -189,7 +189,7 @@ class EcrRepositoryImage(rl.ResourceDocument):
 
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
-        url = self.console_url
+        url = self.get_console_url(console=ars.aws_console)
         detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
         with rl.DetailItem.error_handling(detail_items):

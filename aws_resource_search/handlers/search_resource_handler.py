@@ -10,11 +10,6 @@ import botocore.exceptions
 import zelfred.api as zf
 
 from ..paths import path_aws_config, path_aws_credentials
-from ..search_patterns import (
-    has_partitioner,
-    get_partitioner_resource_type,
-    get_partitioner_boto_kwargs,
-)
 from .. import res_lib as rl
 
 
@@ -362,7 +357,7 @@ def search_resource_under_partitioner(
     # - "my_database@"
     # - "my_database@my table"
     partitioner_query = q.trimmed_parts[0]
-    boto_kwargs = get_partitioner_boto_kwargs(resource_type, partitioner_query)
+    boto_kwargs = ui.ars.get_partitioner_boto_kwargs(resource_type, partitioner_query)
 
     # example: "my_database@  "
     if len(q.trimmed_parts) == 1 and len(q.parts) > 1:
@@ -406,11 +401,11 @@ def search_resource_handler(
         this argument is used for third party integration.
     """
     ui.render.prompt = f"(Query)"
-    if has_partitioner(resource_type):
+    if ui.ars.has_partitioner(resource_type):
         return search_resource_under_partitioner(
             ui=ui,
             resource_type=resource_type,
-            partitioner_resource_type=get_partitioner_resource_type(resource_type),
+            partitioner_resource_type=ui.ars.get_partitioner_resource_type(resource_type),
             query=query,
             skip_ui=skip_ui,
         )

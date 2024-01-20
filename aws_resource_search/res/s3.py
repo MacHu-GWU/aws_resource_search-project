@@ -135,7 +135,7 @@ class S3Bucket(rl.ResourceDocument):
         # the first code block is to initialize a detail_items list
         # using the class attribute
         from_detail = rl.DetailItem.from_detail
-        url = self.console_url
+        url = self.get_console_url(console=ars.aws_console)
         # get initial detail items
         detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars, arn_key="s3 arn")
         detail_items.append(from_detail("s3 uri", f"s3://{self.name}", url=url))

@@ -11,7 +11,6 @@ import dataclasses
 from datetime import datetime, timezone
 
 import jmespath
-import aws_console_url.api as acu
 import sayt.api as sayt
 
 try:
@@ -22,13 +21,10 @@ except ImportError:  # pragma: no cover
 from ..terminal import SUBTITLE, SHORT_SUBTITLE
 from .base_document import BaseArsDocument
 
-# try:
-#     from ..ars_init import ars
-# except ImportError:  # pragma: no cover
-#     pass
-
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager import BotoSesManager
+    import aws_console_url.api as acu
+
     from ..ars_def import ARS
     from ..downloader import T_RESULT_DATA, ResourceIterproxy
     from ..items.api import T_ARS_ITEM
@@ -424,7 +420,7 @@ class ResourceDocument(BaseArsDocument):
         msg = f"{self.__class__.__name__} doesn't support ARN"
         raise NotImplementedError(msg)
 
-    def get_console_url(self, console: acu.AWSConsole) -> str:
+    def get_console_url(self, console: "acu.AWSConsole") -> str:
         """
         AWS Console URL to view this AWS resource in the console.
         If applicable, User can tap 'Enter' to open in browser.
@@ -436,22 +432,8 @@ class ResourceDocument(BaseArsDocument):
         msg = f"{self.__class__.__name__} doesn't support AWS Console url"
         raise NotImplementedError(msg)
 
-    @property
-    def console_url(self) -> str:
-        """
-        Zero argument version of :meth:`~ResourceDocument.get_console_url`.
-        It uses the project default ``acu.AWSConsole`` object under the hood,
-
-        .. note::
-
-            This property method is only used in
-            ``aws_resource_search.res.${service}`` modules.
-        """
-        from ..ars_init import ars
-        return self.get_console_url(ars.aws_console)
-
     @classmethod
-    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+    def get_list_resources_console_url(cls, console: "acu.AWSConsole") -> str:
         """
         AWS Console URL to view list all AWS resources of this type in the console.
         If applicable, User can tap 'Enter' to open in browser.

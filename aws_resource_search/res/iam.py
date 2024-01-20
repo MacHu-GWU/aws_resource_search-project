@@ -174,7 +174,7 @@ class IamRole(IamMixin, rl.ResourceDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
-        url = self.console_url
+        url = self.get_console_url(console=ars.aws_console)
         detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
         trust_entities = self.raw_data["AssumeRolePolicyDocument"]
@@ -291,7 +291,7 @@ class IamPolicy(IamMixin, rl.ResourceDocument):
     # fmt: off
     def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         from_detail = rl.DetailItem.from_detail
-        url = self.console_url
+        url = self.get_console_url(console=ars.aws_console)
         detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
         detail_items.append(from_detail("create_date", self.create_date))
         with rl.DetailItem.error_handling(detail_items):

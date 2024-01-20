@@ -18,7 +18,6 @@ class TestAwsResourceItem:
         )[0]
         _ = item.get_id()
         _ = item.get_name()
-        _ = item.get_console_url()
         _ = item.get_arn()
 
 

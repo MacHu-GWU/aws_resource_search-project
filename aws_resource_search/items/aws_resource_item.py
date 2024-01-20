@@ -13,6 +13,8 @@ from ..terminal import remove_text_format
 from .base_item import BaseArsItem
 
 if T.TYPE_CHECKING:  # pragma: no cover
+    import aws_console_url.api as acu
+
     from ..documents.resource_document import T_ARS_RESOURCE_DOCUMENT
     from ..ui_def import UI
 
@@ -109,12 +111,12 @@ class AwsResourceItem(BaseArsItem):
         """
         return self.variables["doc"].name
 
-    def get_console_url(self) -> str:
+    def get_console_url(self, console: "acu.AWSConsole") -> str:
         """
         Get AWS console url of the resource.
         """
         doc: "T_ARS_RESOURCE_DOCUMENT" = self.variables["doc"]
-        return doc.console_url
+        return doc.get_console_url(console=console)
 
     def get_arn(self) -> str:
         """
@@ -128,7 +130,7 @@ class AwsResourceItem(BaseArsItem):
 
         Open AWS console url in browser.
         """
-        self.open_url_or_print(ui, self.get_console_url())
+        self.open_url_or_print(ui, self.get_console_url(console=ui.ars.aws_console))
 
     def ctrl_a_handler(self, ui: "UI"):  # pragma: no cover
         """
@@ -144,7 +146,7 @@ class AwsResourceItem(BaseArsItem):
 
         Copy AWS console url to clipboard.
         """
-        self.copy_or_print(ui, self.get_console_url())
+        self.copy_or_print(ui, self.get_console_url(console=ui.ars.aws_console))
 
     def ctrl_p_handler(self, ui: "UI"):  # pragma: no cover
         """
