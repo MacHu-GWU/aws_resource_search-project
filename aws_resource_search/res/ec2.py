@@ -3,14 +3,14 @@
 import typing as T
 import dataclasses
 
+import sayt.api as sayt
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import ShortcutEnum, format_key_value, highlight_text
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 ec2_instance_state_icon_mapper = {
@@ -29,17 +29,22 @@ class Ec2Mixin:
         return {dct["Key"]: dct["Value"] for dct in raw_data.get("Tags", [])}
 
     @property
-    def tags(self: T.Union["Ec2Mixin", res_lib.BaseDocument]) -> T.Dict[str, str]:
+    def tags(self: T.Union["Ec2Mixin", rl.ResourceDocument]) -> T.Dict[str, str]:
         return self.get_tags(self.raw_data)
 
 
 @dataclasses.dataclass
-class Ec2Instance(res_lib.BaseDocument, Ec2Mixin):
-    state: str = dataclasses.field()
-    vpc_id: str = dataclasses.field()
-    subnet_id: str = dataclasses.field()
-    id_ng: str = dataclasses.field()
-    inst_arn: str = dataclasses.field()
+class Ec2Instance(rl.ResourceDocument, Ec2Mixin):
+    """
+    todo: docstring
+    """
+    # fmt: off
+    state: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True)})
+    vpc_id: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True)})
+    subnet_id: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="subnet_id", minsize=2, maxsize=4, stored=True)})
+    id_ng: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True)})
+    inst_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="inst_arn")})
+    # fmt: on
 
     @property
     def state_icon(self) -> str:
@@ -84,13 +89,13 @@ class Ec2Instance(res_lib.BaseDocument, Ec2Mixin):
 
     @property
     def title(self) -> str:
-        return format_key_value("name_tag", self.name)
+        return rl.format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{} | {} | {} | {}, {}".format(
             f"{self.state_icon} {self.state}",
-            highlight_text(self.id),
+            rl.highlight_text(self.id),
             self.inst_type,
             f"vpc = {self.vpc_id}",
             self.short_subtitle,
@@ -104,33 +109,37 @@ class Ec2Instance(res_lib.BaseDocument, Ec2Mixin):
     def arn(self) -> str:
         return self.inst_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ec2.get_instance(instance_id_or_arn=self.arn)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ec2.instances
 
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ec2_client.describe_instances(InstanceIds=[self.id])
             instances = res.get("Reservations", [{}])[0].get("Instances", [])
             if len(instances) == 0:
                 return [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🚨 EC2 instance not found, maybe it's deleted?",
-                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to verify in AWS Console",
                         url=url,
                     )
                 ]
             inst = self.from_resource(
                 instances[0], ars.bsm, dict(InstanceIds=[self.id])
             )
-            # fmt: off
             detail_items.extend([
                 from_detail("inst_id", inst.id, url=url),
                 from_detail("inst_type", inst.inst_type, url=url),
-                from_detail("state", inst.state, f"{self.state_icon} {inst.state}", url=url),
+                from_detail("state", inst.state, value_text=f"{self.state_icon} {inst.state}", url=url),
                 from_detail("vpc_id", inst.vpc_id, url=ars.aws_console.vpc.get_vpc(inst.vpc_id)),
                 from_detail("subnet_id", inst.subnet_id, url=ars.aws_console.vpc.get_subnet(inst.subnet_id)),
                 from_detail("public_ip", inst.public_ip, url=url),
@@ -138,24 +147,27 @@ class Ec2Instance(res_lib.BaseDocument, Ec2Mixin):
                 from_detail("platform", inst.platform, url=url),
                 from_detail("inst_profile", inst.inst_profile_arn, url=ars.aws_console.iam.get_role(inst.inst_profile_arn.split("/")[-1])),
             ])
-            # fmt: on
             detail_items.extend(
                 [
                     from_detail(
-                        name="sg",
-                        value=dct["GroupId"],
-                        text="{} | {}".format(dct["GroupId"], dct["GroupName"]),
+                        "sg",
+                        dct["GroupId"],
+                        value_text="{} | {}".format(dct["GroupId"], dct["GroupName"]),
                         url=ars.aws_console.vpc.get_security_group(dct["GroupId"]),
                         uid=dct["GroupId"],
                     )
-                    for dct in self.raw_data.get("SecurityGroups", [])
+                    for dct in inst.raw_data.get("SecurityGroups", [])
                 ]
             )
-            detail_items.extend(res_lib.DetailItem.from_tags(self.tags, url=url))
+            detail_items.extend(rl.DetailItem.from_tags(inst.tags, url=url))
         return detail_items
+    # fmt: on
 
 
-class Ec2InstanceSearcher(res_lib.Searcher[Ec2Instance]):
+class Ec2InstanceSearcher(rl.BaseSearcher[Ec2Instance]):
+    """
+    todo: docstring
+    """
     pass
 
 
@@ -165,23 +177,13 @@ ec2_instance_searcher = Ec2InstanceSearcher(
     method="describe_instances",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Reservations[].Instances[]"),
+    result_path=rl.ResultPath("Reservations[].Instances[]"),
     # extract document
     doc_class=Ec2Instance,
     # search
-    resource_type=SearcherEnum.ec2_instance,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="subnet_id", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.StoredField(name="inst_arn"),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ec2_instance.value,
+    fields=Ec2Instance.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ec2_instance.value),
     more_cache_key=None,
 )
 
@@ -193,12 +195,14 @@ ec2_vpc_state_icon_mapper = {
 
 
 @dataclasses.dataclass
-class Ec2Vpc(res_lib.BaseDocument, Ec2Mixin):
-    state: str = dataclasses.field()
-    cidr_ipv4: str = dataclasses.field()
-    cidr_ipv6: str = dataclasses.field()
-    id_ng: str = dataclasses.field()
-    vpc_arn: str = dataclasses.field()
+class Ec2Vpc(rl.ResourceDocument, Ec2Mixin):
+    # fmt: off
+    state: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True)})
+    cidr_ipv4: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="cidr_ipv4", minsize=2, maxsize=3, stored=True)})
+    cidr_ipv6: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="cidr_ipv6", minsize=2, maxsize=4, stored=True)})
+    id_ng: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True)})
+    vpc_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="vpc_arn")})
+    # fmt: on
 
     @property
     def is_default(self) -> str:
@@ -239,14 +243,14 @@ class Ec2Vpc(res_lib.BaseDocument, Ec2Mixin):
 
     @property
     def title(self) -> str:
-        return format_key_value("name_tag", self.name)
+        return rl.format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{} | {} | {}, {}".format(
             f"{self.state_icon} {self.state}",
-            highlight_text(self.id),
-            format_key_value("is_default", self.is_default),
+            rl.highlight_text(self.id),
+            rl.format_key_value("is_default", self.is_default),
             self.short_subtitle,
         )
 
@@ -258,22 +262,26 @@ class Ec2Vpc(res_lib.BaseDocument, Ec2Mixin):
     def arn(self) -> str:
         return self.vpc_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.vpc.get_vpc(vpc_id=self.id)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        get_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.vpc.vpcs
 
-        with self.enrich_details(detail_items):
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        get_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ec2_client.describe_vpcs(VpcIds=[self.id])
             vpcs = res.get("Vpcs", [])
             if len(vpcs) == 0:
                 return [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🚨 Ec2 vpc not found, maybe it's deleted?",
-                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to verify in AWS Console",
                         url=url,
                     )
                 ]
@@ -289,11 +297,11 @@ class Ec2Vpc(res_lib.BaseDocument, Ec2Mixin):
                 ]
             )
             # fmt: on
-            detail_items.extend(res_lib.DetailItem.from_tags(vpc.tags, url))
+            detail_items.extend(rl.DetailItem.from_tags(vpc.tags, url))
         return detail_items
 
 
-class Ec2VpcSearcher(res_lib.Searcher[Ec2Vpc]):
+class Ec2VpcSearcher(rl.BaseSearcher[Ec2Vpc]):
     pass
 
 
@@ -303,33 +311,25 @@ ec2_vpc_searcher = Ec2VpcSearcher(
     method="describe_vpcs",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Vpcs"),
+    result_path=rl.ResultPath("Vpcs"),
     # extract document
     doc_class=Ec2Vpc,
     # search
-    resource_type=SearcherEnum.ec2_vpc,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="cidr_ipv4", minsize=2, maxsize=3, stored=True),
-            res_lib.sayt.NgramWordsField(name="cidr_ipv6", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.StoredField(name="vpc_arn"),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ec2_vpc.value,
+    fields=Ec2Vpc.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ec2_vpc.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class Ec2Subnet(res_lib.BaseDocument, Ec2Mixin):
-    state: str = dataclasses.field()
-    vpc_id: str = dataclasses.field()
-    az: str = dataclasses.field()
-    id_ng: str = dataclasses.field()
+class Ec2Subnet(rl.ResourceDocument, Ec2Mixin):
+    # fmt: off
+    state: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True)})
+    vpc_id: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True)})
+    az: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="az", minsize=2, maxsize=4, stored=True)})
+    id_ng: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True)})
+    # fmt: on
 
     @property
     def state_icon(self) -> str:
@@ -361,7 +361,7 @@ class Ec2Subnet(res_lib.BaseDocument, Ec2Mixin):
 
     @property
     def title(self) -> str:
-        return format_key_value("name_tag", self.name)
+        return rl.format_key_value("name_tag", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -369,7 +369,7 @@ class Ec2Subnet(res_lib.BaseDocument, Ec2Mixin):
         return "{} | {} | {} | {}, {}".format(
             f"{state_icon} {self.state}",
             self.vpc_id,
-            highlight_text(self.id),
+            rl.highlight_text(self.id),
             self.az,
             self.short_subtitle,
         )
@@ -382,21 +382,26 @@ class Ec2Subnet(res_lib.BaseDocument, Ec2Mixin):
     def arn(self) -> str:
         return self.raw_data["SubnetArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.vpc.get_subnet(subnet_id=self.id)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
-        with self.enrich_details(detail_items):
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.vpc.subnets
+
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ec2_client.describe_subnets(SubnetIds=[self.id])
             subnets = res.get("Subnets", [])
             if len(subnets) == 0:
                 return [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🚨 EC2 subnet not found, maybe it's deleted?",
-                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to verify in AWS Console",
                         url=url,
                     )
                 ]
@@ -412,11 +417,11 @@ class Ec2Subnet(res_lib.BaseDocument, Ec2Mixin):
                 from_detail("ipv6_native", subnet.ipv6_native, url=url),
             ])
             # fmt: on
-            detail_items.extend(res_lib.DetailItem.from_tags(subnet.tags, url))
+            detail_items.extend(rl.DetailItem.from_tags(subnet.tags, url))
         return detail_items
 
 
-class Ec2SubnetSearcher(res_lib.Searcher[Ec2Subnet]):
+class Ec2SubnetSearcher(rl.BaseSearcher[Ec2Subnet]):
     pass
 
 
@@ -426,35 +431,28 @@ ec2_subnet_searcher = Ec2SubnetSearcher(
     method="describe_subnets",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Subnets"),
+    result_path=rl.ResultPath("Subnets"),
     # extract document
     doc_class=Ec2Subnet,
     # search
-    resource_type=SearcherEnum.ec2_subnet,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="az", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ec2_subnet.value,
+    fields=Ec2Subnet.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ec2_subnet.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class Ec2SecurityGroup(res_lib.BaseDocument, Ec2Mixin):
-    vpc_id: str = dataclasses.field()
-    id_ng: str = dataclasses.field()
-    sg_arn: str = dataclasses.field()
+class Ec2SecurityGroup(rl.ResourceDocument, Ec2Mixin):
+    # fmt: off
+    vpc_id: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True)})
+    id_ng: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True)})
+    sg_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="sg_arn")})
+    # fmt: on
 
     @property
     def description(self) -> str:
-        return res_lib.get_description(self.raw_data, "Description")
+        return rl.get_description(self.raw_data, "Description")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -473,13 +471,13 @@ class Ec2SecurityGroup(res_lib.BaseDocument, Ec2Mixin):
 
     @property
     def title(self) -> str:
-        return format_key_value("group_name", self.name)
+        return rl.format_key_value("group_name", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{} | {} | {}, {}".format(
             self.vpc_id,
-            highlight_text(self.id),
+            rl.highlight_text(self.id),
             self.description,
             self.short_subtitle,
         )
@@ -492,21 +490,26 @@ class Ec2SecurityGroup(res_lib.BaseDocument, Ec2Mixin):
     def arn(self) -> str:
         return self.sg_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.vpc.get_security_group(sg_id=self.id)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
-        with self.enrich_details(detail_items):
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.vpc.security_groups
+
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ec2_client.describe_security_groups(GroupIds=[self.id])
             sgs = res.get("SecurityGroups", [])
             if len(sgs) == 0:
                 return [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🚨 EC2 security group not found, maybe it's deleted?",
-                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to verify in AWS Console",
                         url=url,
                     )
                 ]
@@ -518,11 +521,11 @@ class Ec2SecurityGroup(res_lib.BaseDocument, Ec2Mixin):
                 from_detail("vpc_id", sg.vpc_id, url=ars.aws_console.vpc.get_vpc(sg.vpc_id)),
             ])
             # fmt: on
-            detail_items.extend(res_lib.DetailItem.from_tags(sg.tags, url))
+            detail_items.extend(rl.DetailItem.from_tags(sg.tags, url))
         return detail_items
 
 
-class Ec2SecurityGroupSearcher(res_lib.Searcher[Ec2SecurityGroup]):
+class Ec2SecurityGroupSearcher(rl.BaseSearcher[Ec2SecurityGroup]):
     pass
 
 
@@ -532,20 +535,12 @@ ec2_securitygroup_searcher = Ec2SecurityGroupSearcher(
     method="describe_security_groups",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("SecurityGroups"),
+    result_path=rl.ResultPath("SecurityGroups"),
     # extract document
     doc_class=Ec2SecurityGroup,
     # search
-    resource_type=SearcherEnum.ec2_security_group,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.StoredField(name="sg_arn"),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ec2_security_group.value,
+    fields=Ec2SecurityGroup.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ec2_security_group.value),
     more_cache_key=None,
 )

@@ -197,7 +197,7 @@
     },
     "rds-db-cluster": {
         "desc": "A DB cluster deployment is a semi-synchronous, high availability deployment mode of Amazon RDS with two readable standby DB instances.",
-        "klass": "Searcher",
+        "klass": "BaseSearcher",
         "module": "rds",
         "ngram": "relational database service",
         "var": "rds_db_cluster_searcher"

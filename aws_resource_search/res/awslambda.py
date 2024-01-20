@@ -5,12 +5,12 @@ import dataclasses
 
 import aws_arns.api as arns
 
-from .. import res_lib
-from ..terminal import format_key_value, ShortcutEnum
-from ..searchers_enum import SearcherEnum
+import aws_console_url.api as acu
+
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 lambda_function_state_icon = {
@@ -22,10 +22,10 @@ lambda_function_state_icon = {
 
 
 @dataclasses.dataclass
-class LambdaFunction(res_lib.BaseDocument):
+class LambdaFunction(rl.ResourceDocument):
     @property
     def description(self) -> str:
-        return res_lib.get_description(self.raw_data, "Description")
+        return rl.get_description(self.raw_data, "Description")
 
     @property
     def runtime(self) -> str:
@@ -45,13 +45,13 @@ class LambdaFunction(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("function_name", self.name)
+        return rl.format_key_value("function_name", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}".format(
-            format_key_value("runtime", self.runtime),
-            format_key_value("description", self.description),
+            rl.format_key_value("runtime", self.runtime),
+            rl.format_key_value("description", self.description),
             self.short_subtitle,
         )
 
@@ -63,19 +63,23 @@ class LambdaFunction(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["FunctionArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.awslambda.get_function(name_or_arn=self.arn)
 
-    # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.awslambda.functions
 
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.lambda_client.get_function(FunctionName=self.name)
             func_config = res["Configuration"]
-            description = res_lib.get_description(func_config, "Description")
+            description = rl.get_description(func_config, "Description")
             role_arn = func_config["Role"]
             runtime = func_config.get("Runtime", "NA")
             timeout = func_config["Timeout"]
@@ -107,12 +111,12 @@ class LambdaFunction(res_lib.BaseDocument):
                 for dct in func_config.get("Layers", [])
             ])
             env_vars = func_config.get("Environment", {}).get("Variables", {})
-            detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars, url))
+            detail_items.extend(rl.DetailItem.from_env_vars(env_vars, url))
 
-            tags: dict = res.get("Tags", {})
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.lambda_client.list_event_source_mappings(
                 FunctionName=self.arn,
             )
@@ -123,12 +127,12 @@ class LambdaFunction(res_lib.BaseDocument):
                     event_source_arn = mapping["EventSourceArn"]
                     state = mapping["State"]
                     detail_items.append(
-                        res_lib.DetailItem.new(
+                        rl.DetailItem.new(
                             title="mapping: {}, {}".format(
-                                format_key_value("event_source_arn", event_source_arn),
-                                format_key_value("state", state),
+                                rl.format_key_value("event_source_arn", event_source_arn),
+                                rl.format_key_value("state", state),
                             ),
-                            subtitle=f"🌐 {ShortcutEnum.ENTER} to open event source url, 📋 {ShortcutEnum.CTRL_A} to copy event sourec arn.",
+                            subtitle=f"🌐 {rl.ShortcutEnum.ENTER} to open event source url, 📋 {rl.ShortcutEnum.CTRL_A} to copy event sourec arn.",
                             uid=event_source_uuid,
                             copy=event_source_arn,
                             url=arns.Arn.from_arn(event_source_arn).to_console_url(),
@@ -136,9 +140,9 @@ class LambdaFunction(res_lib.BaseDocument):
                     )
             else:
                 detail_items.append(
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title=f"🔴 No mapping found",
-                        subtitle=f"{ShortcutEnum.ENTER} to confirm in AWS console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to confirm in AWS console",
                         uid=f"no mapping found",
                         url=url,
                     )
@@ -148,7 +152,7 @@ class LambdaFunction(res_lib.BaseDocument):
     # fmt: on
 
 
-class LambdaFunctionSearcher(res_lib.Searcher[LambdaFunction]):
+class LambdaFunctionSearcher(rl.BaseSearcher[LambdaFunction]):
     pass
 
 
@@ -158,19 +162,19 @@ lambda_function_searcher = LambdaFunctionSearcher(
     method="list_functions",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Functions"),
+    result_path=rl.ResultPath("Functions"),
     # extract document
     doc_class=LambdaFunction,
     # search
-    resource_type=SearcherEnum.lambda_function,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.lambda_function.value,
+    fields=LambdaFunction.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.lambda_function.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class LambdaFunctionAlias(res_lib.BaseDocument):
+class LambdaFunctionAlias(rl.ResourceDocument):
     @property
     def alias(self) -> str:
         return self.name
@@ -181,7 +185,7 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
 
     @property
     def description(self) -> str:
-        return res_lib.get_description(self.raw_data, "Description")
+        return rl.get_description(self.raw_data, "Description")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -195,7 +199,7 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("alias", self.name)
+        return rl.format_key_value("alias", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -212,16 +216,16 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["AliasArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.awslambda.get_function_alias(name_or_arn=self.arn)
 
     # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.lambda_client.get_function_configuration(
                 FunctionName=self.function_name,
                 Qualifier=self.name,
@@ -252,9 +256,9 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
             )
 
             env_vars = res.get("Environment", {}).get("Variables", {})
-            detail_items.extend(res_lib.DetailItem.from_env_vars(env_vars, url))
+            detail_items.extend(rl.DetailItem.from_env_vars(env_vars, url))
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.lambda_client.list_event_source_mappings(
                 FunctionName=self.arn,
             )
@@ -265,12 +269,12 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
                     event_source_arn = mapping["EventSourceArn"]
                     state = mapping["State"]
                     detail_items.append(
-                        res_lib.DetailItem.new(
+                        rl.DetailItem.new(
                             title="mapping: {}, {}".format(
-                                format_key_value("event_source_arn", event_source_arn),
-                                format_key_value("state", state),
+                                rl.format_key_value("event_source_arn", event_source_arn),
+                                rl.format_key_value("state", state),
                             ),
-                            subtitle=f"🌐 {ShortcutEnum.ENTER} to open event source url, 📋 {ShortcutEnum.CTRL_A} to copy event sourec arn.",
+                            subtitle=f"🌐 {rl.ShortcutEnum.ENTER} to open event source url, 📋 {rl.ShortcutEnum.CTRL_A} to copy event sourec arn.",
                             uid=event_source_uuid,
                             copy=event_source_arn,
                             url =arns.Arn.from_arn(event_source_arn).to_console_url(),
@@ -278,9 +282,9 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
                     )
             else:
                 detail_items.append(
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title=f"🔴 No mapping found",
-                        subtitle=f"{ShortcutEnum.ENTER} to confirm in AWS console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to confirm in AWS console",
                         uid=f"no mapping found",
                         url=url,
                     )
@@ -290,7 +294,7 @@ class LambdaFunctionAlias(res_lib.BaseDocument):
     # fmt: on
 
 
-class LambdaFunctionAliasSearcher(res_lib.Searcher[LambdaFunctionAlias]):
+class LambdaFunctionAliasSearcher(rl.BaseSearcher[LambdaFunctionAlias]):
     pass
 
 
@@ -300,29 +304,31 @@ lambda_function_alias_searcher = LambdaFunctionAliasSearcher(
     method="list_aliases",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Aliases"),
+    result_path=rl.ResultPath("Aliases"),
     # extract document
     doc_class=LambdaFunctionAlias,
     # search
-    resource_type=SearcherEnum.lambda_function_alias,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.lambda_function_alias.value,
+    fields=LambdaFunctionAlias.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(
+        rl.SearcherEnum.lambda_function_alias.value
+    ),
     more_cache_key=lambda boto_kwargs: [boto_kwargs["FunctionName"]],
 )
 
 
 @dataclasses.dataclass
-class LambdaLayer(res_lib.BaseDocument):
+class LambdaLayer(rl.ResourceDocument):
     @property
     def description(self) -> str:
-        return res_lib.get_description(
+        return rl.get_description(
             self.raw_data,
             "LatestMatchingVersion.Description",
         )
 
     @property
     def compatible_runtimes(self) -> T.List[str]:
-        return res_lib.get_none_or_default(
+        return rl.get_none_or_default(
             self.raw_data,
             "LatestMatchingVersion.CompatibleRuntimes",
             [],
@@ -330,7 +336,7 @@ class LambdaLayer(res_lib.BaseDocument):
 
     @property
     def compatible_architectures(self) -> T.List[str]:
-        return res_lib.get_none_or_default(
+        return rl.get_none_or_default(
             self.raw_data,
             "LatestMatchingVersion.CompatibleArchitectures",
             [],
@@ -351,9 +357,9 @@ class LambdaLayer(res_lib.BaseDocument):
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}, {}".format(
-            format_key_value("runtime", self.compatible_runtimes),
-            format_key_value("arch", self.compatible_architectures),
-            format_key_value("description", self.description),
+            rl.format_key_value("runtime", self.compatible_runtimes),
+            rl.format_key_value("arch", self.compatible_architectures),
+            rl.format_key_value("description", self.description),
             self.short_subtitle,
         )
 
@@ -365,11 +371,15 @@ class LambdaLayer(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["LayerArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.awslambda.get_layer(name_or_arn=self.arn + ":1")
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.awslambda.layers
 
-class LambdaLayerSearcher(res_lib.Searcher[LambdaLayer]):
+
+class LambdaLayerSearcher(rl.BaseSearcher[LambdaLayer]):
     pass
 
 
@@ -379,12 +389,12 @@ lambda_layer_searcher = LambdaLayerSearcher(
     method="list_layers",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 1000, "PageSize": 50}},
-    result_path=res_lib.ResultPath("Layers"),
+    result_path=rl.ResultPath("Layers"),
     # extract document
     doc_class=LambdaLayer,
     # search
-    resource_type=SearcherEnum.lambda_layer,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.lambda_layer.value,
+    fields=LambdaLayer.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.lambda_layer.value),
     more_cache_key=None,
 )

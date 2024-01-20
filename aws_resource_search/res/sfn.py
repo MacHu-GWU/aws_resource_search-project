@@ -4,12 +4,13 @@ import typing as T
 import dataclasses
 from datetime import datetime
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+import aws_console_url.api as acu
+import sayt.api as sayt
+
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 sfn_statemachine_status_icon_mapper = {
@@ -24,8 +25,10 @@ sfn_statemachine_type_icon_mapper = {
 
 
 @dataclasses.dataclass
-class SfnStateMachine(res_lib.BaseDocument):
-    type: str = dataclasses.field()
+class SfnStateMachine(rl.ResourceDocument):
+    # fmt: off
+    type: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="type", minsize=2, maxsize=4, stored=True)})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -42,13 +45,13 @@ class SfnStateMachine(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
         type_icon = sfn_statemachine_type_icon_mapper[self.type]
         return "{}, {}".format(
-            format_key_value("type", f"{type_icon} {self.type}"),
+            rl.format_key_value("type", f"{type_icon} {self.type}"),
             self.short_subtitle,
         )
 
@@ -60,16 +63,20 @@ class SfnStateMachine(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["stateMachineArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.step_function.get_state_machine_view_tab(name_or_arn=self.arn)
 
-    # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars, arn_field_name="statemachine_arn")
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.step_function.state_machines
 
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars, arn_key="statemachine_arn")
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.sfn_client.describe_state_machine(stateMachineArn=self.arn)
             status = res["status"]
             role_arn = res["roleArn"]
@@ -80,23 +87,23 @@ class SfnStateMachine(res_lib.BaseDocument):
             status_icon = sfn_statemachine_status_icon_mapper[status]
             type_icon = sfn_statemachine_type_icon_mapper[type]
             detail_items.extend([
-                from_detail("status", status, f"{status_icon} {status}", url=url),
+                from_detail("status", status, value_text=f"{status_icon} {status}", url=url),
                 from_detail("🧢 role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
-                from_detail("definition", definition, self.one_line(definition), url=url),
-                from_detail("type", type, f"{type_icon} {type}", url=url),
+                from_detail("definition", definition, value_text=self.one_line(definition), url=url),
+                from_detail("type", type, value_text=f"{type_icon} {type}", url=url),
                 from_detail("creation_date", creation_date, url=url),
             ])
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.sfn_client.list_tags_for_resource(resourceArn=self.arn)
-            tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
 
 
-class SfnStateMachineSearcher(res_lib.Searcher[SfnStateMachine]):
+class SfnStateMachineSearcher(rl.BaseSearcher[SfnStateMachine]):
     pass
 
 
@@ -106,19 +113,13 @@ sfn_state_machine_searcher = SfnStateMachineSearcher(
     method="list_state_machines",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("stateMachines"),
+    result_path=rl.ResultPath("stateMachines"),
     # extract document
     doc_class=SfnStateMachine,
     # search
-    resource_type=SearcherEnum.sfn_state_machine,
-    fields=res_lib.define_fields(
-        fields=[
-            res_lib.sayt.NgramWordsField(
-                name="type", minsize=2, maxsize=4, stored=True
-            ),
-        ]
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.sfn_state_machine.value,
+    fields=SfnStateMachine.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.sfn_state_machine.value),
     more_cache_key=None,
 )
 
@@ -133,9 +134,11 @@ sfn_execution_status_icon_mapper = {
 
 
 @dataclasses.dataclass
-class SfnExecution(res_lib.BaseDocument):
-    status: str = dataclasses.field()
-    start_at: datetime = dataclasses.field()
+class SfnExecution(rl.ResourceDocument):
+    # fmt: off
+    status: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True)})
+    start_at: datetime = dataclasses.field(metadata={"field": sayt.DatetimeField(name="start_at", sortable=True, ascending=False, stored=True)})
+    # fmt: on
 
     @property
     def state_machine_name(self) -> str:
@@ -143,7 +146,7 @@ class SfnExecution(res_lib.BaseDocument):
 
     @property
     def end_at(self) -> datetime:
-        return res_lib.get_datetime(self.raw_data, "stopDate")
+        return rl.get_datetime(self.raw_data, "stopDate")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -152,20 +155,20 @@ class SfnExecution(res_lib.BaseDocument):
             id=resource["executionArn"].split(":")[-1],
             name=resource["executionArn"].split(":")[-1],
             status=resource["status"],
-            start_at=res_lib.get_datetime(resource, "startDate"),
+            start_at=rl.get_datetime(resource, "startDate"),
         )
 
     @property
     def title(self) -> str:
-        return format_key_value("execution_name", self.name)
+        return rl.format_key_value("execution_name", self.name)
 
     @property
     def subtitle(self) -> str:
         status_icon = sfn_execution_status_icon_mapper[self.status]
         return "{}, {}, {}, {}".format(
             f"{status_icon} {self.status}",
-            format_key_value("start", self.start_at),
-            format_key_value("end", self.end_at),
+            rl.format_key_value("start", self.start_at),
+            rl.format_key_value("end", self.end_at),
             self.short_subtitle,
         )
 
@@ -177,18 +180,18 @@ class SfnExecution(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["executionArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.step_function.get_state_machine_execution(
             exec_id_or_arn=self.arn
         )
 
     # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars, arn_field_name="exec_arn")
-        url = self.get_console_url(ars.aws_console)
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars, arn_key="exec_arn")
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.sfn_client.describe_execution(executionArn=self.arn)
             status = res["status"]
             state_machine_arn = res["stateMachineArn"]
@@ -201,14 +204,14 @@ class SfnExecution(res_lib.BaseDocument):
 
             status_icon = sfn_execution_status_icon_mapper[status]
             detail_items.extend([
-                from_detail("status", status, f"{status_icon} {status}", url=url),
+                from_detail("status", status, value_text=f"{status_icon} {status}", url=url),
                 from_detail("state_machine_arn", state_machine_arn, url=ars.aws_console.step_function.get_state_machine_view_tab(state_machine_arn)),
                 from_detail("state_machine_version_arn", state_machine_version_arn, url=url) if state_machine_version_arn else None,
                 from_detail("state_machine_alias_arn", state_machine_alias_arn, url=url) if state_machine_alias_arn else None,
-                from_detail("input", input, self.one_line(input), url=url),
-                from_detail("output", output, self.one_line(output), url=url),
-                from_detail("error", error, self.one_line(error), url=url),
-                from_detail("cause", cause, self.one_line(cause), url=url),
+                from_detail("input", input, value_text=self.one_line(input), url=url),
+                from_detail("output", output, value_text=self.one_line(output), url=url),
+                from_detail("error", error, value_text=self.one_line(error), url=url),
+                from_detail("cause", cause, value_text=self.one_line(cause), url=url),
             ])
 
         detail_items = [item for item in detail_items if item is not None]
@@ -216,7 +219,7 @@ class SfnExecution(res_lib.BaseDocument):
     # fmt: on
 
 
-class SfnExecutionSearcher(res_lib.Searcher[SfnExecution]):
+class SfnExecutionSearcher(rl.BaseSearcher[SfnExecution]):
     pass
 
 
@@ -226,20 +229,14 @@ sfn_execution_searcher = SfnExecutionSearcher(
     method="list_executions",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("executions"),
+    result_path=rl.ResultPath("executions"),
     # extract document
     doc_class=SfnExecution,
     # search
-    resource_type=SearcherEnum.sfn_state_machine_execution,
-    fields=res_lib.define_fields(
-        fields=[
-            # fmt: off
-            res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True
-            ),
-            res_lib.sayt.DatetimeField(name="start_at", sortable=True, ascending=False, stored=True),
-            # fmt: on
-        ],
+    resource_type=rl.SearcherEnum.sfn_state_machine_execution.value,
+    fields=SfnExecution.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(
+        rl.SearcherEnum.sfn_state_machine_execution.value
     ),
-    cache_expire=24 * 60 * 60,
     more_cache_key=lambda boto_kwargs: [boto_kwargs["stateMachineArn"]],
 )

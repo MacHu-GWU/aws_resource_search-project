@@ -1,8 +1,19 @@
 # -*- coding: utf-8 -*-
 
+"""
+Simplify using moto for unit testing.
+
+.. versionchanged:: 0.1.2
+
+    Fix a bug that the ``_mock_list`` class attribute got messed up when having
+    multiple sub class. Now we use ``_mocked`` class attribute and tracking
+    mocked service in separate list for each subclass.
+"""
+
 import typing as T
-import moto
 from boto_session_manager import BotoSesManager
+
+__version__ = "0.1.2"
 
 
 class BaseMockTest:
@@ -36,31 +47,33 @@ class BaseMockTest:
                 )
 
     """
+
     use_mock: bool = True
     region_name: str = "us-east-1"
     mock_list: list = []
 
     # Don't overwrite the following
     bsm: T.Optional[BotoSesManager] = None
-    _mock_list: list = []
+    _mocked: T.Dict[T.Any, list] = dict()
 
     @classmethod
     def setup_moto(cls):
         if cls.use_mock:
-            cls._mock_list = []
-            if moto.mock_sts not in cls.mock_list:
-                cls.mock_list.append(moto.mock_sts)
+            cls._mocked[cls] = []
             for mock_abc in cls.mock_list:
                 mocker = mock_abc()
                 mocker.start()
-                cls._mock_list.append(mocker)
+                cls._mocked[cls].append(mocker)
         cls.bsm = BotoSesManager(region_name=cls.region_name)
+        if cls.bsm.aws_account_id != "123456789012":
+            raise ValueError("This test only works with fake AWS account 123456789012")
 
     @classmethod
     def teardown_moto(cls):
         if cls.use_mock:
-            for mocker in cls._mock_list:
+            for mocker in cls._mocked[cls]:
                 mocker.stop()
+        cls.bsm = None
 
     @classmethod
     def setup_class_pre_hook(cls):  # pragma: no cover

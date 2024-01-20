@@ -4,17 +4,16 @@ import typing as T
 import dataclasses
 
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class SnsTopic(res_lib.BaseDocument):
+class SnsTopic(rl.ResourceDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         title = arns.res.SnsTopic.from_arn(resource["TopicArn"]).resource_id
@@ -26,7 +25,7 @@ class SnsTopic(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def autocomplete(self) -> str:
@@ -36,16 +35,20 @@ class SnsTopic(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["TopicArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.sns.get_topic(name_or_arn=self.arn)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.sns.topics
 
-        # fmt: off
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.sns_client.get_topic_attributes(TopicArn=self.arn)
             access_policy = res.get("Attributes", {}).get("Policy")
             delivery_policy = res.get("Attributes", {}).get("DeliveryPolicy")
@@ -55,25 +58,25 @@ class SnsTopic(res_lib.BaseDocument):
             is_fifo_topic = res.get("Attributes", {}).get("FifoTopic", "NA")
             content_based_deduplication_enabled = res.get("Attributes", {}).get("ContentBasedDeduplication", "NA")
             detail_items.extend([
-                from_detail("access_policy", access_policy, self.one_line(access_policy), url=url),
-                from_detail("delivery_policy", delivery_policy, self.one_line(delivery_policy), url=url),
+                from_detail("access_policy", access_policy, value_text=self.one_line(access_policy), url=url),
+                from_detail("delivery_policy", delivery_policy, value_text=self.one_line(delivery_policy), url=url),
                 from_detail("subscriptions_confirmed", subscriptions_confirmed, url=url),
                 from_detail("subscriptions_deleted", subscriptions_deleted, url=url),
                 from_detail("subscriptions_pending", subscriptions_pending, url=url),
                 from_detail("is_fifo_topic", is_fifo_topic, url=url),
                 from_detail("content_based_deduplication_enabled", content_based_deduplication_enabled, url=url),
             ])
-        # fmt: on
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.sns_client.list_tags_for_resource(ResourceArn=self.arn)
-            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
+    # fmt: on
 
 
-class SnsTopicSearcher(res_lib.Searcher[SnsTopic]):
+class SnsTopicSearcher(rl.BaseSearcher[SnsTopic]):
     pass
 
 
@@ -87,12 +90,12 @@ sns_topic_searcher = SnsTopicSearcher(
             "MaxItems": 9999,
         },
     },
-    result_path=res_lib.ResultPath("Topics"),
+    result_path=rl.ResultPath("Topics"),
     # extract document
     doc_class=SnsTopic,
     # search
-    resource_type=SearcherEnum.sns_topic,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.sns_topic.value,
+    fields=SnsTopic.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.sns_topic.value),
     more_cache_key=None,
 )

@@ -4,12 +4,13 @@ import typing as T
 import dataclasses
 from datetime import datetime
 
-from .. import res_lib
-from ..terminal import format_key_value, ShortcutEnum
-from ..searchers_enum import SearcherEnum
+import sayt.api as sayt
+import aws_console_url.api as acu
+
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 cloudformation_stack_status_icon_mapper = {
@@ -40,9 +41,11 @@ cloudformation_stack_status_icon_mapper = {
 
 
 @dataclasses.dataclass
-class CloudFormationStack(res_lib.BaseDocument):
-    status: str = dataclasses.field()
-    last_updated_time: datetime = dataclasses.field()
+class CloudFormationStack(rl.ResourceDocument):
+    # fmt: off
+    status: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True)})
+    last_updated_time: datetime = dataclasses.field(metadata={"field": sayt.DatetimeField(name="last_updated_time", sortable=True, ascending=False, stored=True)})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -51,20 +54,20 @@ class CloudFormationStack(res_lib.BaseDocument):
             id=resource["StackName"],
             name=resource["StackName"],
             status=resource["StackStatus"],
-            last_updated_time=res_lib.get_datetime(resource, "LastUpdatedTime"),
+            last_updated_time=rl.get_datetime(resource, "LastUpdatedTime"),
         )
 
     @property
     def title(self) -> str:
-        return format_key_value("stack_name", self.name)
+        return rl.format_key_value("stack_name", self.name)
 
     @property
     def subtitle(self) -> str:
         status_icon = cloudformation_stack_status_icon_mapper[self.status]
         return "{}, {}, {}".format(
             f"{status_icon} {self.status}",
-            format_key_value(
-                "update_at", res_lib.to_simple_fmt(self.last_updated_time)
+            rl.format_key_value(
+                "update_at", rl.to_simple_dt_fmt(self.last_updated_time)
             ),
             self.short_subtitle,
         )
@@ -77,22 +80,26 @@ class CloudFormationStack(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["StackId"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.cloudformation.get_stack(name_or_arn=self.arn)
 
-    # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = [] # don't use self.get_initial_detail_items here, the arn may not change
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.cloudformation.stacks
 
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        detail_items = [] # don't use self.get_initial_detail_items here, the arn may change
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.cloudformation_client.describe_stacks(StackName=self.name)
             stacks = res.get("Stacks", [])
             if len(stacks) == 0:
                 return [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🚨 Stack not found, maybe it's deleted?",
-                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to verify in AWS Console",
                         url=ars.aws_console.cloudformation.filter_stack(name=self.name),
                     )
                 ]
@@ -105,19 +112,19 @@ class CloudFormationStack(res_lib.BaseDocument):
             status_icon = cloudformation_stack_status_icon_mapper[self.status]
             detail_items = [
                 from_detail("arn", arn, url=url),
-                from_detail("status", status, text=f"{status_icon} {status}", url=url),
+                from_detail("status", status, value_text=f"{status_icon} {status}", url=url),
                 from_detail("role_arn", role_arn, url=ars.aws_console.iam.get_role(role_arn)),
             ]
 
             outputs: dict = {dct["OutputKey"]: dct for dct in stack.get("Outputs", [])}
             detail_items.extend(
                 [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🎯 output: {} (export = {})".format(
-                            format_key_value(k, dct["OutputValue"]),
+                            rl.format_key_value(k, dct["OutputValue"]),
                             dct.get("ExportName", "NA"),
                         ),
-                        subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy value.",
+                        subtitle=f"🌐 {rl.ShortcutEnum.ENTER} to open url, 📋 {rl.ShortcutEnum.CTRL_A} to copy value.",
                         copy=dct["OutputValue"],
                         url=url,
                         uid=f"Output {k}",
@@ -126,13 +133,13 @@ class CloudFormationStack(res_lib.BaseDocument):
                 ]
             )
 
-            tags: dict = {dct["Key"]: dct["Value"] for dct in stack.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
         return detail_items
     # fmt: on
 
 
-class CloudFormationStackSearcher(res_lib.Searcher[CloudFormationStack]):
+class CloudFormationStackSearcher(rl.BaseSearcher[CloudFormationStack]):
     pass
 
 
@@ -146,28 +153,12 @@ cloudformation_stack_searcher = CloudFormationStackSearcher(
             "MaxItems": 9999,
         },
     },
-    result_path=res_lib.ResultPath("StackSummaries"),
+    result_path=rl.ResultPath("StackSummaries"),
     # extract document
     doc_class=CloudFormationStack,
     # search
-    resource_type=SearcherEnum.cloudformation_stack,
-    fields=res_lib.define_fields(
-        fields=[
-            res_lib.sayt.NgramWordsField(
-                name="status",
-                minsize=2,
-                maxsize=4,
-                stored=True,
-            ),
-            res_lib.sayt.DatetimeField(
-                name="last_updated_time",
-                sortable=True,
-                ascending=False,
-                stored=True,
-            ),
-        ],
-        name_sortable=False,
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.cloudformation_stack.value,
+    fields=CloudFormationStack.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.cloudformation_stack.value),
     more_cache_key=None,
 )

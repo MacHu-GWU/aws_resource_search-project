@@ -32,9 +32,20 @@ Different AWS resources has different index schema. All AWS resources has two de
 
 Some AWS resources may need more searchable fields. For example, EC2 should be able to search by ``state``, ``vpc_id``, and ``subnet_id``. In this case, you can define more searchable fields in the searcher object.
 
-Below are the `source code for EC2 searcher <../_modules/aws_resource_search/res/ec2.html#Ec2InstanceSearcher>`_
+Below are the source code for `EC2 Instance document <aws_resource_search.res.ec2.Ec2Instance>`_ and `EC2 searcher <aws_resource_search.res.ec2.Ec2InstanceSearcher>`_
 
 .. code-block:: python
+
+    class Ec2Instance(rl.ResourceDocument, Ec2Mixin):
+        # fmt: off
+        state: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True)})
+        vpc_id: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True)})
+        subnet_id: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="subnet_id", minsize=2, maxsize=4, stored=True)})
+        id_ng: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True)})
+        inst_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="inst_arn")})
+        # fmt: on
+
+    ...
 
     ec2_instance_searcher = Ec2InstanceSearcher(
         # list resources
@@ -42,19 +53,6 @@ Below are the `source code for EC2 searcher <../_modules/aws_resource_search/res
         method="describe_instances",
         is_paginator=True,
         default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-        ...
-        fields=res_lib.define_fields(
-            # fmt: off
-            fields=[
-                res_lib.sayt.NgramWordsField(name="state", minsize=2, maxsize=4, stored=True),
-                res_lib.sayt.NgramWordsField(name="vpc_id", minsize=2, maxsize=4, stored=True),
-                res_lib.sayt.NgramWordsField(name="subnet_id", minsize=2, maxsize=4, stored=True),
-                res_lib.sayt.NgramWordsField(name="id_ng", minsize=2, maxsize=4, stored=True),
-                res_lib.sayt.StoredField(name="inst_arn"),
-            ],
-            # fmt: on
-        ),
-        cache_expire=24 * 60 * 60,
         ...
     )
 

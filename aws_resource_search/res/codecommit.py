@@ -3,19 +3,21 @@
 import typing as T
 import dataclasses
 
+import sayt.api as sayt
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class CodeCommitRepository(res_lib.BaseDocument):
-    repo_arn: str = dataclasses.field()
+class CodeCommitRepository(rl.ResourceDocument):
+    # fmt: off
+    repo_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="repo_arn")})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -32,7 +34,7 @@ class CodeCommitRepository(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("repo_name", self.name)
+        return rl.format_key_value("repo_name", self.name)
 
     @property
     def autocomplete(self) -> str:
@@ -42,15 +44,19 @@ class CodeCommitRepository(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.repo_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.codecommit.get_repo(repo_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.codecommit.repositories
+
     # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
-        with self.enrich_details(detail_items):
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.codecommit_client.get_repository(repositoryName=self.name)
             dct = res["repositoryMetadata"]
             accountId = dct.get("accountId")
@@ -75,16 +81,16 @@ class CodeCommitRepository(res_lib.BaseDocument):
                 from_detail("cloneUrlGitRemoteCodecommit", f"codecommit::{ars.bsm.aws_region}://{self.name}", url=url)
             ])
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.codecommit_client.list_tags_for_resource(resourceArn=self.arn)
-            tags: dict = res["tags"]
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
 
 
-class CodeCommitRepositorySearcher(res_lib.Searcher[CodeCommitRepository]):
+class CodeCommitRepositorySearcher(rl.BaseSearcher[CodeCommitRepository]):
     pass
 
 
@@ -100,16 +106,14 @@ codecommit_repository_searcher = CodeCommitRepositorySearcher(
             "MaxItems": 5000,
         },
     },
-    result_path=res_lib.ResultPath("repositories"),
+    result_path=rl.ResultPath("repositories"),
     # extract document
     doc_class=CodeCommitRepository,
     # search
-    resource_type=SearcherEnum.codecommit_repository,
-    fields=res_lib.define_fields(
-        fields=[
-            res_lib.sayt.StoredField(name="repo_arn"),
-        ]
+    resource_type=rl.SearcherEnum.codecommit_repository.value,
+    fields=CodeCommitRepository.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(
+        rl.SearcherEnum.codecommit_repository.value
     ),
-    cache_expire=7 * 24 * 60 * 60,
     more_cache_key=None,
 )

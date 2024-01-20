@@ -3,20 +3,21 @@
 import typing as T
 import dataclasses
 
-from .. import res_lib
-from ..terminal import format_key_value, ShortcutEnum
-from ..searchers_enum import SearcherEnum
+import sayt.api as sayt
+import aws_console_url.api as acu
+
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class RdsDbInstance(res_lib.BaseDocument):
-    status: str = dataclasses.field()
-    engine: str = dataclasses.field()
-    id: str = dataclasses.field()
-    name: str = dataclasses.field()
+class RdsDbInstance(rl.ResourceDocument):
+    # fmt: off
+    status: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True)})
+    engine: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True)})
+    # fmt: on
 
     @property
     def klass(self) -> str:
@@ -34,14 +35,14 @@ class RdsDbInstance(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("identifier", self.name)
+        return rl.format_key_value("identifier", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}, {}".format(
-            format_key_value("status", self.status),
-            format_key_value("class", self.klass),
-            format_key_value("engine", self.engine),
+            rl.format_key_value("status", self.status),
+            rl.format_key_value("class", self.klass),
+            rl.format_key_value("engine", self.engine),
             self.short_subtitle,
         )
 
@@ -53,26 +54,31 @@ class RdsDbInstance(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["DBInstanceArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.rds.get_database_instance(id_or_arn=self.arn)
 
-    # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        url = self.get_console_url(ars.aws_console)
-        detail_items = [
-            from_detail("arn", self.arn, url=url),
-            from_detail("DBInstanceIdentifier", self.id, url=url),
-        ]
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.rds.databases
 
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        detail_items.append(
+            from_detail("DBInstanceIdentifier", self.id, url=url),
+        )
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.rds_client.describe_db_instances(DBInstanceIdentifier=self.name)
             dbs = res.get("DBInstances", [])
             if len(dbs) == 0:
                 return [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🚨 DB instance not found, maybe it's deleted?",
-                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to verify in AWS Console",
                         url=url,
                     )
                 ]
@@ -115,13 +121,13 @@ class RdsDbInstance(res_lib.BaseDocument):
                 from_detail("DBClusterIdentifier", DBClusterIdentifier, url=ars.aws_console.rds.get_database_cluster(id_or_arn=DBClusterIdentifier)),
             ])
 
-            tags: dict = {dct["Key"]: dct["Value"] for dct in db.get("TagList", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
         return detail_items
     # fmt: on
 
 
-class RdsDbInstanceSearcher(res_lib.Searcher[RdsDbInstance]):
+class RdsDbInstanceSearcher(rl.BaseSearcher[RdsDbInstance]):
     pass
 
 
@@ -136,28 +142,23 @@ rds_db_instance_searcher = RdsDbInstanceSearcher(
             "PageSize": 100,
         },
     },
-    result_path=res_lib.ResultPath("DBInstances"),
+    result_path=rl.ResultPath("DBInstances"),
     # extract document
     doc_class=RdsDbInstance,
     # search
-    resource_type=SearcherEnum.rds_db_instance,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.rds_db_instance.value,
+    fields=RdsDbInstance.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.rds_db_instance.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class RdsDbCluster(res_lib.BaseDocument):
-    status: str = dataclasses.field()
-    engine: str = dataclasses.field()
+class RdsDbCluster(rl.ResourceDocument):
+    # fmt: off
+    status: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True)})
+    engine: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True)})
+    # fmt: on
 
     @property
     def klass(self) -> str:
@@ -175,14 +176,14 @@ class RdsDbCluster(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("identifier", self.name)
+        return rl.format_key_value("identifier", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}, {}".format(
-            format_key_value("status", self.status),
-            format_key_value("class", self.klass),
-            format_key_value("engine", self.engine),
+            rl.format_key_value("status", self.status),
+            rl.format_key_value("class", self.klass),
+            rl.format_key_value("engine", self.engine),
             self.short_subtitle,
         )
 
@@ -194,25 +195,30 @@ class RdsDbCluster(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["DBClusterArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.rds.get_database_cluster(id_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.rds.databases
+
     # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        Item = res_lib.DetailItem.from_detail
-        url = self.get_console_url(ars.aws_console)
-        detail_items = [
-            Item("arn", self.arn, url=url),
-            Item("DBClusterIdentifier", self.id, url=url),
-        ]
-        with self.enrich_details(detail_items):
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        detail_items.append(
+            from_detail("DBClusterIdentifier", self.id, url=url),
+        )
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.rds_client.describe_db_clusters(DBClusterIdentifier=self.name)
             dbs = res.get("DBClusters", [])
             if len(dbs) == 0:
                 return [
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🚨 DB cluster not found, maybe it's deleted?",
-                        subtitle=f"{ShortcutEnum.ENTER} to verify in AWS Console",
+                        subtitle=f"{rl.ShortcutEnum.ENTER} to verify in AWS Console",
                         url=url,
                     )
                 ]
@@ -235,21 +241,21 @@ class RdsDbCluster(res_lib.BaseDocument):
             DBClusterInstanceClass = db.get("DBClusterInstanceClass", "Unknown")
 
             detail_items.extend([
-                Item("Status", Status, url=url),
-                Item("engine", engine, url=url),
-                Item("EngineVersion", EngineVersion, url=url),
-                Item("Endpoint", Endpoint, url=url),
-                Item("ReaderEndpoint", ReaderEndpoint, url=url),
-                Item("CustomEndpoints", CustomEndpoints, url=url),
-                Item("Port", Port, url=url),
-                Item("MasterUsername", MasterUsername, url=url),
-                Item("DatabaseName", DatabaseName, url=url),
-                Item("MultiAZ", MultiAZ, url=url),
-                Item("AvailabilityZones", AvailabilityZones, url=url),
-                Item("IAMDatabaseAuthenticationEnabled", IAMDatabaseAuthenticationEnabled, url=url),
-                Item("DeletionProtection", DeletionProtection, url=url),
+                from_detail("Status", Status, url=url),
+                from_detail("engine", engine, url=url),
+                from_detail("EngineVersion", EngineVersion, url=url),
+                from_detail("Endpoint", Endpoint, url=url),
+                from_detail("ReaderEndpoint", ReaderEndpoint, url=url),
+                from_detail("CustomEndpoints", CustomEndpoints, url=url),
+                from_detail("Port", Port, url=url),
+                from_detail("MasterUsername", MasterUsername, url=url),
+                from_detail("DatabaseName", DatabaseName, url=url),
+                from_detail("MultiAZ", MultiAZ, url=url),
+                from_detail("AvailabilityZones", AvailabilityZones, url=url),
+                from_detail("IAMDatabaseAuthenticationEnabled", IAMDatabaseAuthenticationEnabled, url=url),
+                from_detail("DeletionProtection", DeletionProtection, url=url),
                 *[
-                    Item(
+                    from_detail(
                         f"🖥️ db instance",
                         member["DBInstanceIdentifier"],
                         url=ars.aws_console.rds.get_database_instance(id_or_arn=member["DBInstanceIdentifier"]),
@@ -257,20 +263,20 @@ class RdsDbCluster(res_lib.BaseDocument):
                     )
                     for member in DBClusterMembers
                 ],
-                Item("DBClusterInstanceClass", DBClusterInstanceClass, url=url),
+                from_detail("DBClusterInstanceClass", DBClusterInstanceClass, url=url),
             ])
 
-            tags: dict = {dct["Key"]: dct["Value"] for dct in db.get("TagList", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
         return detail_items
     # fmt: on
 
 
-class RdsDbClusterSearcher(res_lib.Searcher[RdsDbCluster]):
+class RdsDbClusterSearcher(rl.BaseSearcher[RdsDbCluster]):
     pass
 
 
-rds_db_cluster_searcher = res_lib.Searcher(
+rds_db_cluster_searcher = rl.BaseSearcher(
     # list resources
     service="rds",
     method="describe_db_clusters",
@@ -280,19 +286,12 @@ rds_db_cluster_searcher = res_lib.Searcher(
             "MaxItems": 9999,
         },
     },
-    result_path=res_lib.ResultPath("DBClusters"),
+    result_path=rl.ResultPath("DBClusters"),
     # extract document
     doc_class=RdsDbCluster,
     # search
-    resource_type=SearcherEnum.rds_db_cluster,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.NgramWordsField(name="status", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="engine", minsize=2, maxsize=4, stored=True),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.rds_db_cluster.value,
+    fields=RdsDbCluster.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.rds_db_cluster.value),
     more_cache_key=None,
 )

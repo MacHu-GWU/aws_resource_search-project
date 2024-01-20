@@ -3,19 +3,21 @@
 import typing as T
 import dataclasses
 
+import sayt.api as sayt
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class SqsQueue(res_lib.BaseDocument):
-    queue_arn: str = dataclasses.field()
+class SqsQueue(rl.ResourceDocument):
+    # fmt: off
+    queue_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="queue_arn")})
+    # fmt: on
 
     @property
     def queue_url(self) -> str:
@@ -42,7 +44,7 @@ class SqsQueue(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def autocomplete(self) -> str:
@@ -52,20 +54,26 @@ class SqsQueue(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.queue_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.sqs.get_queue(name_or_arn_or_url=self.arn)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.sqs.queues
 
-        detail_items.extend([
-            from_detail("queue_url", self.queue_url, url=url),
-        ])
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        detail_items.extend(
+            [
+                from_detail("queue_url", self.queue_url, url=url),
+            ]
+        )
 
         # fmt: off
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.sqs_client.get_queue_attributes(
                 QueueUrl=self.queue_url,
                 AttributeNames=["All"],
@@ -83,21 +91,21 @@ class SqsQueue(res_lib.BaseDocument):
                 from_detail("n_msg", n_msg, url=url),
                 from_detail("n_msg_delayed", n_msg_delayed, url=url),
                 from_detail("n_msg_invisible", n_msg_invisible, url=url),
-                from_detail("policy", policy, self.one_line(policy), url=url),
-                from_detail("redrive_policy", redrive_policy, self.one_line(redrive_policy), url=url),
-                from_detail("redrive_allow_policy", redrive_allow_policy, self.one_line(redrive_allow_policy), url=url),
+                from_detail("policy", policy, value_text=self.one_line(policy), url=url),
+                from_detail("redrive_policy", redrive_policy, value_text=self.one_line(redrive_policy), url=url),
+                from_detail("redrive_allow_policy", redrive_allow_policy, value_text=self.one_line(redrive_allow_policy), url=url),
             ])
         # fmt: on
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.sqs_client.list_queue_tags(QueueUrl=self.queue_url)
-            tags: dict = res.get("Tags", {})
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
 
 
-class SqsQueueSearcher(res_lib.Searcher[SqsQueue]):
+class SqsQueueSearcher(rl.BaseSearcher[SqsQueue]):
     pass
 
 
@@ -112,16 +120,12 @@ sqs_queue_searcher = SqsQueueSearcher(
             "PageSize": 1000,
         },
     },
-    result_path=res_lib.ResultPath("QueueUrls"),
+    result_path=rl.ResultPath("QueueUrls"),
     # extract document
     doc_class=SqsQueue,
     # search
-    resource_type=SearcherEnum.sqs_queue,
-    fields=res_lib.define_fields(
-        fields=[
-            res_lib.sayt.StoredField(name="queue_arn"),
-        ],
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.sqs_queue.value,
+    fields=SqsQueue.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.sqs_queue.value),
     more_cache_key=None,
 )

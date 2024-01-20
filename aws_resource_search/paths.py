@@ -26,7 +26,7 @@ path_cov_index_html = dir_htmlcov / "index.html"
 dir_unit_test = dir_project_root / "tests"
 
 # ------------------------------------------------------------------------------
-# ${HOME}/.aws_console_url_search/ dir related
+# ${HOME}/.aws_resource_search/ dir related
 # ------------------------------------------------------------------------------
 dir_home = Path.home()
 dir_aws_resource_search = dir_home.joinpath(".aws_resource_search")
@@ -35,9 +35,11 @@ dir_aws_resource_search.mkdir(exist_ok=True)
 dir_index = dir_aws_resource_search.joinpath(".index")
 dir_cache = dir_aws_resource_search.joinpath(".cache")
 path_config_json = dir_aws_resource_search.joinpath("config.json")
+path_exception_item_txt = dir_aws_resource_search.joinpath("exception_item.txt")
 
 # ------------------------------------------------------------------------------
 # ${HOME}/.aws/ dir
 # ------------------------------------------------------------------------------
-path_aws_config = dir_home.joinpath(".aws", "config")
-path_aws_credentials = dir_home.joinpath(".aws", "credentials")
+dir_aws = dir_home.joinpath(".aws")
+path_aws_config = dir_aws.joinpath("config")
+path_aws_credentials = dir_aws.joinpath("credentials")

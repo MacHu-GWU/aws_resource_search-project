@@ -3,18 +3,18 @@
 import typing as T
 import dataclasses
 
+import sayt.api as sayt
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class EcsCluster(res_lib.BaseDocument):
+class EcsCluster(rl.ResourceDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         ecs_cluster = arns.res.EcsCluster.from_arn(resource)
@@ -26,7 +26,7 @@ class EcsCluster(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -42,19 +42,24 @@ class EcsCluster(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ecs.get_cluster_services(name_or_arn=self.arn)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ecs.clusters
 
     @property
     def cluster_name(self) -> str:
         return self.name
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ecs_client.describe_clusters(
                 clusters=[self.arn],
                 include=["TAGS"],
@@ -62,7 +67,6 @@ class EcsCluster(res_lib.BaseDocument):
             dct = res.get("clusters", [None])[0]
             if dct:
                 detail_items.extend(
-                    # fmt: off
                     [
                         from_detail("cluster_name", dct["clusterName"], url=url),
                         from_detail("cluster_arn", dct["clusterArn"], url=url),
@@ -73,14 +77,14 @@ class EcsCluster(res_lib.BaseDocument):
                         from_detail("active_service_count", dct["activeServicesCount"], url=url),
                         from_detail("registered_container_instances_count", dct["registeredContainerInstancesCount"], url=url),
                     ]
-                    # fmt: on
                 )
-                tags: dict = {dct["key"]: dct["value"] for dct in dct.get("tags", [])}
-                detail_items.extend(res_lib.DetailItem.from_tags(tags, url=url))
+                tags = rl.extract_tags(res)
+                detail_items.extend(rl.DetailItem.from_tags(tags, url=url))
         return detail_items
+    # fmt: on
 
 
-class EcsClusterSearcher(res_lib.Searcher[EcsCluster]):
+class EcsClusterSearcher(rl.BaseSearcher[EcsCluster]):
     pass
 
 
@@ -90,24 +94,19 @@ ecs_cluster_searcher = EcsClusterSearcher(
     method="list_clusters",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 100}},
-    result_path=res_lib.ResultPath("clusterArns"),
+    result_path=rl.ResultPath("clusterArns"),
     # extract document
     doc_class=EcsCluster,
     # search
-    resource_type=SearcherEnum.ecs_cluster,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ecs_cluster.value,
+    fields=EcsCluster.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ecs_cluster.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class EcsTaskRun(res_lib.BaseDocument):
+class EcsTaskRun(rl.ResourceDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         task_run = arns.res.EcsTaskRun.from_arn(resource)
@@ -119,7 +118,7 @@ class EcsTaskRun(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -135,7 +134,7 @@ class EcsTaskRun(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ecs.get_task_run_configuration(
             task_short_id_or_arn=self.arn, cluster_name=None
         )
@@ -145,12 +144,13 @@ class EcsTaskRun(res_lib.BaseDocument):
         task_run = arns.res.EcsTaskRun.from_arn(self.arn)
         return task_run.cluster_name
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ecs_client.describe_tasks(
                 cluster=self.cluster_name,
                 tasks=[self.arn],
@@ -161,7 +161,6 @@ class EcsTaskRun(res_lib.BaseDocument):
             if task_dct:
                 task_definition_arn = task_dct["taskDefinitionArn"]
                 detail_items.extend(
-                    # fmt: off
                     [
                         from_detail("cluster_name", self.cluster_name, url=ars.aws_console.ecs.get_cluster_tasks(name_or_arn=task_dct["clusterArn"])),
                         from_detail("task_definition_arn", task_definition_arn, url=ars.aws_console.ecs.get_task_definition_revision_containers(name_or_arn=task_definition_arn)),
@@ -182,7 +181,6 @@ class EcsTaskRun(res_lib.BaseDocument):
                         from_detail("last_status", task_dct.get("lastStatus", "NA"), url=url),
                         from_detail("launch_type", task_dct.get("launchType", "NA"), url=url),
                     ]
-                    # fmt: on
                 )
 
             if task_definition_arn is not None:
@@ -193,24 +191,21 @@ class EcsTaskRun(res_lib.BaseDocument):
                 task_def_dct = res.get("taskDefinition", None)
                 if task_def_dct:
                     detail_items.extend(
-                        # fmt: off
                         [
                             from_detail("task_role_arn", task_def_dct["taskRoleArn"], url=ars.aws_console.iam.get_role(task_def_dct["taskRoleArn"])),
                             from_detail("task_execution_role_arn", task_def_dct["executionRoleArn"], url=ars.aws_console.iam.get_role(task_def_dct["executionRoleArn"])),
                         ]
-                        # fmt: on
                     )
 
             if task_dct:
-                tags: dict = {
-                    dct["key"]: dct["value"] for dct in task_dct.get("tags", [])
-                }
-                detail_items.extend(res_lib.DetailItem.from_tags(tags, url=url))
+                tags = rl.extract_tags(res)
+                detail_items.extend(rl.DetailItem.from_tags(tags, url=url))
 
         return detail_items
+    # fmt: on
 
 
-class EcsTaskRunSearcher(res_lib.Searcher[EcsTaskRun]):
+class EcsTaskRunSearcher(rl.BaseSearcher[EcsTaskRun]):
     pass
 
 
@@ -222,25 +217,22 @@ ecs_task_run_searcher = EcsTaskRunSearcher(
     default_boto_kwargs={
         "PaginationConfig": {"MaxItems": 9999, "PageSize": 100},
     },
-    result_path=res_lib.ResultPath("taskArns"),
+    result_path=rl.ResultPath("taskArns"),
     # extract document
     doc_class=EcsTaskRun,
     # search
-    resource_type=SearcherEnum.ecs_task_run,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ecs_task_run.value,
+    fields=EcsTaskRun.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ecs_task_run.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class EcsTaskDefinitionFamily(res_lib.BaseDocument):
-    v1_arn: str = dataclasses.field()
+class EcsTaskDefinitionFamily(rl.ResourceDocument):
+    # fmt: off
+    v1_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="v1_arn")})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -259,7 +251,7 @@ class EcsTaskDefinitionFamily(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -275,19 +267,23 @@ class EcsTaskDefinitionFamily(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.v1_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ecs.get_task_definition_revisions(name_or_arn=self.v1_arn)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ecs.task_definitions
 
     @property
     def task_name(self) -> str:
         return self.name
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ecs_client.list_task_definitions(
                 familyPrefix=self.name,
                 sort="DESC",
@@ -306,7 +302,7 @@ class EcsTaskDefinitionFamily(res_lib.BaseDocument):
         return detail_items
 
 
-class EcsTaskDefinitionFamilySearcher(res_lib.Searcher[EcsTaskDefinitionFamily]):
+class EcsTaskDefinitionFamilySearcher(rl.BaseSearcher[EcsTaskDefinitionFamily]):
     pass
 
 
@@ -319,18 +315,14 @@ ecs_task_definition_family_searcher = EcsTaskDefinitionFamilySearcher(
         "status": "ACTIVE",
         "PaginationConfig": {"MaxItems": 9999, "PageSize": 100},
     },
-    result_path=res_lib.ResultPath("families"),
+    result_path=rl.ResultPath("families"),
     # extract document
     doc_class=EcsTaskDefinitionFamily,
     # search
-    resource_type=SearcherEnum.ecs_task_definition_family,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.StoredField(name="v1_arn"),
-        ],
-        # fmt: on
+    resource_type=rl.SearcherEnum.ecs_task_definition_family.value,
+    fields=EcsTaskDefinitionFamily.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(
+        rl.SearcherEnum.ecs_task_definition_family.value
     ),
-    cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )

@@ -5,10 +5,10 @@ name: CI
 
 on:
   push: # any push event to master will trigger this
-    branches: ["main"]
+    branches: ["main", "dev/**"]
 #    branches: ["unknown"]
   pull_request: # any pull request to master will trigger this
-    branches: ["main"]
+    branches: ["main", "dev/**"]
 #    branches: ["unknown"]
   workflow_dispatch: # allows you to manually trigger run
 
@@ -52,8 +52,9 @@ jobs:
           pip install -r requirements-test.txt
           pip install .
       - name: "Run pytest"
-
-        run: "python -m pytest tests --cov=aws_resource_search"
+        run: |
+          python setup_aws_dir_in_ci.py
+          python -m pytest tests --cov=aws_resource_search
       # don't forget to goto codecov.io, enable your repo, copy the token
       # create an CODECOV_TOKEN env var in GitHub actions secret
       - name: "Upload coverage to Codecov"

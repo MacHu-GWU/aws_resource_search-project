@@ -4,31 +4,26 @@ import typing as T
 import dataclasses
 
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
-
-
-def extract_datetime(resource: res_lib.T_RESULT_DATA) -> str:
-    return res_lib.get_datetime_isofmt(resource, "CreateDate", "No CreateDate")
+    from ..ars_def import ARS
 
 
 class IamMixin:
     @property
-    def create_date(self: res_lib.BaseDocument) -> str:
-        return res_lib.get_datetime_simplefmt(self.raw_data, "CreateDate")
+    def create_date(self: rl.ResourceDocument) -> str:
+        return rl.get_datetime_simple_fmt(self.raw_data, "CreateDate")
 
     @property
-    def arn(self: res_lib.BaseDocument) -> str:
+    def arn(self: rl.ResourceDocument) -> str:
         return self.raw_data["Arn"]
 
 
 @dataclasses.dataclass
-class IamGroup(IamMixin, res_lib.BaseDocument):
+class IamGroup(IamMixin, rl.ResourceDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
@@ -39,13 +34,13 @@ class IamGroup(IamMixin, res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}".format(
-            format_key_value("create_at", self.create_date),
-            format_key_value("arn", self.arn),
+            rl.format_key_value("create_at", self.create_date),
+            rl.format_key_value("arn", self.arn),
             self.short_subtitle,
         )
 
@@ -53,11 +48,15 @@ class IamGroup(IamMixin, res_lib.BaseDocument):
     def autocomplete(self) -> str:
         return self.name
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_user_group(name_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.groups
 
-class IamGroupSearcher(res_lib.Searcher[IamGroup]):
+
+class IamGroupSearcher(rl.BaseSearcher[IamGroup]):
     pass
 
 
@@ -67,19 +66,19 @@ iam_group_searcher = IamGroupSearcher(
     method="list_groups",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Groups"),
+    result_path=rl.ResultPath("Groups"),
     # extract document
     doc_class=IamGroup,
     # search
-    resource_type=SearcherEnum.iam_group,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.iam_group.value,
+    fields=IamGroup.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.iam_group.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class IamUser(IamMixin, res_lib.BaseDocument):
+class IamUser(IamMixin, rl.ResourceDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
@@ -90,13 +89,13 @@ class IamUser(IamMixin, res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}".format(
-            format_key_value("create_at", self.create_date),
-            format_key_value("arn", self.arn),
+            rl.format_key_value("create_at", self.create_date),
+            rl.format_key_value("arn", self.arn),
             self.short_subtitle,
         )
 
@@ -104,11 +103,15 @@ class IamUser(IamMixin, res_lib.BaseDocument):
     def autocomplete(self) -> str:
         return self.name
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_user(name_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.users
 
-class IamUserSearcher(res_lib.Searcher[IamUser]):
+
+class IamUserSearcher(rl.BaseSearcher[IamUser]):
     pass
 
 
@@ -118,19 +121,19 @@ iam_user_searcher = IamUserSearcher(
     method="list_users",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Users"),
+    result_path=rl.ResultPath("Users"),
     # extract document
     doc_class=IamUser,
     # search
-    resource_type=SearcherEnum.iam_user,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.iam_user.value,
+    fields=IamUser.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.iam_user.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class IamRole(IamMixin, res_lib.BaseDocument):
+class IamRole(IamMixin, rl.ResourceDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
@@ -145,15 +148,15 @@ class IamRole(IamMixin, res_lib.BaseDocument):
     @property
     def title(self) -> str:
         if self.is_service_role():
-            return format_key_value("🪖 name", self.name)
+            return rl.format_key_value("🪖 name", self.name)
         else:
-            return format_key_value("🧢 name", self.name)
+            return rl.format_key_value("🧢 name", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}".format(
-            format_key_value("create_at", self.create_date),
-            format_key_value("arn", self.arn),
+            rl.format_key_value("create_at", self.create_date),
+            rl.format_key_value("arn", self.arn),
             self.short_subtitle,
         )
 
@@ -161,13 +164,18 @@ class IamRole(IamMixin, res_lib.BaseDocument):
     def autocomplete(self) -> str:
         return self.name
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_role(name_or_arn=self.arn)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.roles
+
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
         trust_entities = self.raw_data["AssumeRolePolicyDocument"]
         detail_items.extend(
@@ -182,34 +190,32 @@ class IamRole(IamMixin, res_lib.BaseDocument):
             ]
         )
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.iam_client.list_attached_role_policies(
                 RoleName=self.name,
                 MaxItems=50,
             )
-            # fmt: off
             detail_items.extend([
                 from_detail(
-                    name="managed policy",
+                    key="managed policy",
                     value=dct["PolicyArn"],
-                    text=dct["PolicyName"],
+                    value_text=dct["PolicyName"],
                     url=ars.aws_console.iam.get_policy(name_or_arn=dct["PolicyArn"]),
                 )
                 for dct in res.get("AttachedPolicies", [])
             ])
-            # fmt: on
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.iam_client.list_role_policies(RoleName=self.name, MaxItems=50)
             detail_items.extend(
                 [
                     from_detail(
-                        name="inline policy",
+                        key="inline policy",
                         value=arns.res.IamPolicy.new(
                             aws_account_id=ars.bsm.aws_account_id,
                             name=policy_name,
                         ).to_arn(),
-                        text=policy_name,
+                        value_text=policy_name,
                         url=ars.aws_console.iam.get_role_inline_policy(
                             role_name_or_arn=self.name,
                             policy_name=policy_name,
@@ -219,15 +225,16 @@ class IamRole(IamMixin, res_lib.BaseDocument):
                 ]
             )
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.iam_client.list_role_tags(RoleName=self.name)
-            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
+    # fmt: on
 
 
-class IamRoleSearcher(res_lib.Searcher[IamRole]):
+class IamRoleSearcher(rl.BaseSearcher[IamRole]):
     pass
 
 
@@ -237,19 +244,19 @@ iam_role_searcher = IamRoleSearcher(
     method="list_roles",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Roles"),
+    result_path=rl.ResultPath("Roles"),
     # extract document
     doc_class=IamRole,
     # search
-    resource_type=SearcherEnum.iam_role,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.iam_role.value,
+    fields=IamRole.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.iam_role.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class IamPolicy(IamMixin, res_lib.BaseDocument):
+class IamPolicy(IamMixin, rl.ResourceDocument):
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
         return cls(
@@ -260,13 +267,13 @@ class IamPolicy(IamMixin, res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}".format(
-            format_key_value("create_at", self.create_date),
-            format_key_value("arn", self.arn),
+            rl.format_key_value("create_at", self.create_date),
+            rl.format_key_value("arn", self.arn),
             self.short_subtitle,
         )
 
@@ -274,17 +281,20 @@ class IamPolicy(IamMixin, res_lib.BaseDocument):
     def autocomplete(self) -> str:
         return self.name
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.iam.get_policy(name_or_arn=self.arn)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.iam.policies
 
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
         detail_items.append(from_detail("create_date", self.create_date))
-        # fmt: off
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.iam_client.get_policy(PolicyArn=self.arn)
             dct = res["Policy"]
             policy_id = dct["PolicyId"]
@@ -300,15 +310,15 @@ class IamPolicy(IamMixin, res_lib.BaseDocument):
                 from_detail("description", description, url=url),
                 from_detail("document", document, self.one_line(document), url=url),
             ])
-        # fmt: on
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.iam_client.list_policy_tags(PolicyArn=self.arn)
             tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
         return detail_items
+    # fmt: on
 
 
-class IamPolicySearcher(res_lib.Searcher[IamPolicy]):
+class IamPolicySearcher(rl.BaseSearcher[IamPolicy]):
     pass
 
 
@@ -318,12 +328,12 @@ iam_policy_searcher = IamPolicySearcher(
     method="list_policies",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("Policies"),
+    result_path=rl.ResultPath("Policies"),
     # extract document
     doc_class=IamPolicy,
     # search
-    resource_type=SearcherEnum.iam_policy,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.iam_policy.value,
+    fields=IamPolicy.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.iam_policy.value),
     more_cache_key=None,
 )

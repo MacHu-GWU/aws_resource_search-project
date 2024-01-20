@@ -1,0 +1,23 @@
+# -*- coding: utf-8 -*-
+
+"""
+See :class:`ARSMixin`
+"""
+
+import typing as T
+
+from .compat import cached_property
+
+if T.TYPE_CHECKING:  # pragma: no cover
+    from .ars_def import ARS
+    {%- for sr_meta in sr_meta_list %}
+    from .res.{{ sr_meta.module }} import {{ sr_meta.klass }}
+    {%- endfor %}
+
+
+class ARSMixin:  # pragma: no cover
+    {%- for sr_meta in sr_meta_list %}
+    @cached_property
+    def {{ sr_meta.id_snake }}(self: "ARS") -> "{{ sr_meta.klass }}":
+        return self.get_searcher("{{ sr_meta.id }}")
+    {% endfor %}

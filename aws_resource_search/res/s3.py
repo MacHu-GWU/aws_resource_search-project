@@ -12,12 +12,12 @@ import json
 import dataclasses
 from datetime import datetime
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+import aws_console_url.api as acu
+
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 # Declare a new class for the resource type "S3 bucket".
@@ -26,7 +26,7 @@ if T.TYPE_CHECKING:
 # The class name should be "${ServiceName}${ResourceName}" in camel case.
 # it should inherit from res_lib.BaseDocument.
 @dataclasses.dataclass
-class S3Bucket(res_lib.BaseDocument):
+class S3Bucket(rl.ResourceDocument):
     """
     S3 Bucket resource data model.
     """
@@ -72,7 +72,7 @@ class S3Bucket(res_lib.BaseDocument):
         """
         Example: :cyan:`bucket_name` = :yellow:`my-bucket`
         """
-        return format_key_value("bucket_name", self.name)
+        return rl.format_key_value("bucket_name", self.name)
 
     # it has to have a property named "subtitle", it is the second line of the
     # search result item in the dropdown menu. you can format the title using
@@ -87,7 +87,7 @@ class S3Bucket(res_lib.BaseDocument):
         🌐 :magenta:`Enter`, 📋 :magenta:`Ctrl A`, 🔗 :magenta:`Ctrl U`, 👀 :magenta:`Ctrl P`.
         """
         return "{}, {}".format(
-            format_key_value("create_at", self.creation_date),
+            rl.format_key_value("create_at", self.creation_date),
             self.short_subtitle,
         )
 
@@ -115,33 +115,37 @@ class S3Bucket(res_lib.BaseDocument):
 
     # most of the AWS resource support console url,
     # you have to define a method to calculate the console url.
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.s3.get_console_url(bucket=self.name)
+
+    # most of the AWS resource support list all resources of this type in AWS console,
+    # you have to define a method to calculate the console url.
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.s3.buckets
 
     # the get_details method returns a list of items to be displayed in the
     # resource details view when user tap 'Ctrl P'.
     # you may call some boto3 API to get more details about the resource.
     # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
         """
         Include s3 uri, s3 arn, bucket location and tags in details.
         """
         # the first code block is to initialize a detail_items list
         # using the class attribute
-        from_detail = res_lib.DetailItem.from_detail
-        aws = ars.aws_console
-        url = self.get_console_url(aws)
-        detail_items: T.List[res_lib.DetailItem] = [
-            from_detail("s3 uri", f"s3://{self.name}", url=url),
-            from_detail("s3 arn", self.arn, url=url),
-        ]
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        # get initial detail items
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars, arn_key="s3 arn")
+        detail_items.append(from_detail("s3 uri", f"s3://{self.name}", url=url))
 
         # the second code block is to call boto3 API to get more details
         # we should wrap the code block with ``self.enrich_details(detail_items)``
         # context manager because we may not have the permission
         # the context manager will catch the exception and add a debug message
         # to tell the user that we don't have the permission to call the API
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.s3_client.get_bucket_location(Bucket=self.name)
             location = res["LocationConstraint"]
             if not location:
@@ -149,54 +153,46 @@ class S3Bucket(res_lib.BaseDocument):
             detail_items.append(from_detail("location", location, url=url))
 
         # below, we call more API to get more information
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.s3_client.get_bucket_versioning(Bucket=self.name)
             versioning = res.get("Status", "Not enabled yet")
             mfa_delete = res.get("MFADelete", "Not enabled yet")
-            detail_items.extend(
-                [
-                    from_detail("versioning", versioning, url=url),
-                    from_detail("mfa_delete", mfa_delete, url=url),
-                ]
-            )
+            detail_items.extend([
+                from_detail("versioning", versioning, url=url),
+                from_detail("mfa_delete", mfa_delete, url=url),
+            ])
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.s3_client.get_bucket_encryption(Bucket=self.name)
             rules = res.get("ServerSideEncryptionConfiguration", {}).get("Rules", [])
             if rules:
                 rule = rules[0]
-                sse_algorithm = rule.get("ApplyServerSideEncryptionByDefault", {}).get(
-                    "SSEAlgorithm", "Unknown"
-                )
-                kms_master_key_id = rule.get(
-                    "ApplyServerSideEncryptionByDefault", {}
-                ).get("KMSMasterKeyID", "Unknown")
+                sse_algorithm = rule.get("ApplyServerSideEncryptionByDefault", {}).get("SSEAlgorithm", "Unknown")
+                kms_master_key_id = rule.get("ApplyServerSideEncryptionByDefault", {}).get("KMSMasterKeyID", "Unknown")
                 bucket_key_enabled = rule.get("BucketKeyEnabled", "Unknown")
-                detail_items.extend(
-                    [
-                        from_detail("sse_algorithm", sse_algorithm, url=url),
-                        from_detail("kms_master_key_id", kms_master_key_id, url=url),
-                        from_detail("bucket_key_enabled", bucket_key_enabled, url=url),
-                    ]
-                )
+                detail_items.extend([
+                    from_detail("sse_algorithm", sse_algorithm, url=url),
+                    from_detail("kms_master_key_id", kms_master_key_id, url=url),
+                    from_detail("bucket_key_enabled", bucket_key_enabled, url=url),
+                ])
 
         # similar to the second code block
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.s3_client.get_bucket_policy(Bucket=self.name)
             policy = res.get("Policy", "{}")
             detail_items.append(from_detail("bucket_policy", policy, self.one_line(policy), url=url))
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.s3_client.get_bucket_cors(Bucket=self.name)
             dct = {"CORSRules": res.get("CORSRules", [])}
             cors = json.dumps(dct)
             detail_items.append(from_detail("CORS", cors, self.one_line(cors), url=url))
 
         # the last code block is usually to get the tags of the resource
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.s3_client.get_bucket_tagging(Bucket=self.name)
-            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagSet", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
@@ -204,7 +200,7 @@ class S3Bucket(res_lib.BaseDocument):
 
 # create a res_lib.Searcher object. It defines the search behavior including
 # how to get the data, how to index the data, and how to search the data.
-class S3BucketSearcher(res_lib.Searcher[S3Bucket]):
+class S3BucketSearcher(rl.BaseSearcher[S3Bucket]):
     pass
 
 
@@ -223,24 +219,24 @@ s3_bucket_searcher = S3BucketSearcher(
     # how to access the list of resource data in the API response
     # you can find it in the "Response Syntax" section of
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_buckets.html
-    result_path=res_lib.ResultPath("Buckets"),
+    result_path=rl.ResultPath("Buckets"),
     # --- extract document
     # what is the corresponding document class for this AWS resource?
     doc_class=S3Bucket,
     # --- search
     # the resource type identifier in string, the naming convention is
     # ${service_name}-${resource_name}
-    resource_type=SearcherEnum.s3_bucket,
+    resource_type=rl.SearcherEnum.s3_bucket.value,
     # ``fields`` define how to index this document and how to search this document
     # the field list here has to match the attribute list in the document class
     # all field should be stored, so that we can recover the document object
     # from the search result
-    fields=res_lib.define_fields(),
+    fields=S3Bucket.get_dataset_fields(),
     # the list_buckets API result will be cached for 24 hours, so that we don't
     # need to rebuild the index every time when user search
     # user can use !~ query to force refresh the index
     # you can update this value to extend the cache expire time
-    cache_expire=24 * 60 * 60,
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.s3_bucket.value),
     # this is only used for child resource, we will cover it in the sfn.py file
     more_cache_key=None,
 )

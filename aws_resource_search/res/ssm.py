@@ -4,29 +4,31 @@ import typing as T
 import dataclasses
 from datetime import datetime
 
+import sayt.api as sayt
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class SsmParameter(res_lib.BaseDocument):
-    type: str = dataclasses.field()
-    tier: str = dataclasses.field()
-    param_arn: str = dataclasses.field()
+class SsmParameter(rl.ResourceDocument):
+    # fmt: off
+    type: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="type", minsize=2, maxsize=4, stored=True)})
+    tier: str = dataclasses.field(metadata={"field": sayt.NgramWordsField(name="tier", minsize=2, maxsize=4, stored=True)})
+    param_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="param_arn")})
+    # fmt: on
 
     @property
     def last_modified_date(self) -> datetime:
-        return res_lib.get_datetime(self.raw_data, "LastModifiedDate")
+        return rl.get_datetime(self.raw_data, "LastModifiedDate")
 
     @property
     def description(self) -> str:
-        return res_lib.get_description(self.raw_data, "Description")
+        return rl.get_description(self.raw_data, "Description")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -45,13 +47,13 @@ class SsmParameter(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
         return "{}, {}, {}".format(
-            format_key_value("type", self.type),
-            format_key_value("tier", self.tier),
+            rl.format_key_value("type", self.type),
+            rl.format_key_value("tier", self.tier),
             self.short_subtitle,
         )
 
@@ -63,16 +65,20 @@ class SsmParameter(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.param_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ssm.get_parameter(name_or_arn=self.arn)
 
-    # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ssm.parameters
 
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ssm_client.get_parameter(Name=self.name)
             param = res["Parameter"]
             detail_items.extend([
@@ -83,19 +89,19 @@ class SsmParameter(res_lib.BaseDocument):
                 from_detail("Value", param.get("Value", "NA"), self.one_line(param.get("Value", "NA")), url=url),
             ])
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.ssm_client.list_tags_for_resource(
                 ResourceType="Parameter",
                 ResourceId=self.name,
             )
-            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("TagList", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
 
 
-class SsmParameterSearcher(res_lib.Searcher[SsmParameter]):
+class SsmParameterSearcher(rl.BaseSearcher[SsmParameter]):
     pass
 
 
@@ -105,20 +111,12 @@ ssm_parameter_searcher = SsmParameterSearcher(
     method="describe_parameters",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 50}},
-    result_path=res_lib.ResultPath("Parameters"),
+    result_path=rl.ResultPath("Parameters"),
     # extract document
     doc_class=SsmParameter,
     # search
-    resource_type=SearcherEnum.ssm_parameter,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.NgramWordsField(name="type", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.NgramWordsField(name="tier", minsize=2, maxsize=4, stored=True),
-            res_lib.sayt.StoredField(name="param_arn"),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ssm_parameter.value,
+    fields=SsmParameter.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ssm_parameter.value),
     more_cache_key=None,
 )

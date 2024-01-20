@@ -3,14 +3,14 @@
 import typing as T
 import dataclasses
 
+import sayt.api as sayt
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import ShortcutEnum, format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 dynamodb_table_status_icon_mapper = {
     "CREATING": "🟡",
@@ -24,8 +24,10 @@ dynamodb_table_status_icon_mapper = {
 
 
 @dataclasses.dataclass
-class DynamodbTable(res_lib.BaseDocument):
-    table_arn: str = dataclasses.field()
+class DynamodbTable(rl.ResourceDocument):
+    # fmt: off
+    table_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="table_arn")})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -42,7 +44,7 @@ class DynamodbTable(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("table_name", self.name)
+        return rl.format_key_value("table_name", self.name)
 
     @property
     def autocomplete(self) -> str:
@@ -52,16 +54,20 @@ class DynamodbTable(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.table_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.dynamodb.get_table(table_or_arn=self.arn)
 
-    # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.dynamodb.tables
 
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.dynamodb_client.describe_table(TableName=self.name)
             dct = res["Table"]
 
@@ -69,13 +75,13 @@ class DynamodbTable(res_lib.BaseDocument):
             keys = {d["AttributeName"]: d["KeyType"] for d in dct.get("KeySchema", [])}
             for attr_name, key_type in keys.items():
                 data_type = attrs[attr_name]
-                item = res_lib.DetailItem.new(
+                item = rl.DetailItem.new(
                     title="🔑 key_schema {}, {}, {}".format(
-                        format_key_value("key", attr_name),
-                        format_key_value("key_type", key_type),
-                        format_key_value("data_type", data_type),
+                        rl.format_key_value("key", attr_name),
+                        rl.format_key_value("key_type", key_type),
+                        rl.format_key_value("data_type", data_type),
                     ),
-                    subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy key name.",
+                    subtitle=f"🌐 {rl.ShortcutEnum.ENTER} to open url, 📋 {rl.ShortcutEnum.CTRL_A} to copy key name.",
                 )
                 detail_items.append(item)
 
@@ -92,16 +98,16 @@ class DynamodbTable(res_lib.BaseDocument):
                 ]
             )
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.dynamodb_client.list_tags_of_resource(ResourceArn=self.arn)
-            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url=url))
 
         return detail_items
     # fmt: on
 
 
-class DynamodbTableSearcher(res_lib.Searcher[DynamodbTable]):
+class DynamodbTableSearcher(rl.BaseSearcher[DynamodbTable]):
     pass
 
 
@@ -113,16 +119,12 @@ dynamodb_table_searcher = DynamodbTableSearcher(
     default_boto_kwargs={
         "PaginationConfig": {"MaxItems": 9999, "PageSize": 100},
     },
-    result_path=res_lib.ResultPath("TableNames"),
+    result_path=rl.ResultPath("TableNames"),
     # extract document
     doc_class=DynamodbTable,
     # search
-    resource_type=SearcherEnum.dynamodb_table,
-    fields=res_lib.define_fields(
-        fields=[
-            res_lib.sayt.StoredField(name="table_arn"),
-        ],
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.dynamodb_table.value,
+    fields=DynamodbTable.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.dynamodb_table.value),
     more_cache_key=None,
 )

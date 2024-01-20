@@ -3,19 +3,21 @@
 import typing as T
 import dataclasses
 
+import sayt.api as sayt
 import aws_arns.api as arns
+import aws_console_url.api as acu
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class EcrRepository(res_lib.BaseDocument):
-    uri: str = dataclasses.field()
+class EcrRepository(rl.ResourceDocument):
+    # fmt: off
+    uri: str = dataclasses.field(metadata={"field": sayt.StoredField(name="uri")})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -28,7 +30,7 @@ class EcrRepository(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -45,8 +47,12 @@ class EcrRepository(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["repositoryArn"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.ecr.get_repo(name_or_arn_or_uri=self.arn)
+
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.ecr.repos
 
     @property
     def registry_id(self) -> str:
@@ -56,14 +62,14 @@ class EcrRepository(res_lib.BaseDocument):
     def repository_name(self) -> str:
         return self.raw_data["repositoryName"]
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             detail_items.extend(
-                # fmt: off
                 [
                     from_detail("registry_id", self.registry_id, url=url),
                     from_detail("repository_name", self.repository_name, url=url),
@@ -72,24 +78,23 @@ class EcrRepository(res_lib.BaseDocument):
                     from_detail("create_at", self.raw_data["createdAt"], url=url),
                     from_detail("image_tag_mutability", self.raw_data["imageTagMutability"], url=url),
                 ]
-                # fmt: on
             )
             res = ars.bsm.ecr_client.get_repository_policy(
                 registryId=self.registry_id,
                 repositoryName=self.repository_name,
             )
-            # fmt: off
+
             detail_items.extend([
                 from_detail("repo_policy", self.one_line(res.get("policyText", "{}")), url=url),
             ])
-            # fmt: on
             res = ars.bsm.ecr_client.list_tags_for_resource(resourceArn=self.arn)
-            tags: dict = {dct["Key"]: dct["Value"] for dct in res.get("tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url=url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url=url))
         return detail_items
+    # fmt: on
 
 
-class EcrRepositorySearcher(res_lib.Searcher[EcrRepository]):
+class EcrRepositorySearcher(rl.BaseSearcher[EcrRepository]):
     pass
 
 
@@ -99,27 +104,23 @@ ecr_repository_searcher = EcrRepositorySearcher(
     method="describe_repositories",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("repositories"),
+    result_path=rl.ResultPath("repositories"),
     # extract document
     doc_class=EcrRepository,
     # search
-    resource_type=SearcherEnum.ecr_repository,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.StoredField(name="uri"),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ecr_repository.value,
+    fields=EcrRepository.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ecr_repository.value),
     more_cache_key=None,
 )
 
 
 @dataclasses.dataclass
-class EcrRepositoryImage(res_lib.BaseDocument):
-    repo_arn: str = dataclasses.field()
-    repo_uri: str = dataclasses.field()
+class EcrRepositoryImage(rl.ResourceDocument):
+    # fmt: off
+    repo_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="repo_arn")})
+    repo_uri: str = dataclasses.field(metadata={"field": sayt.StoredField(name="repo_uri")})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -139,8 +140,8 @@ class EcrRepositoryImage(res_lib.BaseDocument):
     @property
     def title(self) -> str:
         return "{}, {}".format(
-            format_key_value("digest", self.id),
-            format_key_value("tags", self.name),
+            rl.format_key_value("digest", self.id),
+            rl.format_key_value("tags", self.name),
         )
 
     @property
@@ -157,7 +158,7 @@ class EcrRepositoryImage(res_lib.BaseDocument):
     def arn(self) -> str:
         return f"{self.repo_arn}:{self.id}"
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         # todo: add image url support to aws_console_url project
         origin_digest = self.raw_data["imageDigest"]
         return (
@@ -186,12 +187,12 @@ class EcrRepositoryImage(res_lib.BaseDocument):
     def uri(self) -> str:
         return f"{self.repo_uri}:{self.digest}"
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             detail_items.extend(
                 # fmt: off
                 [
@@ -210,7 +211,7 @@ class EcrRepositoryImage(res_lib.BaseDocument):
         return detail_items
 
 
-class EcrRepositoryImageSearcher(res_lib.Searcher[EcrRepositoryImage]):
+class EcrRepositoryImageSearcher(rl.BaseSearcher[EcrRepositoryImage]):
     pass
 
 
@@ -220,19 +221,12 @@ ecr_repository_image_searcher = EcrRepositoryImageSearcher(
     method="describe_images",
     is_paginator=True,
     default_boto_kwargs={"PaginationConfig": {"MaxItems": 9999, "PageSize": 1000}},
-    result_path=res_lib.ResultPath("imageDetails"),
+    result_path=rl.ResultPath("imageDetails"),
     # extract document
     doc_class=EcrRepositoryImage,
     # search
-    resource_type=SearcherEnum.ecr_repository_image,
-    fields=res_lib.define_fields(
-        # fmt: off
-        fields=[
-            res_lib.sayt.StoredField(name="repo_arn"),
-            res_lib.sayt.StoredField(name="repo_uri"),
-        ],
-        # fmt: on
-    ),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.ecr_repository_image.value,
+    fields=EcrRepositoryImage.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(rl.SearcherEnum.ecr_repository_image.value),
     more_cache_key=lambda boto_kwargs: [boto_kwargs["repositoryName"]],
 )

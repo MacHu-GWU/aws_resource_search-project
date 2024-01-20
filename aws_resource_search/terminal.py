@@ -82,10 +82,27 @@ def format_key_value(key: str, value: T.Any) -> str:
     return f"{format_key(key)} = {format_value(value)}"
 
 
+def remove_text_format(text: str) -> str:
+    """
+    Remove the terminal format from the given text.
+    """
+    formats = [
+        term.cyan,
+        term.yellow,
+        term.magenta,
+        term.blue,
+        term.green,
+        term.normal,
+    ]
+    for c in formats:
+        text = text.replace(c, "")
+    return text
+
+
 class ShortcutEnum:
     """
     Formatted keyboard shortcuts::
-    
+
         print("Tap {ShortcutEnum.ENTER} to open url")
 
     For example, the above code will print:
@@ -100,3 +117,34 @@ class ShortcutEnum:
     CTRL_U = format_shortcut("Ctrl U")
     CTRL_P = format_shortcut("Ctrl P")
     F1 = format_shortcut("F1")
+
+
+SUBTITLE = (
+    f"🌐 {ShortcutEnum.ENTER} to open url, "
+    f"📋 {ShortcutEnum.CTRL_A} to copy arn, "
+    f"🔗 {ShortcutEnum.CTRL_U} to copy url, "
+    f"👀 {ShortcutEnum.CTRL_P} to view details."
+)
+"""
+The subtitle in the zelfred UI.
+
+The default subtitle is the help text to show the user how to interact with the UI.
+
+Example:
+
+🌐 :magenta:`Enter` to open url, 📋 :magenta:`Ctrl A` to copy arn, 🔗 :magenta:`Ctrl U` to copy url, 👀 :magenta:`Ctrl P` to view details."
+"""
+
+SHORT_SUBTITLE = (
+    f"🌐 {ShortcutEnum.ENTER}, "
+    f"📋 {ShortcutEnum.CTRL_A}, "
+    f"🔗 {ShortcutEnum.CTRL_U}, "
+    f"👀 {ShortcutEnum.CTRL_P}."
+)
+"""
+A shorter version of subtitle.
+
+Example:
+
+🌐 :magenta:`Enter`, 📋 :magenta:`Ctrl A`, 🔗 :magenta:`Ctrl U`, 👀 :magenta:`Ctrl P`."
+"""

@@ -4,19 +4,19 @@ import typing as T
 import json
 import dataclasses
 
-from .. import res_lib
-from ..terminal import format_key_value
-from ..searchers_enum import SearcherEnum
+import aws_console_url.api as acu
+
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class SecretsManagerSecret(res_lib.BaseDocument):
+class SecretsManagerSecret(rl.ResourceDocument):
     @property
     def description(self) -> str:
-        return res_lib.get_description(self.raw_data, "Description")
+        return rl.get_description(self.raw_data, "Description")
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -28,7 +28,7 @@ class SecretsManagerSecret(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("name", self.name)
+        return rl.format_key_value("name", self.name)
 
     @property
     def subtitle(self) -> str:
@@ -45,18 +45,20 @@ class SecretsManagerSecret(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.raw_data["ARN"]
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.secretmanager.get_secret(secret_name_or_arn=self.arn)
 
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_details = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(
-            ars, arn_field_name="statemachine_arn"
-        )
-        url = self.get_console_url(ars.aws_console)
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.secretmanager.secrets
 
-        # fmt: off
-        with self.enrich_details(detail_items):
+    # fmt: off
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_details = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
+
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.secretsmanager_client.describe_secret(SecretId=self.name)
             detail_items.extend([
                 from_details("KmsKeyId", res.get("KmsKeyId", "NA"), url=url),
@@ -72,14 +74,14 @@ class SecretsManagerSecret(res_lib.BaseDocument):
                 from_details("CreatedDate", res.get("CreatedDate", "NA"), url=url),
                 from_details("PrimaryRegion", res.get("PrimaryRegion", "NA"), url=url),
             ])
-            # fmt: on
-            tags: dict = {dct["key"]: dct["value"] for dct in self.raw_data.get("Tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
+    # fmt: on
 
 
-class SecretsManagerSecretSearcher(res_lib.Searcher[SecretsManagerSecret]):
+class SecretsManagerSecretSearcher(rl.BaseSearcher[SecretsManagerSecret]):
     pass
 
 
@@ -93,12 +95,14 @@ secretsmanager_secret_searcher = SecretsManagerSecretSearcher(
         "SortOrder": "desc",
         "PaginationConfig": {"MaxItems": 9999, "PageSize": 100},
     },
-    result_path=res_lib.ResultPath("SecretList"),
+    result_path=rl.ResultPath("SecretList"),
     # extract document
     doc_class=SecretsManagerSecret,
     # search
-    resource_type=SearcherEnum.secretsmanager_secret,
-    fields=res_lib.define_fields(),
-    cache_expire=24 * 60 * 60,
+    resource_type=rl.SearcherEnum.secretsmanager_secret.value,
+    fields=SecretsManagerSecret.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(
+        rl.SearcherEnum.secretsmanager_secret.value
+    ),
     more_cache_key=None,
 )

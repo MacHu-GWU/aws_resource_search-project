@@ -5,17 +5,21 @@ import dataclasses
 
 import aws_arns.api as arns
 
-from .. import res_lib
-from ..terminal import format_key_value, ShortcutEnum, format_key, format_value
-from ..searchers_enum import SearcherEnum
+import sayt.api as sayt
+import aws_arns.api as arns
+import aws_console_url.api as acu
+
+from .. import res_lib as rl
 
 if T.TYPE_CHECKING:
-    from ..ars import ARS
+    from ..ars_def import ARS
 
 
 @dataclasses.dataclass
-class CodePipelinePipeline(res_lib.BaseDocument):
-    pipeline_arn: str = dataclasses.field()
+class CodePipelinePipeline(rl.ResourceDocument):
+    # fmt: off
+    pipeline_arn: str = dataclasses.field(metadata={"field": sayt.StoredField(name="pipeline_arn")})
+    # fmt: on
 
     @classmethod
     def from_resource(cls, resource, bsm, boto_kwargs):
@@ -32,7 +36,7 @@ class CodePipelinePipeline(res_lib.BaseDocument):
 
     @property
     def title(self) -> str:
-        return format_key_value("pipeline_name", self.name)
+        return rl.format_key_value("pipeline_name", self.name)
 
     @property
     def autocomplete(self) -> str:
@@ -42,20 +46,24 @@ class CodePipelinePipeline(res_lib.BaseDocument):
     def arn(self) -> str:
         return self.pipeline_arn
 
-    def get_console_url(self, console: res_lib.acu.AWSConsole) -> str:
+    def get_console_url(self, console: acu.AWSConsole) -> str:
         return console.codepipeline.get_pipeline(name_or_arn=self.arn)
 
+    @classmethod
+    def get_list_resources_console_url(cls, console: acu.AWSConsole) -> str:
+        return console.codepipeline.pipelines
+
     # fmt: off
-    def get_details(self, ars: "ARS") -> T.List[res_lib.DetailItem]:
-        from_detail = res_lib.DetailItem.from_detail
-        detail_items = self.get_initial_detail_items(ars)
-        url = self.get_console_url(ars.aws_console)
+    def get_details(self, ars: "ARS") -> T.List[rl.DetailItem]:
+        from_detail = rl.DetailItem.from_detail
+        url = self.get_console_url(console=ars.aws_console)
+        detail_items = rl.DetailItem.get_initial_detail_items(doc=self, ars=ars)
         
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.codepipeline_client.get_pipeline(name=self.name)
             dct = res["pipeline"]
             version = dct.get("version", 0)
-            update_at = res_lib.get_none_or_default(dct, "metadata.updated", "NA")
+            update_at = rl.get_none_or_default(dct, "metadata.updated", "NA")
             roleArn = dct.get("roleArn", "NA")
             variables = dct.get("variables", [])
             detail_items.extend([
@@ -69,29 +77,29 @@ class CodePipelinePipeline(res_lib.BaseDocument):
                 description = d["description"]
                 defaultValue = d["defaultValue"]
                 detail_items.append(
-                    res_lib.DetailItem.new(
+                    rl.DetailItem.new(
                         title="🎯 var = {}, default value = {}, ({})".format(
-                            format_key(name),
-                            format_value(defaultValue),
+                            rl.format_key(name),
+                            rl.format_value(defaultValue),
                             description,
                         ),
-                        subtitle=f"🌐 {ShortcutEnum.ENTER} to open url, 📋 {ShortcutEnum.CTRL_A} to copy var name.",
+                        subtitle=f"🌐 {rl.ShortcutEnum.ENTER} to open url, 📋 {rl.ShortcutEnum.CTRL_A} to copy var name.",
                         uid=f"var {name}",
                         copy=name,
                         url=url,
                     )
                 )
 
-        with self.enrich_details(detail_items):
+        with rl.DetailItem.error_handling(detail_items):
             res = ars.bsm.codepipeline_client.list_tags_for_resource(resourceArn=self.arn)
-            tags: dict = {dct["key"]: dct["value"] for dct in res.get("tags", [])}
-            detail_items.extend(res_lib.DetailItem.from_tags(tags, url))
+            tags = rl.extract_tags(res)
+            detail_items.extend(rl.DetailItem.from_tags(tags, url))
 
         return detail_items
     # fmt: on
 
 
-class CodePipelinePipelineSearcher(res_lib.Searcher[CodePipelinePipeline]):
+class CodePipelinePipelineSearcher(rl.BaseSearcher[CodePipelinePipeline]):
     pass
 
 
@@ -106,16 +114,14 @@ codepipeline_pipeline_searcher = CodePipelinePipelineSearcher(
             "PageSize": 1000,
         },
     },
-    result_path=res_lib.ResultPath("pipelines"),
+    result_path=rl.ResultPath("pipelines"),
     # extract document
     doc_class=CodePipelinePipeline,
     # search
-    resource_type=SearcherEnum.codepipeline_pipeline,
-    fields=res_lib.define_fields(
-        fields=[
-            res_lib.sayt.StoredField(name="pipeline_arn"),
-        ],
+    resource_type=rl.SearcherEnum.codepipeline_pipeline.value,
+    fields=CodePipelinePipeline.get_dataset_fields(),
+    cache_expire=rl.config.get_cache_expire(
+        rl.SearcherEnum.codepipeline_pipeline.value
     ),
-    cache_expire=24 * 60 * 60,
     more_cache_key=None,
 )
