@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import pytest
 from rich import print as rprint
 
 from aws_resource_search.searcher_enum import SearcherEnum
@@ -8,8 +7,7 @@ from aws_resource_search.logger import logger
 from aws_resource_search.tests.fake_aws.api import FakeAws, guid, envs, rand_env
 
 
-# @pytest.mark.skip()
-class TestARS(FakeAws):
+class TestARSInit(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
         cls.setup_ars()

@@ -7,7 +7,7 @@ from aws_resource_search.handlers.show_aws_info_handler import (
 from aws_resource_search.tests.fake_aws.main import FakeAws
 
 
-class Test(FakeAws):
+class TestShowAwsInfoHandler(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
         cls.setup_ars()

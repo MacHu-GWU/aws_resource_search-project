@@ -8,7 +8,7 @@ from aws_resource_search.tests.fake_aws.utils import guid
 from aws_resource_search.tests.fake_aws.main import FakeAws
 
 
-class Test(FakeAws):
+class TestSearchResourceHandler(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
         cls.setup_ars()

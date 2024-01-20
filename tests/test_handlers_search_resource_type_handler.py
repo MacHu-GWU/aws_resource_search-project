@@ -6,7 +6,7 @@ from aws_resource_search.handlers.search_resource_type_handler import (
 from aws_resource_search.tests.fake_aws.main import FakeAws
 
 
-class Test(FakeAws):
+class TestSearchResourceTypeHandler(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
         cls.setup_ars()

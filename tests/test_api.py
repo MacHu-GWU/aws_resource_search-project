@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-
 from aws_resource_search.tests.fake_aws.api import FakeAws
 
 
-class TestARS(FakeAws):
+class TestApi(FakeAws):
     @classmethod
     def setup_class_post_hook(cls):
         cls.setup_ars()
