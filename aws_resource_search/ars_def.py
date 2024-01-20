@@ -12,11 +12,12 @@ from pathlib import Path
 from diskcache import Cache
 from boto_session_manager import BotoSesManager
 from boto_session_manager.manager import NOTHING
-import aws_console_url.api as aws_console_url
+import aws_console_url.api as acu
 
 from .exc import MalformedBotoSessionError
 from .paths import dir_index, dir_cache
 from .searcher_finder import SearcherFinder, searcher_finder
+from .ars_search_patterns import ArsSearchPatternsMixin
 from .ars_mixin import ARSMixin
 
 if T.TYPE_CHECKING:  # pragma: no cover
@@ -48,7 +49,10 @@ def validate_bsm(bsm: "BotoSesManager"):
 
 
 @dataclasses.dataclass
-class ARS(ARSMixin):
+class ARS(
+    ArsSearchPatternsMixin,
+    ARSMixin,
+):
     """
     This class stands for "AWS Resource Search Base", provides method
     to search AWS resources in Python.
@@ -76,16 +80,15 @@ class ARS(ARSMixin):
 
     This class is a singleton object that holds all context data such as
     ``boto_session_manager.BotoSesManager``, ``aws_console_url.api.AwsConsole``.
-
-    :class:`aws_resource_search.ars_def.ARS` is a subclass of this class.
     """
-
+    # fmt: off
     bsm: "BotoSesManager" = dataclasses.field()
     aws_console: "aws_console_url.AWSConsole" = dataclasses.field()
     searcher_finder: "SearcherFinder" = dataclasses.field(default_factory=lambda: searcher_finder)
     dir_index: Path = dataclasses.field(default=dir_index)
     dir_cache: Path = dataclasses.field(default=dir_cache)
     cache: Cache = dataclasses.field(default=None)
+    # fmt: on
 
     def __post_init__(self):
         self.dir_index = Path(self.dir_index)
@@ -109,7 +112,7 @@ class ARS(ARSMixin):
     def from_bsm(cls, bsm: T.Optional["BotoSesManager"] = None):
         if bsm is None:
             bsm = BotoSesManager()
-        return cls(bsm=bsm, aws_console=aws_console_url.AWSConsole.from_bsm(bsm))
+        return cls(bsm=bsm, aws_console=acu.AWSConsole.from_bsm(bsm))
 
     def get_searcher(self, resource_type: str) -> "T_SEARCHER":
         """
@@ -151,6 +154,7 @@ class ARS(ARSMixin):
         3. Since we updated the ``bsm``, we also need to reset the ``searcher_finder``
             cache to recreate all ``Searcher`` objects.
         """
+        # reset boto_session_manager.BotoSesManager
         self.bsm.aws_access_key_id = NOTHING
         self.bsm.aws_secret_access_key = NOTHING
         self.bsm.aws_session_token = NOTHING
@@ -160,6 +164,12 @@ class ARS(ARSMixin):
         self.bsm.clear_cache()
         validate_bsm(self.bsm)
 
-        self.aws_console = aws_console_url.AWSConsole.from_bsm(self.bsm)
+        # reset aws_console_url.AWSConsole
+        self.aws_console = acu.AWSConsole.from_bsm(self.bsm)
 
+        # reset searcher_finder.SearcherFinder
         self.searcher_finder.searcher_cache.clear()
+
+        # reset ARS.search_patterns
+        _ = self.search_patterns
+        self._clear_search_patterns_cache()

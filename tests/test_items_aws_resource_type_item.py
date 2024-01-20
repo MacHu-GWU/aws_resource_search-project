@@ -2,12 +2,15 @@
 
 from aws_resource_search.documents.resource_type_document import ResourceTypeDocument
 from aws_resource_search.items.aws_resource_type_item import AwsResourceTypeItem
+from aws_resource_search.tests.fake_aws.api import FakeAws
 
 
-class TestAwsResourceTypeItem:
+class TestAwsResourceTypeItem(FakeAws):
+    @classmethod
+    def setup_class_post_hook(cls):
+        cls.setup_ars()
+
     def test_from_many_document(self):
-        from aws_resource_search.ars_init import ars
-
         item = AwsResourceTypeItem.from_many_document(
             docs=[
                 ResourceTypeDocument(
@@ -17,7 +20,7 @@ class TestAwsResourceTypeItem:
                     ngram="s3-bucket",
                 ),
             ],
-            ars=ars,
+            ars=self.ars,
         )[0]
         assert isinstance(item, AwsResourceTypeItem)
 
