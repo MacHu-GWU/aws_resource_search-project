@@ -187,7 +187,6 @@ class UI(zf.UI):
             ars=ars,
             hello_message="Welcome to AWS Resource Search!",
             capture_error=False,
-            terminal=rl.terminal,
         )
 
     def process_ctrl_b(self):  # pragma: no cover

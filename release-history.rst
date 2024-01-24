@@ -15,6 +15,14 @@ Backlog (TODO)
 **Miscellaneous**
 
 
+
+0.6.2 (2024-01-24)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Miscellaneous**
+
+- Upgrade dependencies, so that this package doesn't depends on any C library.
+
+
 0.6.1 (2024-01-20)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
