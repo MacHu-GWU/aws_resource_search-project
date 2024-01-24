@@ -9,6 +9,8 @@ import typing as T
 import zelfred.api as zf
 
 from . import res_lib as rl
+
+from .terminal import terminal
 from .handlers.api import (
     open_config_handler,
     search_aws_profile_handler,
@@ -171,7 +173,7 @@ class UI(zf.UI):
         **kwargs,
     ):
         self.ars: "ARS" = ars
-        super().__init__(handler=handler, **kwargs)
+        super().__init__(handler=handler, terminal=terminal, **kwargs)
 
     @classmethod
     def new(

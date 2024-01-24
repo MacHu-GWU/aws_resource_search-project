@@ -15,7 +15,7 @@ from .base_item import BaseArsItem
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from ..ars_def import ARS
-    from ..ui.main import UI
+    from ..ui_def import UI
 
 
 def set_profile_in_bsm(profile: str, ars: "ARS"):
